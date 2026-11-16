@@ -40,5 +40,6 @@ body:not(.alma-online) .app, body:not(.alma-online) .mobile-nav { visibility: hi
 .alma-formdoc { background: #faf8fc; border: 1px dashed #c9bddb; border-radius: 10px; padding: 12px; }
 .alma-formdoc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
 #almaFormDocPrev img { max-width: 260px; width: 100%; border-radius: 8px; border: 1px solid #e7e1ed; display: block; margin-bottom: 6px; }
+.alma-wa-note { background: #f1ecfa; border-left: 4px solid #51407a; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 13.5px; color: #30254e; }
 .alma-clip { font-size: 11.5px; font-weight: 700; color: #2e7d4f; }
 </style>

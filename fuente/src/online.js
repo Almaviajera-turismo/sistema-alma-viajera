@@ -451,6 +451,7 @@ function start(state) {
   $('almaUserBox').hidden = false;
   takeSnapshot(APP.getState());
   wireFormDoc();
+  wireOrders();
   APP.render();
   $('almaLoading').hidden = true;
   status('ok');
@@ -610,6 +611,70 @@ function wireFormDoc() {
     if (!pid) return;
     try { status('saving'); await uploadDoc(pid, file); APP.render(); status('ok'); }
     catch (e) { status('ok'); alert('La ficha se guardó, pero la foto del pasaporte no se pudo subir: ' + e.message + '\nPodés subirla desde «Ver ficha».'); }
+  });
+}
+
+/* Pedidos: "Pegar mensaje de WhatsApp" → la IA ordena el pedido (función leer-pedido) */
+let waImgs = [];
+function waInfo() { $('almaWaInfo').textContent = waImgs.length ? waImgs.length + ' captura/s adjunta/s' : ''; }
+window.almaOpenWa = () => {
+  waImgs = []; $('almaWaText').value = ''; $('almaWaImgs').value = ''; $('almaWaMsg').textContent = ''; waInfo();
+  $('almaWaGo').disabled = false; $('almaWaDialog').showModal(); setTimeout(() => $('almaWaText').focus(), 50);
+};
+window.almaWaPick = input => { waImgs.push(...[...(input.files || [])].filter(f => /^image\//.test(f.type))); waImgs = waImgs.slice(0, 4); input.value = ''; waInfo(); };
+async function imgBase64(file) {
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 1568 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.85).split(',')[1];
+}
+window.almaWaRun = async () => {
+  const texto = $('almaWaText').value.trim(), go = $('almaWaGo'), msg = $('almaWaMsg');
+  if (!texto && !waImgs.length) { msg.textContent = 'Pegá el mensaje o adjuntá una captura.'; return; }
+  go.disabled = true; msg.textContent = 'Leyendo el mensaje… (unos segundos)';
+  try {
+    const imagenes = [];
+    for (const f of waImgs) imagenes.push({ tipo: 'image/jpeg', datos: await imgBase64(f) });
+    const st = APP.getState();
+    const body = { texto, imagenes, hoy: new Date().toISOString().slice(0, 10),
+      salidas: (st.groups || []).map(g => ({ id: g.id, nombre: g.name || '', destino: g.destination || '', salida: g.departure || '' })) };
+    let r;
+    try {
+      r = await fetch(CFG.url + '/functions/v1/leer-pedido', { method: 'POST',
+        headers: { apikey: CFG.key, Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    } catch (e) { throw new Error('Sin conexión a internet.'); }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.pedido) throw new Error(j.error || 'No se pudo ordenar el mensaje (' + r.status + ').');
+    $('almaWaDialog').close();
+    fillOrder(j.pedido);
+  } catch (e) { msg.textContent = e.message; go.disabled = false; }
+};
+function fillOrder(p) {
+  const st = APP.getState();
+  const grupal = p.tipo === 'grupal' && p.salida_id && (st.groups || []).some(g => g.id === p.salida_id);
+  window.openOrder(grupal ? 'grupal' : 'individual');
+  const f = $('orderForm'), set = (n, v) => { if (f.elements[n] && v !== null && v !== undefined && v !== '') f.elements[n].value = v; };
+  set('client', p.cliente); set('phone', p.telefono); set('destination', p.destino); set('when', p.cuando);
+  if (Number(p.pasajeros_cant) > 0) set('pax', Math.round(p.pasajeros_cant));
+  if (grupal) set('groupId', p.salida_id);
+  if (p.precio_cotizado != null && Number(p.precio_cotizado) > 0) { set('quoteAmount', p.precio_cotizado); if (p.moneda) set('quoteCurrency', p.moneda); }
+  const falt = (p.faltantes || []).filter(Boolean);
+  set('notes', String(p.pedido || '').trim() + (falt.length ? '\n\nFalta preguntar:\n' + falt.map(x => '• ' + x).join('\n') : ''));
+  window.toggleOrderType?.();
+  const body = f.querySelector('.modalbody');
+  body.querySelector('.alma-wa-note')?.remove();
+  body.insertAdjacentHTML('afterbegin', '<div class="alma-wa-note">✨ Datos ordenados a partir del mensaje de WhatsApp. Revisalos y completá lo que falte antes de guardar.'
+    + (falt.length ? '<br><b>Falta preguntar:</b> ' + falt.map(esc).join(' · ') : '') + '</div>');
+}
+function wireOrders() {
+  const open = window.openOrder;
+  if (!open) return;
+  window.openOrder = (...a) => { open(...a); $('orderForm')?.querySelector('.alma-wa-note')?.remove(); };
+  $('almaWaText')?.addEventListener('paste', e => {          // pegar una captura directamente
+    const imgs = [...(e.clipboardData?.files || [])].filter(f => /^image\//.test(f.type));
+    if (imgs.length) { waImgs.push(...imgs); waImgs = waImgs.slice(0, 4); waInfo(); }
   });
 }
 

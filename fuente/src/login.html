@@ -28,6 +28,15 @@
   </div><div id="almaPwMsg" class="alma-msg"></div></div>
   <div class="modalfoot"><button type="button" class="btn plain" onclick="document.getElementById('almaPwDialog').close()">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>
 </dialog>
+<dialog id="almaWaDialog" class="dialog"><div class="modalhead"><h2>Pegar mensaje de WhatsApp</h2></div>
+  <div class="modalbody">
+    <p class="hint">Copiá el o los mensajes del cliente y pegalos acá. Se ordenan solos en un pedido nuevo que revisás antes de guardar. También podés adjuntar capturas del chat.</p>
+    <label class="field full" style="display:block"><textarea id="almaWaText" rows="9" placeholder="Pegá acá el mensaje…" style="width:100%;box-sizing:border-box"></textarea></label>
+    <div class="alma-formdoc-row"><label class="btn ghost tiny">📎 Adjuntar capturas<input id="almaWaImgs" type="file" accept="image/*" multiple hidden onchange="almaWaPick(this)"></label><span id="almaWaInfo" class="sub"></span></div>
+    <div id="almaWaMsg" class="alma-msg" style="color:#30254e"></div>
+  </div>
+  <div class="modalfoot"><button type="button" class="btn plain" onclick="document.getElementById('almaWaDialog').close()">Cancelar</button><button id="almaWaGo" type="button" class="btn" onclick="almaWaRun()">✨ Ordenar pedido</button></div>
+</dialog>
 <dialog id="almaBulkDialog" class="dialog"><div class="modalhead"><h2>Carga masiva de pasaportes</h2></div>
   <div class="modalbody">
     <p class="hint">Elegí varias fotos o PDF juntos. Cada archivo tiene que llamarse como el <b>número de pasaporte</b> (por ejemplo <b>AAJ522098.jpg</b>) o el <b>DNI</b> del pasajero; así se engancha solo con su ficha.</p>

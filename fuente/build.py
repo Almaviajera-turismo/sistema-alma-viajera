@@ -91,6 +91,10 @@ before = re.sub(r'<div class="field full" style="background:#fff4e6;border-radiu
     '<small class="sub">Página de los datos del pasaporte (foto o PDF). Se guarda junto con la ficha.</small></div>',
     before, count=1, flags=re.S)
 assert 'almaFormDoc' in before
+# Pedidos: botón para pegar un mensaje de WhatsApp (lo maneja online.js)
+before = sub('<button class="btn" onclick="openOrder()">+ Nuevo pedido</button>',
+             '<button class="btn ghost" onclick="almaOpenWa()">📋 Pegar mensaje de WhatsApp</button>'
+             '<button class="btn" onclick="openOrder()">+ Nuevo pedido</button>', before)
 
 logo = re.search(r'<img src="(data:image/png;base64,[^"]+)"', before).group(1)
 login = (HERE / 'src' / 'login.html').read_text(encoding='utf-8').replace('{{LOGO}}', logo)
