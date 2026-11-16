@@ -803,7 +803,7 @@ window.almaSubirFotoCot = async (blob, path) => {
   await storage('POST', 'object/cotizaciones/' + path, blob, { 'Content-Type': 'image/jpeg', 'x-upsert': 'true' });
   return CFG.url + '/storage/v1/object/public/cotizaciones/' + path;
 };
-window.almaPerfil = () => ({ nombre: profile?.nombre || '', email: session?.user?.email || '', rol: profile?.rol || '' });
+window.almaPerfil = () => ({ nombre: profile?.nombre || '', email: session?.user?.email || '', rol: profile?.rol || '', oficina: profile?.oficina || '' });
 
 window.__almaSave = () => { if (APP) scheduleSave(); };
 window.almaLogout = () => { if (syncing && !confirm('Hay cambios guardándose. ¿Salir igual?')) return; logout(false); };
