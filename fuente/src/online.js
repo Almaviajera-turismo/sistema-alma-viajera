@@ -401,6 +401,7 @@ function start(state) {
   $('almaUserRole').textContent = profile.rol === 'socio' ? 'Socio' : 'Vendedor' + (profile.oficina ? ' · ' + (profile.oficina === 'gaona' ? 'Gaona' : 'Centro') : '');
   $('almaUserBox').hidden = false;
   takeSnapshot(APP.getState());
+  wireFormDoc();
   APP.render();
   $('almaLoading').hidden = true;
   status('ok');
@@ -528,6 +529,40 @@ window.almaDeleteDoc = async (pid, name) => {
   } catch (e) { alert('No se pudo borrar: ' + e.message); }
   window.almaLoadDocs(pid); APP?.render();
 };
+
+/* Formulario de alta / edición: foto del pasaporte opcional, se sube al guardar */
+function wireFormDoc() {
+  const f = $('passengerForm'), inp = $('almaFormDoc');
+  if (!f || !inp) return;
+  let prevUrl = null, idsBefore = null;
+  const clear = () => {
+    inp.value = ''; $('almaFormDocInfo').textContent = 'Sin archivo'; $('almaFormDocPrev').innerHTML = '';
+    if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = null; }
+  };
+  inp.addEventListener('change', () => {
+    const file = inp.files?.[0];
+    if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = null; }
+    $('almaFormDocInfo').textContent = file ? file.name + ' · ' + Math.max(1, Math.round(file.size / 1024)) + ' KB' : 'Sin archivo';
+    const pv = $('almaFormDocPrev');
+    if (file && /^image\//.test(file.type)) { prevUrl = URL.createObjectURL(file); pv.innerHTML = '<img alt="Vista previa del pasaporte" src="' + prevUrl + '">'; }
+    else pv.innerHTML = file ? '<span class="alma-pdf">PDF</span>' : '';
+  });
+  const open = window.openPassengerForm;
+  window.openPassengerForm = (...a) => { open(...a); clear(); };
+  // antes del guardado de la app: qué pasajeros había
+  f.addEventListener('submit', () => { idsBefore = new Set(APP.getState().passengers.map(p => p.id)); }, true);
+  // después del guardado de la app: subir la foto a la ficha
+  f.addEventListener('submit', async () => {
+    const file = inp.files?.[0];
+    if (!file || f.closest('dialog')?.open) return;          // sin foto, o la ficha no se guardó
+    const st = APP.getState(), edit = f.elements.editId?.value;
+    const pid = (edit && st.passengers.some(p => p.id === edit)) ? edit : st.passengers.find(p => !idsBefore?.has(p.id))?.id;
+    clear();
+    if (!pid) return;
+    try { status('saving'); await uploadDoc(pid, file); APP.render(); status('ok'); }
+    catch (e) { status('ok'); alert('La ficha se guardó, pero la foto del pasaporte no se pudo subir: ' + e.message + '\nPodés subirla desde «Ver ficha».'); }
+  });
+}
 
 /* Carga masiva: cada archivo se llama como el Nº de pasaporte (o el DNI) del pasajero */
 let bulk = [];

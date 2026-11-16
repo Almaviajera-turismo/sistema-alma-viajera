@@ -82,6 +82,15 @@ before = sub('<button class="btn" onclick="openPassengerForm()">+ Agregar pasaje
              '<span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" onclick="almaOpenBulk()">Carga masiva de pasaportes</button>'
              '<button class="btn" onclick="openPassengerForm()">+ Agregar pasajero</button></span>', before)
 before = before.replace('Recibo provisional de demostración', 'Recibo')
+# Formulario de pasajero: campo para adjuntar la foto del pasaporte (lo maneja online.js)
+before = re.sub(r'<div class="field full" style="background:#fff4e6;border-radius:10px;padding:12px"><strong>Imagen de pasaporte.*?</small></div>',
+    lambda m: '<div class="field full alma-formdoc"><span>Foto del pasaporte (opcional)</span>'
+    '<div class="alma-formdoc-row"><label class="btn ghost tiny">📷 Sacar foto o elegir archivo'
+    '<input id="almaFormDoc" type="file" accept="image/*,application/pdf" hidden></label>'
+    '<span id="almaFormDocInfo" class="sub">Sin archivo</span></div><div id="almaFormDocPrev"></div>'
+    '<small class="sub">Página de los datos del pasaporte (foto o PDF). Se guarda junto con la ficha.</small></div>',
+    before, count=1, flags=re.S)
+assert 'almaFormDoc' in before
 
 logo = re.search(r'<img src="(data:image/png;base64,[^"]+)"', before).group(1)
 login = (HERE / 'src' / 'login.html').read_text(encoding='utf-8').replace('{{LOGO}}', logo)
@@ -118,6 +127,12 @@ TEXTOS = [
     ('Todavía no hay reservas creadas por este usuario ficticio.', 'Todavía no hay reservas creadas por tu usuario.'),
 ]
 for a, b in TEXTOS:
+    out = out.replace(a, b)
+# Formulario de pasajero: textos que quedaban de la demo
+for a, b in [('Para proteger datos personales, no cargues DNI, pasaportes ni fotos reales local. Los dos pasaportes recibidos se usan solo para definir los campos, no están insertados aquí.',
+              'Los datos personales quedan guardados en el servidor y solo los ve el personal de la agencia con su usuario.'),
+             ('Ficha del pasajero · Demostración', 'Ficha del pasajero'), ('Observaciones no sensibles', 'Observaciones'),
+             ('placeholder="Notas generales de ejemplo"', 'placeholder="Notas generales"')]:
     out = out.replace(a, b)
 out = _re.sub(r'<b>Versión de prueba:</b>[^<]*', '<b>Envío por email:</b> se abre un borrador en tu aplicación de correo. Antes de enviarlo, adjuntá el PDF del recibo.', out)
 out = _re.sub(r'<div class="panel"><b>En la versión real</b>.*?</div>', '', out, flags=_re.S)

@@ -37,5 +37,8 @@ body:not(.alma-online) .app, body:not(.alma-online) .mobile-nav { visibility: hi
 .alma-pdf { font-weight: 800; color: #a3361b; }
 .alma-doc-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .alma-doc-btns a { text-decoration: none; }
+.alma-formdoc { background: #faf8fc; border: 1px dashed #c9bddb; border-radius: 10px; padding: 12px; }
+.alma-formdoc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+#almaFormDocPrev img { max-width: 260px; width: 100%; border-radius: 8px; border: 1px solid #e7e1ed; display: block; margin-bottom: 6px; }
 .alma-clip { font-size: 11.5px; font-weight: 700; color: #2e7d4f; }
 </style>

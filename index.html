@@ -122,6 +122,9 @@ body:not(.alma-online) .app, body:not(.alma-online) .mobile-nav { visibility: hi
 .alma-pdf { font-weight: 800; color: #a3361b; }
 .alma-doc-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .alma-doc-btns a { text-decoration: none; }
+.alma-formdoc { background: #faf8fc; border: 1px dashed #c9bddb; border-radius: 10px; padding: 12px; }
+.alma-formdoc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+#almaFormDocPrev img { max-width: 260px; width: 100%; border-radius: 8px; border: 1px solid #e7e1ed; display: block; margin-bottom: 6px; }
 .alma-clip { font-size: 11.5px; font-weight: 700; color: #2e7d4f; }
 </style>
 </head><body>
@@ -387,7 +390,7 @@ body:not(.alma-online) .app, body:not(.alma-online) .mobile-nav { visibility: hi
 <label class="field full">Motivo o referencia <textarea name="notes" placeholder="Opcional"></textarea></label>
 </div><p class="hint">La transferencia se anotará como salida de una oficina y entrada de la otra. No constituye una venta ni altera las cuentas de los pasajeros.</p></div><div class="modalfoot"><button class="btn plain" type="button" onclick="closeDialog('cashTransferDialog')">Cancelar</button><button class="btn" type="submit">Guardar transferencia</button></div></form></dialog>
 
-<dialog class="dialog" id="passengerFormDialog"><div class="modalhead"><h2>Ficha del pasajero · Demostración</h2><button class="btn ghost tiny" onclick="goBack()">← Volver</button></div>
+<dialog class="dialog" id="passengerFormDialog"><div class="modalhead"><h2>Ficha del pasajero</h2><button class="btn ghost tiny" onclick="goBack()">← Volver</button></div>
 <form id="passengerForm"><div class="modalbody"><div class="formgrid">
 <input type="hidden" id="passengerEditId" name="editId">
 <label class="field full">Nombre y apellido<input name="name" required placeholder="Ej.: Persona de ejemplo"></label>
@@ -402,9 +405,9 @@ body:not(.alma-online) .app, body:not(.alma-online) .mobile-nav { visibility: hi
 <label class="field">Vencimiento del pasaporte<input name="passportExpiry" type="date"></label>
 <label class="field">Lugar / país de nacimiento<input name="birthPlace" placeholder="Ej.: Argentina"></label>
 <label class="field">Sexo según documento<select name="documentSex"><option value="">Sin completar</option><option value="F">F</option><option value="M">M</option><option value="X">X / Otro valor</option></select></label>
-<label class="field full">Observaciones no sensibles<textarea name="notes" placeholder="Notas generales de ejemplo"></textarea></label>
-<div class="field full" style="background:#fff4e6;border-radius:10px;padding:12px"><strong>Foto del pasaporte</strong><small style="display:block;margin-top:6px">Después de guardar la ficha, abrila con «Ver ficha» y usá «+ Subir archivo» para adjuntar la foto o el PDF del pasaporte.</small></div>
-</div><p class="hint">Para proteger datos personales, no cargues DNI, pasaportes ni fotos reales local. Los dos pasaportes recibidos se usan solo para definir los campos, no están insertados aquí.</p></div><div class="modalfoot"><button class="btn plain" type="button" onclick="closeDialog('passengerFormDialog')">Cancelar</button><button class="btn" type="submit">Guardar ficha</button></div></form></dialog>
+<label class="field full">Observaciones<textarea name="notes" placeholder="Notas generales"></textarea></label>
+<div class="field full alma-formdoc"><span>Foto del pasaporte (opcional)</span><div class="alma-formdoc-row"><label class="btn ghost tiny">📷 Sacar foto o elegir archivo<input id="almaFormDoc" type="file" accept="image/*,application/pdf" hidden></label><span id="almaFormDocInfo" class="sub">Sin archivo</span></div><div id="almaFormDocPrev"></div><small class="sub">Página de los datos del pasaporte (foto o PDF). Se guarda junto con la ficha.</small></div>
+</div><p class="hint">Los datos personales quedan guardados en el servidor y solo los ve el personal de la agencia con su usuario.</p></div><div class="modalfoot"><button class="btn plain" type="button" onclick="closeDialog('passengerFormDialog')">Cancelar</button><button class="btn" type="submit">Guardar ficha</button></div></form></dialog>
 
 <dialog id="editBookingDialog" class="dialog" aria-labelledby="editBookingDialogTitle">
 <div class="modalhead"><h2 id="editBookingDialogTitle">Editar reserva</h2><button class="btn ghost tiny" type="button" onclick="goBack()">← Volver</button></div>
@@ -871,6 +874,7 @@ function start(state) {
   $('almaUserRole').textContent = profile.rol === 'socio' ? 'Socio' : 'Vendedor' + (profile.oficina ? ' · ' + (profile.oficina === 'gaona' ? 'Gaona' : 'Centro') : '');
   $('almaUserBox').hidden = false;
   takeSnapshot(APP.getState());
+  wireFormDoc();
   APP.render();
   $('almaLoading').hidden = true;
   status('ok');
@@ -998,6 +1002,40 @@ window.almaDeleteDoc = async (pid, name) => {
   } catch (e) { alert('No se pudo borrar: ' + e.message); }
   window.almaLoadDocs(pid); APP?.render();
 };
+
+/* Formulario de alta / edición: foto del pasaporte opcional, se sube al guardar */
+function wireFormDoc() {
+  const f = $('passengerForm'), inp = $('almaFormDoc');
+  if (!f || !inp) return;
+  let prevUrl = null, idsBefore = null;
+  const clear = () => {
+    inp.value = ''; $('almaFormDocInfo').textContent = 'Sin archivo'; $('almaFormDocPrev').innerHTML = '';
+    if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = null; }
+  };
+  inp.addEventListener('change', () => {
+    const file = inp.files?.[0];
+    if (prevUrl) { URL.revokeObjectURL(prevUrl); prevUrl = null; }
+    $('almaFormDocInfo').textContent = file ? file.name + ' · ' + Math.max(1, Math.round(file.size / 1024)) + ' KB' : 'Sin archivo';
+    const pv = $('almaFormDocPrev');
+    if (file && /^image\//.test(file.type)) { prevUrl = URL.createObjectURL(file); pv.innerHTML = '<img alt="Vista previa del pasaporte" src="' + prevUrl + '">'; }
+    else pv.innerHTML = file ? '<span class="alma-pdf">PDF</span>' : '';
+  });
+  const open = window.openPassengerForm;
+  window.openPassengerForm = (...a) => { open(...a); clear(); };
+  // antes del guardado de la app: qué pasajeros había
+  f.addEventListener('submit', () => { idsBefore = new Set(APP.getState().passengers.map(p => p.id)); }, true);
+  // después del guardado de la app: subir la foto a la ficha
+  f.addEventListener('submit', async () => {
+    const file = inp.files?.[0];
+    if (!file || f.closest('dialog')?.open) return;          // sin foto, o la ficha no se guardó
+    const st = APP.getState(), edit = f.elements.editId?.value;
+    const pid = (edit && st.passengers.some(p => p.id === edit)) ? edit : st.passengers.find(p => !idsBefore?.has(p.id))?.id;
+    clear();
+    if (!pid) return;
+    try { status('saving'); await uploadDoc(pid, file); APP.render(); status('ok'); }
+    catch (e) { status('ok'); alert('La ficha se guardó, pero la foto del pasaporte no se pudo subir: ' + e.message + '\nPodés subirla desde «Ver ficha».'); }
+  });
+}
 
 /* Carga masiva: cada archivo se llama como el Nº de pasaporte (o el DNI) del pasajero */
 let bulk = [];
