@@ -154,5 +154,26 @@ for a, b in [('Para proteger datos personales, no cargues DNI, pasaportes ni fot
 out = _re.sub(r'<b>Versión de prueba:</b>[^<]*', '<b>Envío por email:</b> se abre un borrador en tu aplicación de correo. Antes de enviarlo, adjuntá el PDF del recibo.', out)
 out = _re.sub(r'<div class="panel"><b>En la versión real</b>.*?</div>', '', out, flags=_re.S)
 out = _re.sub(r'<div class="panel"><b>Documentos privados en la versión definitiva</b>.*?</div>', '', out, flags=_re.S)
+# Textos que quedaban de la versión de prueba
+for a, b in [
+    (' El envío automático se implementará en la versión online.', ''),
+    (' En el sistema online cada vendedor utilizará únicamente su oficina asignada.', ''),
+    (' El sistema todavía no envía automáticamente.', ''),
+    ('En la versión online el usuario se tomará de su sesión, sin poder elegir otro.', 'Queda registrado con tu usuario.'),
+    (' Se requerirá un ajuste autorizado en la versión online.', ' Consultá con un socio para registrar un ajuste.'),
+    ('Este prototipo no sustituye una conciliación bancaria.', 'No reemplaza la conciliación bancaria.'),
+    ("['Fecha / hora','Perfil de prueba','Acción','Objeto / detalle']", "['Fecha / hora','Usuario','Acción','Objeto / detalle']"),
+    ('No se encontró apertura para la fecha del navegador.', 'Todavía no se abrió la caja hoy.'),
+    ("notify('Usuario ficticio: '+value)", "notify('Usuario: '+value)"),
+    ('placeholder="ejemplo@correo.test"', 'placeholder="nombre@correo.com"'),
+    ('placeholder="pasajero@ejemplo.test"', 'placeholder="nombre@correo.com"'),
+    ('placeholder="comercial@ejemplo.com"', 'placeholder="comercial@operador.com"'),
+    ('placeholder="Ej.: Operador de ejemplo"', 'placeholder="Ej.: nombre del operador u hotel"'),
+    ('placeholder="Ej.: Persona de ejemplo"', 'placeholder="Como figura en el pasaporte"'),
+    ('placeholder="No uses documentos reales"', 'placeholder="Ej.: 30123456"'),
+]:
+    if a not in out:
+        raise SystemExit(f'Texto de prueba no encontrado: {a[:70]!r}')
+    out = out.replace(a, b)
 OUT.write_text(out, encoding='utf-8')
 print('OK', OUT, len(out) // 1024, 'KB')
