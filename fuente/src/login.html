@@ -1,0 +1,30 @@
+
+<div id="almaLogin" class="alma-screen" hidden>
+  <form id="almaLoginForm" class="alma-card" autocomplete="on">
+    <img src="{{LOGO}}" alt="Alma Viajera Turismo">
+    <div class="cap">GESTIÓN DE VIAJES</div>
+    <label for="almaEmail">Email</label>
+    <input id="almaEmail" type="email" autocomplete="username" required placeholder="nombre@almaviajeraturismo.com">
+    <label for="almaPass">Contraseña</label>
+    <input id="almaPass" type="password" autocomplete="current-password" required>
+    <button id="almaLoginBtn" type="submit">Ingresar</button>
+    <div id="almaLoginMsg" class="alma-msg" role="alert"></div>
+    <div class="alma-hint">¿Olvidaste la contraseña? Pedile a un socio que te la restablezca.</div>
+  </form>
+</div>
+<div id="almaLoading" class="alma-screen" hidden>
+  <div class="alma-card" style="text-align:center"><img src="{{LOGO}}" alt=""><div class="alma-spin"></div><p>Cargando datos…</p></div>
+</div>
+<div id="almaFatal" class="alma-screen" hidden>
+  <div class="alma-card" style="text-align:center"><img src="{{LOGO}}" alt="">
+    <p><b>No se pudieron cargar los datos.</b></p><p id="almaFatalMsg" class="alma-msg"></p>
+    <button type="button" class="btn" onclick="location.reload()">Reintentar</button>
+    <button type="button" class="btn ghost" onclick="almaLogout()">Salir</button></div>
+</div>
+<dialog id="almaPwDialog" class="dialog"><div class="modalhead"><h2>Cambiar mi contraseña</h2></div>
+  <form id="almaPwForm"><div class="modalbody"><div class="formgrid">
+    <label class="field full">Contraseña nueva (mínimo 8 caracteres)<input id="almaPw1" type="password" autocomplete="new-password" required></label>
+    <label class="field full">Repetir contraseña nueva<input id="almaPw2" type="password" autocomplete="new-password" required></label>
+  </div><div id="almaPwMsg" class="alma-msg"></div></div>
+  <div class="modalfoot"><button type="button" class="btn plain" onclick="document.getElementById('almaPwDialog').close()">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>
+</dialog>

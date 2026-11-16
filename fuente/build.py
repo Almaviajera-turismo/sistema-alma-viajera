@@ -1,0 +1,106 @@
+"""Arma index.html (versión online) a partir del sistema original v32."""
+import re, sys, pathlib
+
+SRC = pathlib.Path(sys.argv[1])
+OUT = pathlib.Path(sys.argv[2])
+HERE = pathlib.Path(__file__).parent
+html = SRC.read_text(encoding='utf-8')
+
+def sub(old, new, s, count=1, required=True):
+    n = s.count(old)
+    if required and n == 0:
+        raise SystemExit(f'No encontrado: {old[:90]!r}')
+    return s.replace(old, new) if count == 0 else s.replace(old, new, count)
+
+# ---------- separar el script principal ----------
+start = html.index('<script>', html.index('</dialog>'))
+end = html.index('</script>', start)
+app = html[start + len('<script>'):end]
+before, after = html[:start], html[end + len('</script>'):]
+
+# ---------- cambios en la lógica ----------
+app = sub("let state;try{state=JSON.parse(localStorage.getItem(key))}catch(e){};", "let state=window.__ALMA_STATE__;", app)
+app = sub("function save(){try{localStorage.setItem(key,JSON.stringify(state))}catch(e){alert('No se pudo guardar en el navegador')}}",
+          "function save(){window.__almaSave&&window.__almaSave()}", app)
+app = sub("function audit(action, entity, details){state.audit.unshift({id:uid(),when:new Date().toISOString(),user:currentDemoOperator()+' (simulado)',action,entity,details:details||''})}",
+          "function audit(){/* la bitácora la registra el servidor */}", app)
+app = sub("function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}",
+          "function uid(){return crypto.randomUUID()}", app)
+app = sub("owners.concat(['Vendedor 1 (demo)','Vendedor 2 (demo)','Vendedor 3 (demo)'])", "[currentDemoOperator()]", app)
+app = sub("' · Autorizado por Socio (demo)'", "' · Autorizado por '+currentDemoOperator()", app)
+app = sub("'Socio (demo)'", "currentDemoOperator()", app, count=0)
+app = sub("'Vista de vendedor de prueba (no es seguridad real)':'Vista de socio de prueba'", "'Ingresaste como vendedor':'Ingresaste como socio'", app)
+app = sub("notify('Recibo de prueba generado')", "notify('Recibo generado')", app)
+app = sub("alert('En este diseño la finanzas queda reservada a socios. Esta es una simulación, sin autenticación real.')",
+          "alert('Esta sección está reservada a los socios.')", app)
+app = sub("En la demo, los movimientos en efectivo se registran solo con fecha de hoy y caja abierta. Para rectificar otro día hará falta una operación autorizada.",
+          "Los movimientos en efectivo se registran solo con fecha de hoy y con la caja abierta.", app)
+app = sub('DEMOSTRACIÓN: recibo provisional de prueba. No constituye factura ni comprobante fiscal. No utilizar para cobros reales hasta implementar el sistema seguro y verificar sus datos.',
+          'Recibo provisorio. No constituye factura ni comprobante fiscal.', app)
+for old, new in [(' en esta demostración', ''), (' en la demostración', ''), (' (demostración)', ''),
+                 ('Exportación de demostración', 'Exportación'), ('DNI ficticio', 'DNI'), ('CUIL ficticio', 'CUIL'),
+                 ('DNI (ficticio)', 'DNI'), ('usuario ficticio', 'usuario'), ('Todas las acciones son DEMOSTRACIÓN LOCAL; no hay autenticación ni servidor.', ''),
+                 (' | Documento de prueba', '')]:
+    app = app.replace(old, new)
+app = sub(" // El acumulado es por oficina y moneda", " if(window.demoRole==='vendedor')for(const m of state.cashOthers||[])out.push({...m});\n // El acumulado es por oficina y moneda", app)
+# Acceso para la capa online
+app = sub("render();\nupdateBackButton();\n})();",
+          "window.__ALMA_APP={getState:()=>state,render:()=>render(),refreshDetail:()=>{try{if(window.currentGroupDetail&&document.getElementById('groupDetailPanel')?.style.display!=='none')renderGroupDetail()}catch(e){}}};\n"
+          "render();\nupdateBackButton();\n})();", app)
+
+# ---------- cambios en la pantalla ----------
+before = re.sub(r'<title>.*?</title>', '<title>Alma Viajera Turismo · Gestión</title>', before, count=1)
+before = re.sub(r'<div class="notice">.*?</div>', '', before, count=1, flags=re.S)
+before = sub('Versión de prueba · datos solo en este navegador', 'Sistema online · datos compartidos', before)
+before = sub('<div class="pill">DEMO V32</div>',
+             '<div id="almaUserBox" class="alma-user" hidden><span id="almaSync" class="alma-sync" data-s="ok">✓ Guardado</span>'
+             '<div class="alma-who"><b id="almaUserName"></b><small id="almaUserRole"></small></div>'
+             '<button type="button" class="btn ghost tiny" onclick="almaRefresh()" title="Traer los últimos cambios">↻</button>'
+             '<button type="button" class="btn ghost tiny" onclick="almaOpenPassword()">Contraseña</button>'
+             '<button type="button" class="btn ghost tiny" onclick="almaLogout()">Salir</button></div>', before)
+before = sub('Respaldo automático de las 23:59: pendiente de instalar en el servidor. Esta demo no realiza backups.',
+             'Los datos se guardan en el servidor y se comparten entre Centro y Gaona.', before)
+before = before.replace('<b>Demostración:</b> cargá solo nombres y documentos ficticios. La carga de fotos reales de pasaportes estará disponible después de implementar almacenamiento privado, autenticación y permisos.',
+                        'La carga de fotos de pasaportes se agregará en una próxima etapa.')
+before = before.replace('Recibo provisional de demostración', 'Recibo')
+
+logo = re.search(r'<img src="(data:image/png;base64,[^"]+)"', before).group(1)
+login = (HERE / 'src' / 'login.html').read_text(encoding='utf-8').replace('{{LOGO}}', logo)
+online = (HERE / 'src' / 'online.js').read_text(encoding='utf-8')
+
+before = sub('</head>', (HERE / 'src' / 'login.css').read_text(encoding='utf-8') + '</head>', before)
+out = (before + login
+       + '<script>' + online + '</script>\n'
+       + '<script type="text/plain" id="almaAppSource">' + app + '</script>' + after)
+assert '</script>' not in app
+# ---------- textos de la demo ----------
+import re as _re
+TEXTOS = [
+    (' en esta demostración', ''), ('Solo socios · Demo', 'Solo socios'),
+    (' Acceso administrativo simulado: solo socios.', ' Acceso exclusivo de socios.'),
+    ('quedan en la bitácora de demostración', 'quedan en la bitácora'), (' La bitácora de esta demo no es inmutable.', ''),
+    ('En esta demostración los registros son locales y NO están protegidos contra modificaciones fuera de la interfaz.',
+     'Los registros los genera el servidor automáticamente y nadie puede editarlos ni borrarlos.'),
+    ('placeholder="Cliente de prueba"', 'placeholder="Nombre y apellido"'), ('placeholder="Pasajero de prueba"', 'placeholder="Nombre y apellido"'),
+    ('Registrado por (usuario de prueba)', 'Registrado por'), ('Opcional (datos de prueba)', 'Opcional'),
+    ('Para enviar en esta demo: ', 'Para enviar: '), ('placeholder="Solo datos ficticios"', 'placeholder="Opcional"'),
+    ('DNI (ficticio)', 'DNI'), ('CUIL / CUIT (ficticio)', 'CUIL / CUIT'), (' · solo pruebas', ''),
+    ('Nº de pasaporte (ficticio)', 'Nº de pasaporte'), ('Pasaporte ficticio:', 'Pasaporte:'),
+    ('Imagen de pasaporte · pendiente de implementación segura', 'Imagen de pasaporte · próximamente'),
+    ('En la futura aplicación, aquí se podrá adjuntar el documento en almacenamiento privado, con permisos de consulta. Esta demostración NO acepta ni almacena imágenes de pasaportes.',
+     'La carga de la imagen del pasaporte se habilitará en una próxima etapa, con acceso restringido.'),
+    ('Para proteger datos personales, no cargues DNI, pasaportes ni fotos reales en esta demostración local. Los dos pasaportes recibidos se usan solo para definir los campos, no están insertados aquí.',
+     'Los datos personales quedan guardados en el servidor y solo los ve el personal de la agencia con su usuario.'),
+    ('; en esta demo es necesario adjuntar el PDF manualmente.', '; es necesario adjuntar el PDF manualmente.'),
+    ('En la demo, solo se admite efectivo con fecha de hoy.', 'Solo se admite efectivo con fecha de hoy.'),
+    ('No se puede anular desde esta demo porque', 'No se puede anular porque'),
+    ('Informe financiero de DEMOSTRACIÓN', 'Informe financiero'),
+    ('Todavía no hay reservas creadas por este usuario ficticio.', 'Todavía no hay reservas creadas por tu usuario.'),
+]
+for a, b in TEXTOS:
+    out = out.replace(a, b)
+out = _re.sub(r'<b>Versión de prueba:</b>[^<]*', '<b>Envío por email:</b> se abre un borrador en tu aplicación de correo. Antes de enviarlo, adjuntá el PDF del recibo.', out)
+out = _re.sub(r'<div class="panel"><b>En la versión real</b>.*?</div>', '', out, flags=_re.S)
+out = _re.sub(r'<div class="panel"><b>Documentos privados en la versión definitiva</b>.*?</div>', '', out, flags=_re.S)
+OUT.write_text(out, encoding='utf-8')
+print('OK', OUT, len(out) // 1024, 'KB')
