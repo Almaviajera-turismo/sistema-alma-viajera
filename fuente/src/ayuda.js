@@ -34,6 +34,15 @@ const AYUDA = [
       'En <b>¿Qué te pidió exactamente?</b> anotá el detalle: hotel, régimen, edades, presupuesto, desde dónde sale, etc.',
       'Tocá <b>Guardar pedido</b>. Queda en estado <b>Pendiente</b>.',
     ] },
+  { tema: 'Pedidos', titulo: 'Pegar un WhatsApp para armar el pedido o la cotización', pantallas: ['pedidos', 'inicio'],
+    claves: 'pegar whatsapp mensaje copiar automatico armar completar cotizacion',
+    pasos: [
+      'En WhatsApp mantené apretado el mensaje (o seleccioná varios) y tocá <b>Copiar</b>.',
+      'En el sistema abrí <b>+ Nuevo pedido</b> (o <b>🖼 Cotizar</b> en el pedido) y tocá el botón verde <b>💬 Pegar WhatsApp</b>.',
+      'Pegá el texto y tocá <b>Armar</b>. Se completan solos cliente, teléfono, destino, fechas y pasajeros; en la cotización también hotel, régimen, vuelos, qué incluye y precio.',
+      'Revisá el recuadro verde: dice qué completó y qué falta. Corregí lo necesario y guardá.',
+    ],
+    nota: 'Funciona sin internet extra ni costo: reconoce patrones conocidos. Si algo no lo detecta, completalo a mano.' },
   { tema: 'Pedidos', titulo: 'Cambiar el estado de un pedido o corregirlo', pantallas: ['pedidos'],
     claves: 'estado editar pedido cotizacion enviada aceptada cancelado seguimiento',
     pasos: [

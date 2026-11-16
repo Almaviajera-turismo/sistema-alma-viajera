@@ -452,6 +452,7 @@ function start(state) {
   $('almaUserBox').hidden = false;
   takeSnapshot(APP.getState());
   wireFormDoc();
+  window.almaWhatsapp?.iniciar();
   APP.render();
   $('almaLoading').hidden = true;
   status('ok');

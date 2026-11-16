@@ -72,4 +72,11 @@ body:not(.alma-online) .app, body:not(.alma-online) .mobile-nav { visibility: hi
 .alma-old a{text-decoration:none}
 @media(max-width:560px){.alma-rep-grid{grid-template-columns:1fr}}
 @media print{.alma-folleto,.alma-replace{display:none!important}}
+/* Pegar WhatsApp */
+.alma-wa-fila { display: flex; justify-content: flex-start; margin: 0 0 12px; grid-column: 1 / -1; }
+.btn.alma-wa-btn, dialog .btn.alma-wa-btn, button.btn.alma-wa-btn { background: #25a35a !important; border-color: #25a35a !important; color: #fff !important; display: inline-flex; align-items: center; gap: 6px; }
+.btn.alma-wa-btn:hover, dialog .btn.alma-wa-btn:hover { background: #1e8a4b !important; border-color: #1e8a4b !important; }
+.alma-wa-ico { font-size: 1.05em; line-height: 1; }
+.alma-wa-note { background: #eaf7ef; border-left: 4px solid #25a35a; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 13.5px; color: #1d4a2f; grid-column: 1 / -1; }
 </style>
+

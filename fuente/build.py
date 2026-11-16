@@ -130,6 +130,7 @@ login = (HERE / 'src' / 'login.html').read_text(encoding='utf-8').replace('{{LOG
 online = (HERE / 'src' / 'online.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'ayuda.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'cotizador.js').read_text(encoding='utf-8')
+online += '\n' + (HERE / 'src' / 'whatsapp.js').read_text(encoding='utf-8')
 
 before = sub('</head>', (HERE / 'src' / 'login.css').read_text(encoding='utf-8') + (HERE / 'src' / 'cotizador.css').read_text(encoding='utf-8') + '</head>', before)
 sys.path.insert(0, str(HERE))
