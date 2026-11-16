@@ -43,3 +43,7 @@
   </div>
   <div class="modalfoot"><button type="button" class="btn plain" onclick="document.getElementById('almaBulkDialog').close()">Cerrar</button><button id="almaBulkGo" type="button" class="btn" onclick="almaBulkRun()" disabled>Subir</button></div>
 </dialog>
+
+<dialog class="dialog alma-folleto" id="almaFolletoDialog"><div class="modalhead"><h2 id="almaFolletoTitulo">Folleto</h2><button type="button" class="btn ghost tiny" onclick="this.closest('dialog').close()">✕ Cerrar</button></div>
+<div class="modalbody" id="almaFolletoCuerpo"></div>
+<div class="modalfoot"><a id="almaFolletoAbrir" class="btn ghost" target="_blank" rel="noopener">Abrir en otra pestaña</a><button type="button" id="almaFolletoCompartir" class="btn ghost" onclick="almaCompartirFolleto()">Compartir</button><button type="button" class="btn" onclick="almaBajarFolleto()">Descargar</button></div></dialog>

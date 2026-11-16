@@ -70,6 +70,10 @@ app = sub("window.goBack=()=>{",
           "document.querySelectorAll('dialog .modalhead button[onclick=\"goBack()\"]').forEach(b=>{const h=document.createElement('button');h.type='button';h.className=b.className;h.textContent='⌂ Inicio';h.onclick=()=>window.goHome();b.after(h);b.parentElement.style.gap='6px'});\n"
           "window.goBack=()=>{", app)
 
+# Folleto de la salida: se actualiza cada vez que se muestra el detalle (lo maneja online.js)
+app = sub("function renderGroupDetail(){const id=window.currentGroupDetail;if(!id)return;",
+          "function renderGroupDetail(){const id=window.currentGroupDetail;if(!id)return;window.almaFolleto&&window.almaFolleto(id);", app)
+
 # Acceso para la capa online
 app = sub("render();\nupdateBackButton();\n})();",
           "{const __opp=window.openPassengerProfile;window.openPassengerProfile=id=>{__opp(id);window.almaLoadDocs&&window.almaLoadDocs(id)}}\n"
@@ -107,6 +111,13 @@ before = re.sub(r'<div class="field full" style="background:#fff4e6;border-radiu
     '<small class="sub">Página de los datos del pasaporte (foto o PDF). Se guarda junto con la ficha.</small></div>',
     before, count=1, flags=re.S)
 assert 'almaFormDoc' in before
+
+# Botones «Ver folleto» y «Subir folleto» en la ficha de la salida
+before = sub('<h2 id="groupDetailTitle">Pasajeros de la salida</h2><div class="actionset">',
+             '<h2 id="groupDetailTitle">Pasajeros de la salida</h2><div class="actionset">'
+             '<button type="button" id="almaFolletoVer" class="btn tiny btn-folleto" onclick="almaVerFolleto()" hidden>🖼 Ver folleto</button>'
+             '<label class="btn ghost tiny" data-admin-only="true"><span id="almaFolletoSubirTxt">+ Subir folleto</span>'
+             '<input type="file" accept="image/*,application/pdf" hidden onchange="almaSubirFolleto(this)"></label>', before)
 
 logo = re.search(r'<img src="(data:image/png;base64,[^"]+)"', before).group(1)
 login = (HERE / 'src' / 'login.html').read_text(encoding='utf-8').replace('{{LOGO}}', logo)

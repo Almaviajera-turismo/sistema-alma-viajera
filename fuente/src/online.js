@@ -145,7 +145,7 @@ const MAPS = {
   groups: { table: 'salidas', order: 'creado.asc', skip: ['rooms'], cols: {
     fileNumber: ['file'], name: ['nombre'], destination: ['destino'], departure: ['fecha_salida', D],
     returnDate: ['fecha_regreso', D], price: ['precio', N], currency: ['moneda'], capacity: ['cupos', N],
-    owner: ['responsable'], description: ['descripcion'] } },
+    owner: ['responsable'], description: ['descripcion'], brochure: ['folleto'] } },
   rooms: { table: 'habitaciones', order: 'creado.asc', parent: ['groups', 'rooms', 'salida_id'], cols: {} },
   orders: { table: 'pedidos', order: 'creado.desc', cols: {
     client: ['cliente'], phone: ['telefono'], type: ['tipo'], groupId: ['salida_id', FK], destination: ['destino'],
@@ -646,6 +646,71 @@ window.almaBulkRun = async () => {
   }
   bulkRender(); go.disabled = true; APP?.render();
   msg.textContent = 'Listo: se subieron ' + done + ' archivo/s' + (fail ? '. ' + fail + ' no se pudieron subir (ver la lista).' : '.');
+};
+
+
+/* ------------------------------------------------------------------ */
+/* Folleto de cada salida grupal (bucket público "folletos")           */
+/* ------------------------------------------------------------------ */
+const FBUCKET = 'folletos';
+const isPdfUrl = u => /\.pdf(\?|$)/i.test(u || '');
+window.almaFolleto = id => {
+  const g = APP?.getState().groups.find(x => x.id === id);
+  const ver = $('almaFolletoVer'), sub = $('almaFolletoSubirTxt');
+  if (!ver || !g) return;
+  ver.hidden = !g.brochure;
+  if (sub) sub.textContent = g.brochure ? 'Cambiar folleto' : '+ Subir folleto';
+};
+window.almaVerFolleto = () => {
+  const g = APP?.getState().groups.find(x => x.id === window.currentGroupDetail);
+  if (!g?.brochure) return;
+  const url = g.brochure, d = $('almaFolletoDialog');
+  $('almaFolletoTitulo').textContent = 'Folleto · ' + g.name;
+  $('almaFolletoCuerpo').innerHTML = isPdfUrl(url)
+    ? '<iframe src="' + esc(url) + '" title="Folleto"></iframe>'
+    : '<img src="' + esc(url) + '" alt="Folleto de ' + esc(g.name) + '">';
+  $('almaFolletoAbrir').href = url;
+  d.dataset.url = url; d.dataset.name = g.name;
+  $('almaFolletoCompartir').hidden = !navigator.share;
+  d.showModal();
+};
+async function folletoArchivo(d) {
+  const r = await fetch(d.dataset.url);
+  if (!r.ok) throw new Error('No se pudo descargar el folleto.');
+  const blob = await r.blob();
+  const ext = isPdfUrl(d.dataset.url) ? 'pdf' : (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+  return new File([blob], 'Folleto ' + d.dataset.name + '.' + ext, { type: blob.type });
+}
+window.almaBajarFolleto = async () => {
+  const d = $('almaFolletoDialog');
+  try {
+    const f = await folletoArchivo(d), url = URL.createObjectURL(f), a = document.createElement('a');
+    a.href = url; a.download = f.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch (e) { window.open(d.dataset.url, '_blank'); }
+};
+window.almaCompartirFolleto = async () => {
+  const d = $('almaFolletoDialog');
+  try {
+    const f = await folletoArchivo(d);
+    if (navigator.canShare?.({ files: [f] })) await navigator.share({ files: [f], title: f.name });
+    else await navigator.share({ title: 'Folleto ' + d.dataset.name, url: d.dataset.url });
+  } catch (e) { if (e.name !== 'AbortError') alert('No se pudo compartir: ' + e.message); }
+};
+window.almaSubirFolleto = async input => {
+  const file = input.files?.[0]; input.value = '';
+  const id = window.currentGroupDetail;
+  const g = APP?.getState().groups.find(x => x.id === id);
+  if (!file || !g) return;
+  const txt = $('almaFolletoSubirTxt'); if (txt) txt.textContent = 'Subiendo…';
+  try {
+    const p = await prepareFile(file);
+    const path = id + '/' + safeName('folleto-' + stamp()) + '.' + p.ext;
+    await storage('POST', 'object/' + FBUCKET + '/' + path, p.blob, { 'Content-Type': p.type, 'x-upsert': 'true' });
+    g.brochure = CFG.url + '/storage/v1/object/public/' + FBUCKET + '/' + path;
+    scheduleSave();
+  } catch (e) { alert('No se pudo subir el folleto: ' + e.message); }
+  window.almaFolleto(id);
 };
 
 window.__almaSave = () => { if (APP) scheduleSave(); };
