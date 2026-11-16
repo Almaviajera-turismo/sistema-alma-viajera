@@ -247,6 +247,7 @@ async function loadAll() {
   if (profile?.rol === 'socio') {
     try { state.audit = (await rest('GET', 'bitacora?select=*&order=id.desc&limit=500')).map(auditRow); } catch (e) {}
   }
+  await loadDocIndex();
   return state;
 }
 function auditRow(b) {
@@ -404,6 +405,165 @@ function start(state) {
   $('almaLoading').hidden = true;
   status('ok');
 }
+/* ------------------------------------------------------------------ */
+/* Fotos de pasaportes (espacio privado "pasaportes" de Supabase)       */
+/* Cada archivo se guarda como <id del pasajero>/<nombre>.<ext>        */
+/* ------------------------------------------------------------------ */
+const BUCKET = 'pasaportes';
+let docIds = new Set();
+window.__almaDocIds = docIds;
+async function storage(method, path, body, headers = {}) {
+  const h = { apikey: CFG.key, Authorization: 'Bearer ' + await token(), ...headers };
+  let r;
+  try { r = await fetch(CFG.url + '/storage/v1/' + path, { method, headers: h, body }); }
+  catch (e) { throw new Error('Sin conexión a internet.'); }
+  if (!r.ok) {
+    let j = {}; try { j = await r.json(); } catch (e) {}
+    const m = String(j.message || j.error || '');
+    if (r.status === 401 || /jwt/i.test(m)) throw new Error('Tu sesión venció. Volvé a ingresar.');
+    if (r.status === 413 || /too large|size/i.test(m)) throw new Error('El archivo es demasiado grande (máximo 10 MB).');
+    if (/mime/i.test(m)) throw new Error('Tipo de archivo no admitido. Usá una foto (JPG o PNG) o un PDF.');
+    if (r.status === 403 || /row-level|policy|unauthorized/i.test(m)) throw new Error('No tenés permiso para hacer esta acción con tu usuario.');
+    throw new Error(m || 'Error del servidor (' + r.status + ').');
+  }
+  return r;
+}
+const JSONH = { 'Content-Type': 'application/json' };
+async function listDocs(prefix, limit = 100, offset = 0) {
+  const r = await storage('POST', 'object/list/' + BUCKET,
+    JSON.stringify({ prefix, limit, offset, sortBy: { column: 'created_at', order: 'desc' } }), JSONH);
+  return r.json();
+}
+async function loadDocIndex() {
+  try {
+    const all = [];
+    for (let off = 0; ; off += 1000) {
+      const rows = await listDocs('', 1000, off);
+      all.push(...rows);
+      if (rows.length < 1000) break;
+    }
+    docIds = new Set(all.filter(x => !x.id).map(x => x.name)); // las "carpetas" son los ids de pasajeros
+    window.__almaDocIds = docIds;
+  } catch (e) {}
+}
+// Fotos grandes de celular: se achican antes de subir (2000 px, JPG)
+async function prepareFile(file) {
+  const ext = String(file.name.split('.').pop() || '').toLowerCase();
+  if (file.type === 'application/pdf' || ext === 'pdf') return { blob: file, type: 'application/pdf', ext: 'pdf' };
+  if (!/^image\//.test(file.type) && !/^(jpe?g|png|webp|heic|heif)$/.test(ext))
+    throw new Error('"' + file.name + '" no es una foto ni un PDF.');
+  const simple = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.type];
+  if (simple && file.size < 1.5e6) return { blob: file, type: file.type, ext: simple };
+  let bmp = null;
+  try { bmp = await createImageBitmap(file); } catch (e) {}
+  if (!bmp) return { blob: file, type: file.type || 'image/jpeg', ext: ext || 'jpg' };
+  const k = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.85));
+  return { blob, type: 'image/jpeg', ext: 'jpg' };
+}
+const stamp = () => new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+const safeName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '-');
+async function uploadDoc(pid, file, base) {
+  const p = await prepareFile(file);
+  const name = safeName(base || ('pasaporte-' + stamp())) + '.' + p.ext;
+  await storage('POST', 'object/' + BUCKET + '/' + pid + '/' + name, p.blob, { 'Content-Type': p.type, 'x-upsert': 'true' });
+  docIds.add(pid);
+}
+const objPath = path => path.split('/').map(encodeURIComponent).join('/');
+async function fetchDoc(path) { return (await storage('GET', 'object/authenticated/' + BUCKET + '/' + objPath(path))).blob(); }
+
+const docUrls = [];
+function clearUrls() { while (docUrls.length) URL.revokeObjectURL(docUrls.pop()); }
+window.almaLoadDocs = async pid => {
+  const box = $('almaDocs'); if (!box) return;
+  clearUrls();
+  box.dataset.pid = pid;
+  box.innerHTML = '<div class="alma-docs-head"><b>Pasaporte (foto o PDF)</b>'
+    + '<label class="btn ghost tiny">+ Subir archivo<input type="file" accept="image/*,application/pdf" hidden onchange="almaUploadOne(\'' + pid + '\',this)"></label></div>'
+    + '<div class="alma-docs-list"><span class="sub">Cargando…</span></div>';
+  const list = box.querySelector('.alma-docs-list');
+  let items;
+  try { items = (await listDocs(pid + '/')).filter(x => x.id); }
+  catch (e) { if (box.dataset.pid === pid) list.innerHTML = '<span class="alma-msg">' + esc(e.message) + '</span>'; return; }
+  if (box.dataset.pid !== pid) return;
+  if (!items.length) { list.innerHTML = '<span class="sub">Todavía no hay foto del pasaporte. Tocá «+ Subir archivo».</span>'; return; }
+  const p = APP?.getState().passengers.find(x => x.id === pid);
+  list.innerHTML = items.map((it, i) => '<div class="alma-doc" data-i="' + i + '"><div class="alma-thumb">…</div><div class="alma-doc-info">'
+    + '<span class="sub">' + (it.metadata?.mimetype === 'application/pdf' ? 'PDF' : 'Foto') + ' · subido ' + esc(String(it.created_at || '').slice(0, 10).split('-').reverse().join('/')) + '</span>'
+    + '<div class="alma-doc-btns"><a class="btn ghost tiny" target="_blank" rel="noopener">Ver</a><a class="btn ghost tiny">Descargar</a>'
+    + (profile?.rol === 'socio' ? '<button class="btn plain tiny" onclick="almaDeleteDoc(\'' + pid + '\',\'' + esc(it.name) + '\')">Borrar</button>' : '')
+    + '</div></div></div>').join('');
+  items.forEach(async (it, i) => {
+    const el = list.querySelector('[data-i="' + i + '"]');
+    try {
+      const blob = await fetchDoc(pid + '/' + it.name);
+      if (box.dataset.pid !== pid) return;
+      const url = URL.createObjectURL(blob); docUrls.push(url);
+      const isPdf = blob.type === 'application/pdf';
+      el.querySelector('.alma-thumb').innerHTML = isPdf ? '<span class="alma-pdf">PDF</span>' : '<img alt="Pasaporte" src="' + url + '">';
+      const [ver, bajar] = el.querySelectorAll('a');
+      ver.href = url; bajar.href = url;
+      bajar.download = 'Pasaporte ' + (p?.name || '') + (items.length > 1 ? ' (' + (i + 1) + ')' : '') + '.' + (it.name.split('.').pop() || 'jpg');
+    } catch (e) { el.querySelector('.alma-thumb').textContent = '⚠'; }
+  });
+};
+window.almaUploadOne = async (pid, input) => {
+  const file = input.files?.[0]; input.value = '';
+  if (!file) return;
+  const box = $('almaDocs'); const list = box?.querySelector('.alma-docs-list');
+  if (list) list.innerHTML = '<span class="sub">Subiendo…</span>';
+  try { await uploadDoc(pid, file); }
+  catch (e) { alert('No se pudo subir: ' + e.message); }
+  window.almaLoadDocs(pid); APP?.render();
+};
+window.almaDeleteDoc = async (pid, name) => {
+  if (!confirm('¿Borrar este archivo del pasaporte? No se puede deshacer.')) return;
+  try {
+    await storage('DELETE', 'object/' + BUCKET, JSON.stringify({ prefixes: [pid + '/' + name] }), JSONH);
+    const left = (await listDocs(pid + '/')).filter(x => x.id);
+    if (!left.length) docIds.delete(pid);
+  } catch (e) { alert('No se pudo borrar: ' + e.message); }
+  window.almaLoadDocs(pid); APP?.render();
+};
+
+/* Carga masiva: cada archivo se llama como el Nº de pasaporte (o el DNI) del pasajero */
+let bulk = [];
+const norm = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+window.almaOpenBulk = () => { bulk = []; $('almaBulkFiles').value = ''; $('almaBulkList').innerHTML = ''; $('almaBulkMsg').textContent = ''; $('almaBulkGo').disabled = true; $('almaBulkDialog').showModal(); };
+function bulkMatch(files) {
+  const pp = APP.getState().passengers;
+  const byPass = new Map(), byDoc = new Map();
+  for (const p of pp) { if (p.passportNumber) byPass.set(norm(p.passportNumber), p); if (p.doc) byDoc.set(norm(p.doc), p); }
+  return [...files].map(f => {
+    const base = norm(f.name.replace(/\.[^.]+$/, '').replace(/\s*\(\d+\)$/, ''));
+    return { file: f, p: byPass.get(base) || byDoc.get(base) || null, state: '' };
+  });
+}
+function bulkRender() {
+  const ok = bulk.filter(b => b.p).length;
+  $('almaBulkList').innerHTML = '<p class="hint">' + ok + ' de ' + bulk.length + ' archivos coinciden con un pasajero.'
+    + (ok < bulk.length ? ' Los que no coinciden no se suben.' : '') + '</p><div class="tablewrap"><table class="table"><thead><tr><th>Archivo</th><th>Pasajero</th><th></th></tr></thead><tbody>'
+    + bulk.map(b => '<tr><td>' + esc(b.file.name) + '</td><td>' + (b.p ? esc(b.p.name) + (docIds.has(b.p.id) ? '<span class="sub">ya tiene foto · se agrega igual</span>' : '') : '<span class="sub">Sin coincidencia</span>') + '</td><td>' + esc(b.state) + '</td></tr>').join('')
+    + '</tbody></table></div>';
+  $('almaBulkGo').disabled = !ok;
+}
+window.almaBulkPick = input => { bulk = bulkMatch(input.files || []); bulkRender(); };
+window.almaBulkRun = async () => {
+  const go = $('almaBulkGo'), msg = $('almaBulkMsg'); go.disabled = true;
+  let done = 0, fail = 0; const todo = bulk.filter(b => b.p && b.state !== '✓');
+  for (const b of todo) {
+    b.state = 'Subiendo…'; bulkRender(); go.disabled = true;
+    try { await uploadDoc(b.p.id, b.file, 'pasaporte-' + norm(b.p.passportNumber || b.p.doc)); b.state = '✓'; done++; }
+    catch (e) { b.state = '⚠ ' + e.message; fail++; }
+    msg.textContent = 'Subidos ' + done + ' de ' + todo.length + (fail ? ' · ' + fail + ' con error' : '');
+  }
+  bulkRender(); go.disabled = true; APP?.render();
+  msg.textContent = 'Listo: se subieron ' + done + ' archivo/s' + (fail ? '. ' + fail + ' no se pudieron subir (ver la lista).' : '.');
+};
+
 window.__almaSave = () => { if (APP) scheduleSave(); };
 window.almaLogout = () => { if (syncing && !confirm('Hay cambios guardándose. ¿Salir igual?')) return; logout(false); };
 window.almaRefresh = () => refresh(true);

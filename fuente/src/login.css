@@ -28,4 +28,14 @@ body:not(.alma-online) .app, body:not(.alma-online) .mobile-nav { visibility: hi
 .alma-sync[data-s=saving] { background: #fff4e8; color: #a8571a; }
 .alma-sync[data-s=error] { background: #fde9e5; color: #a3361b; }
 @media print { .alma-user { display: none !important; } }
+.alma-docs { margin: 14px 0; padding: 12px; border: 1px solid #ded5e7; border-radius: 12px; background: #faf8fc; }
+.alma-docs-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.alma-docs-list { display: flex; flex-direction: column; gap: 10px; }
+.alma-doc { display: flex; gap: 12px; align-items: center; }
+.alma-thumb { width: 120px; min-height: 76px; flex: none; display: grid; place-items: center; background: #fff; border: 1px solid #e7e1ed; border-radius: 8px; overflow: hidden; }
+.alma-thumb img { width: 100%; height: auto; display: block; }
+.alma-pdf { font-weight: 800; color: #a3361b; }
+.alma-doc-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.alma-doc-btns a { text-decoration: none; }
+.alma-clip { font-size: 11.5px; font-weight: 700; color: #2e7d4f; }
 </style>

@@ -52,10 +52,15 @@ app = sub("// Semana de lunes a domingo y mes calendario",
           "if(p.passportNumber){const venc=p.passportExpiry&&p.passportExpiry<new Date().toISOString().slice(0,10);"
           "parts.push('Pasaporte '+esc(p.passportNumber)+(p.passportExpiry?'<span class=\"sub\"'+(venc?' style=\"color:#b42318;font-weight:600\"':'')+'>Vence: '+fmt(p.passportExpiry)+(venc?' · vencido':'')+'</span>':''))}"
           "if(p.doc)parts.push((p.passportNumber?'<span class=\"sub\">':'')+'DNI '+esc(p.doc)+(p.passportNumber?'</span>':''));"
+          "if(window.__almaDocIds&&window.__almaDocIds.has(p.id))parts.push('<span class=\"sub alma-clip\">📎 Foto del pasaporte</span>');"
           "return parts.join('')||'—'}\n// Semana de lunes a domingo y mes calendario", app)
+# Ficha del pasajero: fotos del pasaporte (las maneja online.js)
+app = sub("<span>Copia de pasaporte: disponible solo en futura versión segura</span></div>",
+          "</div><div id=\"almaDocs\" class=\"alma-docs\"></div>", app)
 app = sub(" // El acumulado es por oficina y moneda", " if(window.demoRole==='vendedor')for(const m of state.cashOthers||[])out.push({...m});\n // El acumulado es por oficina y moneda", app)
 # Acceso para la capa online
 app = sub("render();\nupdateBackButton();\n})();",
+          "{const __opp=window.openPassengerProfile;window.openPassengerProfile=id=>{__opp(id);window.almaLoadDocs&&window.almaLoadDocs(id)}}\n"
           "window.__ALMA_APP={getState:()=>state,render:()=>render(),refreshDetail:()=>{try{if(window.currentGroupDetail&&document.getElementById('groupDetailPanel')?.style.display!=='none')renderGroupDetail()}catch(e){}}};\n"
           "render();\nupdateBackButton();\n})();", app)
 
@@ -72,7 +77,10 @@ before = sub('<div class="pill">DEMO V32</div>',
 before = sub('Respaldo automático de las 23:59: pendiente de instalar en el servidor. Esta demo no realiza backups.',
              'Los datos se guardan en el servidor y se comparten entre Centro y Gaona.', before)
 before = before.replace('<b>Demostración:</b> cargá solo nombres y documentos ficticios. La carga de fotos reales de pasaportes estará disponible después de implementar almacenamiento privado, autenticación y permisos.',
-                        'La carga de fotos de pasaportes se agregará en una próxima etapa.')
+                        'Cada ficha puede guardar la foto o el PDF del pasaporte (se ve desde «Ver ficha»).')
+before = sub('<button class="btn" onclick="openPassengerForm()">+ Agregar pasajero</button>',
+             '<span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" onclick="almaOpenBulk()">Carga masiva de pasaportes</button>'
+             '<button class="btn" onclick="openPassengerForm()">+ Agregar pasajero</button></span>', before)
 before = before.replace('Recibo provisional de demostración', 'Recibo')
 
 logo = re.search(r'<img src="(data:image/png;base64,[^"]+)"', before).group(1)
@@ -98,9 +106,9 @@ TEXTOS = [
     ('Buscar por nombre, teléfono o datos ficticios de documento', 'Buscar por nombre, teléfono, DNI o pasaporte'),
     ('DNI (ficticio)', 'DNI'), ('CUIL / CUIT (ficticio)', 'CUIL / CUIT'), (' · solo pruebas', ''),
     ('Nº de pasaporte (ficticio)', 'Nº de pasaporte'), ('Pasaporte ficticio:', 'Pasaporte:'),
-    ('Imagen de pasaporte · pendiente de implementación segura', 'Imagen de pasaporte · próximamente'),
+    ('Imagen de pasaporte · pendiente de implementación segura', 'Foto del pasaporte'),
     ('En la futura aplicación, aquí se podrá adjuntar el documento en almacenamiento privado, con permisos de consulta. Esta demostración NO acepta ni almacena imágenes de pasaportes.',
-     'La carga de la imagen del pasaporte se habilitará en una próxima etapa, con acceso restringido.'),
+     'Después de guardar la ficha, abrila con «Ver ficha» y usá «+ Subir archivo» para adjuntar la foto o el PDF del pasaporte.'),
     ('Para proteger datos personales, no cargues DNI, pasaportes ni fotos reales en esta demostración local. Los dos pasaportes recibidos se usan solo para definir los campos, no están insertados aquí.',
      'Los datos personales quedan guardados en el servidor y solo los ve el personal de la agencia con su usuario.'),
     ('; en esta demo es necesario adjuntar el PDF manualmente.', '; es necesario adjuntar el PDF manualmente.'),

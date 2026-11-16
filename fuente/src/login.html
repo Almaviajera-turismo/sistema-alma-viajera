@@ -28,3 +28,11 @@
   </div><div id="almaPwMsg" class="alma-msg"></div></div>
   <div class="modalfoot"><button type="button" class="btn plain" onclick="document.getElementById('almaPwDialog').close()">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>
 </dialog>
+<dialog id="almaBulkDialog" class="dialog"><div class="modalhead"><h2>Carga masiva de pasaportes</h2></div>
+  <div class="modalbody">
+    <p class="hint">Elegí varias fotos o PDF juntos. Cada archivo tiene que llamarse como el <b>número de pasaporte</b> (por ejemplo <b>AAJ522098.jpg</b>) o el <b>DNI</b> del pasajero; así se engancha solo con su ficha.</p>
+    <label class="btn ghost">Elegir archivos<input id="almaBulkFiles" type="file" multiple accept="image/*,application/pdf" hidden onchange="almaBulkPick(this)"></label>
+    <div id="almaBulkList"></div><div id="almaBulkMsg" class="alma-msg" style="color:#30254e"></div>
+  </div>
+  <div class="modalfoot"><button type="button" class="btn plain" onclick="document.getElementById('almaBulkDialog').close()">Cerrar</button><button id="almaBulkGo" type="button" class="btn" onclick="almaBulkRun()" disabled>Subir</button></div>
+</dialog>
