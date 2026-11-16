@@ -58,6 +58,18 @@ app = sub("// Semana de lunes a domingo y mes calendario",
 app = sub("<span>Copia de pasaporte: disponible solo en futura versión segura</span></div>",
           "</div><div id=\"almaDocs\" class=\"alma-docs\"></div>", app)
 app = sub(" // El acumulado es por oficina y moneda", " if(window.demoRole==='vendedor')for(const m of state.cashOthers||[])out.push({...m});\n // El acumulado es por oficina y moneda", app)
+# Botón "Inicio" junto a "Volver" (pantallas y ventanas) y "Contraseña" solo en el Inicio
+app = sub("function updateBackButton(){const btn=document.getElementById('navBackButton');if(btn)btn.disabled=navHistory.length===0 && activePageId()==='inicio' && visibleDialogs().length===0 && !window.currentGroupDetail}",
+          "function updateBackButton(){const atHome=activePageId()==='inicio';const btn=document.getElementById('navBackButton');if(btn)btn.disabled=navHistory.length===0 && atHome && visibleDialogs().length===0 && !window.currentGroupDetail;"
+          "const home=document.getElementById('navHomeButton');if(home)home.style.display=(atHome&&visibleDialogs().length===0&&!window.currentGroupDetail)?'none':'';"
+          "const pw=document.getElementById('almaPwBtn');if(pw)pw.style.display=atHome?'':'none'}", app)
+app = sub("window.goBack=()=>{",
+          "window.goHome=()=>{const ds=visibleDialogs();for(const id of [...ds].reverse()){const d=$(id);if(d&&!discardDialogChanges(d))return}"
+          "navRestoring=true;try{ds.forEach(id=>{const d=$(id);if(d&&d.open)d.close()});if(window.currentGroupDetail&&window.closeGroupDetail)window.closeGroupDetail();switchPage('inicio')}finally{navRestoring=false}"
+          "navHistory.length=0;window.scrollTo({top:0,behavior:'smooth'});updateBackButton()};\n"
+          "document.querySelectorAll('dialog .modalhead button[onclick=\"goBack()\"]').forEach(b=>{const h=document.createElement('button');h.type='button';h.className=b.className;h.textContent='⌂ Inicio';h.onclick=()=>window.goHome();b.after(h);b.parentElement.style.gap='6px'});\n"
+          "window.goBack=()=>{", app)
+
 # Acceso para la capa online
 app = sub("render();\nupdateBackButton();\n})();",
           "{const __opp=window.openPassengerProfile;window.openPassengerProfile=id=>{__opp(id);window.almaLoadDocs&&window.almaLoadDocs(id)}}\n"
@@ -65,6 +77,9 @@ app = sub("render();\nupdateBackButton();\n})();",
           "render();\nupdateBackButton();\n})();", app)
 
 # ---------- cambios en la pantalla ----------
+before = sub('<button type="button" class="nav-back" id="navBackButton" onclick="goBack()" aria-label="Volver a la pantalla anterior">← Volver</button>',
+             '<div style="display:flex;gap:8px"><button type="button" class="nav-back" id="navBackButton" onclick="goBack()" aria-label="Volver a la pantalla anterior">← Volver</button>'
+             '<button type="button" class="nav-back" id="navHomeButton" onclick="goHome()" aria-label="Ir al inicio" style="display:none">⌂ Inicio</button></div>', before)
 before = re.sub(r'<title>.*?</title>', '<title>Alma Viajera Turismo · Gestión</title>', before, count=1)
 before = re.sub(r'<div class="notice">.*?</div>', '', before, count=1, flags=re.S)
 before = sub('Versión de prueba · datos solo en este navegador', 'Sistema online · datos compartidos', before)
@@ -72,7 +87,7 @@ before = sub('<div class="pill">DEMO V32</div>',
              '<div id="almaUserBox" class="alma-user" hidden><span id="almaSync" class="alma-sync" data-s="ok">✓ Guardado</span>'
              '<div class="alma-who"><b id="almaUserName"></b><small id="almaUserRole"></small></div>'
              '<button type="button" class="btn ghost tiny" onclick="almaRefresh()" title="Traer los últimos cambios">↻</button>'
-             '<button type="button" class="btn ghost tiny" onclick="almaOpenPassword()">Contraseña</button>'
+             '<button type="button" id="almaPwBtn" class="btn ghost tiny" onclick="almaOpenPassword()">Contraseña</button>'
              '<button type="button" class="btn ghost tiny" onclick="almaLogout()">Salir</button></div>', before)
 before = sub('Respaldo automático de las 23:59: pendiente de instalar en el servidor. Esta demo no realiza backups.',
              'Los datos se guardan en el servidor y se comparten entre Centro y Gaona.', before)
