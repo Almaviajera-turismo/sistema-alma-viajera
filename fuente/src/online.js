@@ -713,6 +713,13 @@ window.almaSubirFolleto = async input => {
   window.almaFolleto(id);
 };
 
+/* Fotos de las cotizaciones (bucket público "cotizaciones"; lo usa cotizador.js) */
+window.almaSubirFotoCot = async (blob, path) => {
+  await storage('POST', 'object/cotizaciones/' + path, blob, { 'Content-Type': 'image/jpeg', 'x-upsert': 'true' });
+  return CFG.url + '/storage/v1/object/public/cotizaciones/' + path;
+};
+window.almaPerfil = () => ({ nombre: profile?.nombre || '', email: session?.user?.email || '', rol: profile?.rol || '' });
+
 window.__almaSave = () => { if (APP) scheduleSave(); };
 window.almaLogout = () => { if (syncing && !confirm('Hay cambios guardándose. ¿Salir igual?')) return; logout(false); };
 window.almaRefresh = () => refresh(true);

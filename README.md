@@ -9,7 +9,8 @@ pasajeros, reservas, cobros y recibos, caja (Centro y Gaona), proveedores, infor
 
 ## Archivos
 - `index.html` — el sistema publicado.
-- `supabase/01_esquema.sql`, `supabase/02_ajustes.sql` — estructura de la base (ya aplicadas).
+- `supabase/*.sql` — estructura de la base (ya aplicadas). La cotización de cada pedido se guarda en `pedidos.extra -> quote` y sus fotos en el espacio público `cotizaciones`.
+- `cotizador/` — logo, fondos y tipografía del flyer de cotización (botón «Cotizar» en Pedidos).
 - `fuente/` — base original (v32) y el script que arma `index.html`:
   `python3 fuente/build.py fuente/Alma_Viajera_Sistema_v32.html index.html`
 

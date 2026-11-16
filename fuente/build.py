@@ -74,6 +74,12 @@ app = sub("window.goBack=()=>{",
 app = sub("function renderGroupDetail(){const id=window.currentGroupDetail;if(!id)return;",
           "function renderGroupDetail(){const id=window.currentGroupDetail;if(!id)return;window.almaFolleto&&window.almaFolleto(id);", app)
 
+# Pedidos: botón «Cotizar» que abre el flyer de cotización (lo maneja cotizador.js)
+app = sub("onclick=\"editOrder(&quot;'+o.id+'&quot;)\">✎ Editar pedido</button></div>",
+          "onclick=\"editOrder(&quot;'+o.id+'&quot;)\">✎ Editar pedido</button> "
+          "<button class=\"btn tiny\" style=\"margin:6px 0\" onclick=\"almaCotizar(&quot;'+o.id+'&quot;)\">'+(o.quote?'🖼 Ver cotización':'🖼 Cotizar')+'</button></div>"
+          "'+(o.quote&&o.quote.precio?'<span class=\"sub\" style=\"color:#1f8fa8;font-weight:600\">Cotizado: '+esc(o.quote.moneda||'')+' '+esc(Number(o.quote.precio).toLocaleString('es-AR'))+' por pasajero</span>':'')+'", app)
+
 # Acceso para la capa online
 app = sub("render();\nupdateBackButton();\n})();",
           "{const __opp=window.openPassengerProfile;window.openPassengerProfile=id=>{__opp(id);window.almaLoadDocs&&window.almaLoadDocs(id)}}\n"
@@ -123,8 +129,9 @@ logo = re.search(r'<img src="(data:image/png;base64,[^"]+)"', before).group(1)
 login = (HERE / 'src' / 'login.html').read_text(encoding='utf-8').replace('{{LOGO}}', logo)
 online = (HERE / 'src' / 'online.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'ayuda.js').read_text(encoding='utf-8')
+online += '\n' + (HERE / 'src' / 'cotizador.js').read_text(encoding='utf-8')
 
-before = sub('</head>', (HERE / 'src' / 'login.css').read_text(encoding='utf-8') + '</head>', before)
+before = sub('</head>', (HERE / 'src' / 'login.css').read_text(encoding='utf-8') + (HERE / 'src' / 'cotizador.css').read_text(encoding='utf-8') + '</head>', before)
 out = (before + login
        + '<script>' + online + '</script>\n'
        + '<script type="text/plain" id="almaAppSource">' + app + '</script>' + after)
