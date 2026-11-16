@@ -61,5 +61,15 @@ body:not(.alma-online) .app, body:not(.alma-online) .mobile-nav { visibility: hi
 .alma-folleto iframe{width:100%;height:70vh;border:0;border-radius:10px;background:#fff}
 .alma-folleto .modalfoot{flex-wrap:wrap}
 .btn-folleto{background:#fff4ea!important;color:#a8571a!important;border-color:#f3d6bb!important}
-@media print{.alma-folleto{display:none!important}}
+.alma-replace{width:min(640px,96vw)}
+.alma-rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.alma-rep-box{margin-top:6px;min-height:140px;display:grid;place-items:center;background:#f4f1f8;border:1px solid #e7e1ed;border-radius:10px;overflow:hidden;padding:6px}
+.alma-rep-box img{max-width:100%;max-height:46vh;display:block;border-radius:6px}
+.alma-rep-empty{color:#9a93a8}
+.alma-vencido{margin:0 0 10px;padding:9px 11px;border-radius:10px;background:#fdeceb;color:#a3361b;font-size:12.5px;font-weight:600}
+.alma-rep-hot{background:#fff4ea!important;color:#a8571a!important;border-color:#f3d6bb!important}
+.alma-docs-old{margin-top:10px}.alma-old{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px}
+.alma-old a{text-decoration:none}
+@media(max-width:560px){.alma-rep-grid{grid-template-columns:1fr}}
+@media print{.alma-folleto,.alma-replace{display:none!important}}
 </style>

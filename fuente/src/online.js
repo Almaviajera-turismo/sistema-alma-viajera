@@ -261,7 +261,7 @@ const TABLE_LABEL = { pasajeros: 'Pasajero', salidas: 'Salida grupal', habitacio
   reservas: 'Reserva', extensiones: 'Extensión', aereos: 'Aéreo', cobros: 'Recibo', turnos_caja: 'Caja',
   movimientos_caja: 'Movimiento de caja', transferencias_caja: 'Transferencia entre cajas', proveedores: 'Proveedor',
   compromisos: 'Compromiso con proveedor', pagos_proveedores: 'Pago a proveedor', extras_salida: 'Extra de salida',
-  perfiles: 'Usuario', usuarios_autorizados: 'Usuario autorizado' };
+  perfiles: 'Usuario', usuarios_autorizados: 'Usuario autorizado', archivos: 'Archivo' };
 
 async function loadAll() {
   const rows = {};
@@ -290,6 +290,7 @@ async function loadAll() {
 }
 function auditRow(b) {
   const d = b.despues || b.antes || {};
+  if (b.tabla === 'archivos') return { id: 'b' + b.id, when: b.cuando, user: b.usuario, action: d.evento || 'Archivo', entity: 'Archivo', details: d.nombre || '' };
   let action = b.accion === 'INSERT' ? 'Alta' : b.accion === 'DELETE' ? 'Eliminación' : 'Modificación';
   if (b.tabla === 'cobros' && b.accion === 'UPDATE' && b.despues?.anulado) action = 'Anulación';
   if (b.tabla === 'turnos_caja') action = b.accion === 'INSERT' ? 'Apertura' : (b.despues?.estado === 'cerrada' ? 'Cierre' : action);
@@ -521,6 +522,38 @@ async function uploadDoc(pid, file, base) {
   const name = safeName(base || ('pasaporte-' + stamp())) + '.' + p.ext;
   await storage('POST', 'object/' + BUCKET + '/' + pid + '/' + name, p.blob, { 'Content-Type': p.type, 'x-upsert': 'true' });
   docIds.add(pid);
+  return name;
+}
+// Reemplazo: el archivo anterior no se borra, pasa a <pasajero>/anteriores/ (lo ven los socios)
+async function archiveDoc(pid, name) {
+  await storage('POST', 'object/move', JSON.stringify({ bucketId: BUCKET, sourceKey: pid + '/' + name,
+    destinationKey: pid + '/anteriores/' + stamp() + '-' + name }), JSONH);
+}
+// Sube el nuevo y recién después guarda los actuales como anteriores (si falla la subida, no se pierde nada)
+async function replaceDocs(pid, file, base, olds) {
+  const name = await uploadDoc(pid, file, base);
+  for (const o of olds) if (o !== name) await archiveDoc(pid, o);
+  return name;
+}
+const currentDocs = async pid => (await listDocs(pid + '/')).filter(x => x.id).map(x => x.name);
+
+/* Ventana de confirmación con vista previa: actual / nuevo */
+function confirmReplace(title, oldUrl, oldIsPdf, file) {
+  return new Promise(resolve => {
+    const d = $('almaReplaceDialog');
+    const nuevo = URL.createObjectURL(file), isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    const box = (url, pdf, alt) => !url ? '<div class="alma-rep-empty">—</div>'
+      : pdf ? '<a class="alma-pdf" href="' + esc(url) + '" target="_blank" rel="noopener">PDF · abrir</a>' : '<img src="' + esc(url) + '" alt="' + alt + '">';
+    $('almaReplaceTitle').textContent = title;
+    $('almaReplaceOld').innerHTML = box(oldUrl, oldIsPdf, 'Actual');
+    $('almaReplaceNew').innerHTML = box(nuevo, isPdf, 'Nuevo');
+    $('almaReplaceInfo').textContent = file.name + ' · ' + Math.max(1, Math.round(file.size / 1024)) + ' KB';
+    const done = ok => { d.onclose = null; d.close(); URL.revokeObjectURL(nuevo); resolve(ok); };
+    $('almaReplaceOk').onclick = () => done(true);
+    $('almaReplaceNo').onclick = () => done(false);
+    d.onclose = () => { URL.revokeObjectURL(nuevo); resolve(false); };
+    d.showModal();
+  });
 }
 const objPath = path => path.split('/').map(encodeURIComponent).join('/');
 async function fetchDoc(path) { return (await storage('GET', 'object/authenticated/' + BUCKET + '/' + objPath(path))).blob(); }
@@ -531,19 +564,25 @@ window.almaLoadDocs = async pid => {
   const box = $('almaDocs'); if (!box) return;
   clearUrls();
   box.dataset.pid = pid;
+  const p = APP?.getState().passengers.find(x => x.id === pid);
+  const vencido = p?.passportExpiry && p.passportExpiry < new Date().toISOString().slice(0, 10);
   box.innerHTML = '<div class="alma-docs-head"><b>Pasaporte (foto o PDF)</b>'
-    + '<label class="btn ghost tiny">+ Subir archivo<input type="file" accept="image/*,application/pdf" hidden onchange="almaUploadOne(\'' + pid + '\',this)"></label></div>'
-    + '<div class="alma-docs-list"><span class="sub">Cargando…</span></div>';
+    + '<label class="btn ghost tiny">+ Agregar archivo<input type="file" accept="image/*,application/pdf" hidden onchange="almaUploadOne(\'' + pid + '\',this)"></label></div>'
+    + (vencido ? '<div class="alma-vencido">⚠ El pasaporte figura vencido (' + esc(p.passportExpiry.split('-').reverse().join('/')) + '). Cuando llegue el nuevo, tocá «Reemplazar» y actualizá los datos de la ficha.</div>' : '')
+    + '<div class="alma-docs-list"><span class="sub">Cargando…</span></div><div class="alma-docs-old"></div>';
   const list = box.querySelector('.alma-docs-list');
-  let items;
-  try { items = (await listDocs(pid + '/')).filter(x => x.id); }
+  let all;
+  try { all = await listDocs(pid + '/'); }
   catch (e) { if (box.dataset.pid === pid) list.innerHTML = '<span class="alma-msg">' + esc(e.message) + '</span>'; return; }
   if (box.dataset.pid !== pid) return;
-  if (!items.length) { list.innerHTML = '<span class="sub">Todavía no hay foto del pasaporte. Tocá «+ Subir archivo».</span>'; return; }
-  const p = APP?.getState().passengers.find(x => x.id === pid);
+  const items = all.filter(x => x.id), hasOld = all.some(x => !x.id && x.name === 'anteriores');
+  if (profile?.rol === 'socio' && hasOld)
+    box.querySelector('.alma-docs-old').innerHTML = '<button type="button" class="textlink subtle-link" onclick="almaVerAnteriores(\'' + pid + '\')">Ver archivos anteriores (reemplazados)</button>';
+  if (!items.length) { list.innerHTML = '<span class="sub">Todavía no hay foto del pasaporte. Tocá «+ Agregar archivo».</span>'; return; }
   list.innerHTML = items.map((it, i) => '<div class="alma-doc" data-i="' + i + '"><div class="alma-thumb">…</div><div class="alma-doc-info">'
     + '<span class="sub">' + (it.metadata?.mimetype === 'application/pdf' ? 'PDF' : 'Foto') + ' · subido ' + esc(String(it.created_at || '').slice(0, 10).split('-').reverse().join('/')) + '</span>'
     + '<div class="alma-doc-btns"><a class="btn ghost tiny" target="_blank" rel="noopener">Ver</a><a class="btn ghost tiny">Descargar</a>'
+    + '<label class="btn ghost tiny' + (vencido ? ' alma-rep-hot' : '') + '">↻ Reemplazar<input type="file" accept="image/*,application/pdf" hidden onchange="almaReplaceOne(\'' + pid + '\',\'' + esc(it.name) + '\',' + i + ',this)"></label>'
     + (profile?.rol === 'socio' ? '<button class="btn plain tiny" onclick="almaDeleteDoc(\'' + pid + '\',\'' + esc(it.name) + '\')">Borrar</button>' : '')
     + '</div></div></div>').join('');
   items.forEach(async (it, i) => {
@@ -553,6 +592,7 @@ window.almaLoadDocs = async pid => {
       if (box.dataset.pid !== pid) return;
       const url = URL.createObjectURL(blob); docUrls.push(url);
       const isPdf = blob.type === 'application/pdf';
+      el.dataset.url = url; el.dataset.pdf = isPdf ? '1' : '';
       el.querySelector('.alma-thumb').innerHTML = isPdf ? '<span class="alma-pdf">PDF</span>' : '<img alt="Pasaporte" src="' + url + '">';
       const [ver, bajar] = el.querySelectorAll('a');
       ver.href = url; bajar.href = url;
@@ -569,6 +609,38 @@ window.almaUploadOne = async (pid, input) => {
   catch (e) { alert('No se pudo subir: ' + e.message); }
   window.almaLoadDocs(pid); APP?.render();
 };
+window.almaReplaceOne = async (pid, name, i, input) => {
+  const file = input.files?.[0]; input.value = '';
+  if (!file) return;
+  const el = $('almaDocs')?.querySelector('[data-i="' + i + '"]');
+  const p = APP?.getState().passengers.find(x => x.id === pid);
+  if (!await confirmReplace('Reemplazar pasaporte · ' + (p?.name || ''), el?.dataset.url, !!el?.dataset.pdf, file)) return;
+  const list = $('almaDocs')?.querySelector('.alma-docs-list');
+  if (list) list.innerHTML = '<span class="sub">Reemplazando…</span>';
+  try { await replaceDocs(pid, file, null, [name]); notifyOk('Pasaporte reemplazado. El anterior quedó guardado.'); }
+  catch (e) { alert('No se pudo reemplazar: ' + e.message); }
+  window.almaLoadDocs(pid); APP?.render();
+};
+window.almaVerAnteriores = async pid => {
+  const box = $('almaDocs')?.querySelector('.alma-docs-old'); if (!box) return;
+  box.innerHTML = '<span class="sub">Cargando…</span>';
+  try {
+    const items = (await listDocs(pid + '/anteriores/')).filter(x => x.id);
+    if (!items.length) { box.innerHTML = '<span class="sub">No hay archivos anteriores.</span>'; return; }
+    box.innerHTML = '<b class="sub">Archivos anteriores (solo socios)</b>' + items.map((it, i) => {
+      const m = it.name.match(/^(\d{4})(\d{2})(\d{2})/);
+      return '<div class="alma-old" data-o="' + i + '"><span class="sub">Reemplazado ' + (m ? m[3] + '/' + m[2] + '/' + m[1] : '') + '</span> '
+        + '<a class="btn ghost tiny" target="_blank" rel="noopener">Ver</a> <a class="btn ghost tiny">Descargar</a></div>';
+    }).join('');
+    items.forEach(async (it, i) => {
+      const el = box.querySelector('[data-o="' + i + '"]');
+      try {
+        const url = URL.createObjectURL(await fetchDoc(pid + '/anteriores/' + it.name)); docUrls.push(url);
+        const [ver, bajar] = el.querySelectorAll('a'); ver.href = url; bajar.href = url; bajar.download = 'Pasaporte anterior ' + it.name;
+      } catch (e) { el.append(' ⚠'); }
+    });
+  } catch (e) { box.innerHTML = '<span class="alma-msg">' + esc(e.message) + '</span>'; }
+};
 window.almaDeleteDoc = async (pid, name) => {
   if (!confirm('¿Borrar este archivo del pasaporte? No se puede deshacer.')) return;
   try {
@@ -578,6 +650,7 @@ window.almaDeleteDoc = async (pid, name) => {
   } catch (e) { alert('No se pudo borrar: ' + e.message); }
   window.almaLoadDocs(pid); APP?.render();
 };
+function notifyOk(t) { const el = $('toast'); if (!el) return; el.textContent = t; el.style.display = 'block'; setTimeout(() => { el.style.display = 'none'; }, 3000); }
 
 /* Formulario de alta / edición: foto del pasaporte opcional, se sube al guardar */
 function wireFormDoc() {
@@ -608,7 +681,7 @@ function wireFormDoc() {
     const pid = (edit && st.passengers.some(p => p.id === edit)) ? edit : st.passengers.find(p => !idsBefore?.has(p.id))?.id;
     clear();
     if (!pid) return;
-    try { status('saving'); await uploadDoc(pid, file); APP.render(); status('ok'); }
+    try { status('saving'); await replaceDocs(pid, file, null, docIds.has(pid) ? await currentDocs(pid) : []); APP.render(); status('ok'); }
     catch (e) { status('ok'); alert('La ficha se guardó, pero la foto del pasaporte no se pudo subir: ' + e.message + '\nPodés subirla desde «Ver ficha».'); }
   });
 }
@@ -630,7 +703,7 @@ function bulkRender() {
   const ok = bulk.filter(b => b.p).length;
   $('almaBulkList').innerHTML = '<p class="hint">' + ok + ' de ' + bulk.length + ' archivos coinciden con un pasajero.'
     + (ok < bulk.length ? ' Los que no coinciden no se suben.' : '') + '</p><div class="tablewrap"><table class="table"><thead><tr><th>Archivo</th><th>Pasajero</th><th></th></tr></thead><tbody>'
-    + bulk.map(b => '<tr><td>' + esc(b.file.name) + '</td><td>' + (b.p ? esc(b.p.name) + (docIds.has(b.p.id) ? '<span class="sub">ya tiene foto · se agrega igual</span>' : '') : '<span class="sub">Sin coincidencia</span>') + '</td><td>' + esc(b.state) + '</td></tr>').join('')
+    + bulk.map(b => '<tr><td>' + esc(b.file.name) + '</td><td>' + (b.p ? esc(b.p.name) + (docIds.has(b.p.id) ? '<span class="sub">ya tiene foto · se reemplaza (la anterior queda guardada)</span>' : '') : '<span class="sub">Sin coincidencia</span>') + '</td><td>' + esc(b.state) + '</td></tr>').join('')
     + '</tbody></table></div>';
   $('almaBulkGo').disabled = !ok;
 }
@@ -640,7 +713,7 @@ window.almaBulkRun = async () => {
   let done = 0, fail = 0; const todo = bulk.filter(b => b.p && b.state !== '✓');
   for (const b of todo) {
     b.state = 'Subiendo…'; bulkRender(); go.disabled = true;
-    try { await uploadDoc(b.p.id, b.file, 'pasaporte-' + norm(b.p.passportNumber || b.p.doc)); b.state = '✓'; done++; }
+    try { await replaceDocs(b.p.id, b.file, 'pasaporte-' + norm(b.p.passportNumber || b.p.doc) + '-' + stamp(), docIds.has(b.p.id) ? await currentDocs(b.p.id) : []); b.state = '✓'; done++; }
     catch (e) { b.state = '⚠ ' + e.message; fail++; }
     msg.textContent = 'Subidos ' + done + ' de ' + todo.length + (fail ? ' · ' + fail + ' con error' : '');
   }
@@ -659,16 +732,19 @@ window.almaFolleto = id => {
   const ver = $('almaFolletoVer'), sub = $('almaFolletoSubirTxt');
   if (!ver || !g) return;
   ver.hidden = !g.brochure;
-  if (sub) sub.textContent = g.brochure ? 'Cambiar folleto' : '+ Subir folleto';
+  if (sub) sub.textContent = g.brochure ? '↻ Reemplazar folleto' : '+ Subir folleto';
 };
 window.almaVerFolleto = () => {
   const g = APP?.getState().groups.find(x => x.id === window.currentGroupDetail);
   if (!g?.brochure) return;
   const url = g.brochure, d = $('almaFolletoDialog');
   $('almaFolletoTitulo').textContent = 'Folleto · ' + g.name;
-  $('almaFolletoCuerpo').innerHTML = isPdfUrl(url)
+  const prev = profile?.rol === 'socio' ? (g.folletos_anteriores || []) : [];
+  $('almaFolletoCuerpo').innerHTML = (isPdfUrl(url)
     ? '<iframe src="' + esc(url) + '" title="Folleto"></iframe>'
-    : '<img src="' + esc(url) + '" alt="Folleto de ' + esc(g.name) + '">';
+    : '<img src="' + esc(url) + '" alt="Folleto de ' + esc(g.name) + '">')
+    + (prev.length ? '<div class="alma-docs-old" style="text-align:left"><b class="sub">Folletos anteriores (solo socios)</b>'
+      + prev.slice().reverse().map(x => '<div class="alma-old"><span class="sub">Reemplazado ' + esc(String(x.hasta || '').slice(0, 10).split('-').reverse().join('/')) + (x.por ? ' por ' + esc(x.por) : '') + '</span> <a class="btn ghost tiny" target="_blank" rel="noopener" href="' + esc(x.url) + '">Ver</a></div>').join('') + '</div>' : '');
   $('almaFolletoAbrir').href = url;
   d.dataset.url = url; d.dataset.name = g.name;
   $('almaFolletoCompartir').hidden = !navigator.share;
@@ -697,18 +773,25 @@ window.almaCompartirFolleto = async () => {
     else await navigator.share({ title: 'Folleto ' + d.dataset.name, url: d.dataset.url });
   } catch (e) { if (e.name !== 'AbortError') alert('No se pudo compartir: ' + e.message); }
 };
+// Socios y vendedores: el cambio lo hace el servidor (cambiar_folleto) y guarda el anterior en el historial
 window.almaSubirFolleto = async input => {
   const file = input.files?.[0]; input.value = '';
   const id = window.currentGroupDetail;
   const g = APP?.getState().groups.find(x => x.id === id);
   if (!file || !g) return;
+  if (g.brochure && !await confirmReplace('Reemplazar folleto · ' + g.name, g.brochure, isPdfUrl(g.brochure), file)) return;
   const txt = $('almaFolletoSubirTxt'); if (txt) txt.textContent = 'Subiendo…';
   try {
     const p = await prepareFile(file);
     const path = id + '/' + safeName('folleto-' + stamp()) + '.' + p.ext;
     await storage('POST', 'object/' + FBUCKET + '/' + path, p.blob, { 'Content-Type': p.type, 'x-upsert': 'true' });
-    g.brochure = CFG.url + '/storage/v1/object/public/' + FBUCKET + '/' + path;
-    scheduleSave();
+    await rest('POST', 'rpc/cambiar_folleto', { p_salida: id, p_url: CFG.url + '/storage/v1/object/public/' + FBUCKET + '/' + path });
+    const row = (await rest('GET', 'salidas?select=*&id=eq.' + encodeURIComponent(id)))?.[0];
+    if (row) {
+      Object.assign(g, fromRow(row, MAPS.groups));
+      snap.groups?.set(id, JSON.stringify(toRow(g, MAPS.groups)));  // ya está guardado en el servidor
+    }
+    notifyOk(g.folletos_anteriores?.length ? 'Folleto reemplazado. El anterior quedó guardado.' : 'Folleto subido.');
   } catch (e) { alert('No se pudo subir el folleto: ' + e.message); }
   window.almaFolleto(id);
 };

@@ -47,3 +47,8 @@
 <dialog class="dialog alma-folleto" id="almaFolletoDialog"><div class="modalhead"><h2 id="almaFolletoTitulo">Folleto</h2><button type="button" class="btn ghost tiny" onclick="this.closest('dialog').close()">✕ Cerrar</button></div>
 <div class="modalbody" id="almaFolletoCuerpo"></div>
 <div class="modalfoot"><a id="almaFolletoAbrir" class="btn ghost" target="_blank" rel="noopener">Abrir en otra pestaña</a><button type="button" id="almaFolletoCompartir" class="btn ghost" onclick="almaCompartirFolleto()">Compartir</button><button type="button" class="btn" onclick="almaBajarFolleto()">Descargar</button></div></dialog>
+
+<dialog class="dialog alma-replace" id="almaReplaceDialog"><div class="modalhead"><h2 id="almaReplaceTitle">Reemplazar archivo</h2></div>
+<div class="modalbody"><div class="alma-rep-grid"><div><span class="smallcaps">Actual</span><div id="almaReplaceOld" class="alma-rep-box"></div></div><div><span class="smallcaps">Nuevo</span><div id="almaReplaceNew" class="alma-rep-box"></div><small id="almaReplaceInfo" class="sub"></small></div></div>
+<p class="hint">El archivo actual no se borra: queda guardado como anterior y los socios lo pueden consultar.</p></div>
+<div class="modalfoot"><button type="button" class="btn ghost" id="almaReplaceNo">Cancelar</button><button type="button" class="btn" id="almaReplaceOk">↻ Reemplazar</button></div></dialog>

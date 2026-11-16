@@ -122,7 +122,7 @@ assert 'almaFormDoc' in before
 before = sub('<h2 id="groupDetailTitle">Pasajeros de la salida</h2><div class="actionset">',
              '<h2 id="groupDetailTitle">Pasajeros de la salida</h2><div class="actionset">'
              '<button type="button" id="almaFolletoVer" class="btn tiny btn-folleto" onclick="almaVerFolleto()" hidden>🖼 Ver folleto</button>'
-             '<label class="btn ghost tiny" data-admin-only="true"><span id="almaFolletoSubirTxt">+ Subir folleto</span>'
+             '<label class="btn ghost tiny"><span id="almaFolletoSubirTxt">+ Subir folleto</span>'
              '<input type="file" accept="image/*,application/pdf" hidden onchange="almaSubirFolleto(this)"></label>', before)
 
 logo = re.search(r'<img src="(data:image/png;base64,[^"]+)"', before).group(1)
