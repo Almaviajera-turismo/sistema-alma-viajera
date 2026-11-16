@@ -53,7 +53,7 @@ const AYUDA = [
   { tema: 'Pedidos', titulo: 'El cliente aceptó: pasar el pedido a reserva', pantallas: ['pedidos', 'individuales'],
     claves: 'acepto aceptada reserva confirmar viaje individual crear',
     pasos: [
-      '<b>Viaje individual:</b> poné el pedido en <b>Confirmado</b> (o <b>Cotización aceptada</b>). Se abre solo el viaje individual con los datos de la cotización; revisá fechas, hotel, precio total y operador, y tocá <b>Guardar viaje individual</b>. Desde ese momento aparece en <b>Viajes individuales</b> y en <b>Reservas</b>. Si cerraste la ventana, usá el botón <b>Pasar a viajes individuales</b> del pedido.',
+      '<b>Viaje individual:</b> tocá <b>✓ Confirmar pedido</b> (o cambiá el estado a <b>Confirmado</b>) y aceptá el aviso. Se abre solo el viaje individual con los datos de la cotización; revisá fechas, hotel, precio total y operador, y tocá <b>Guardar viaje individual</b>. Desde ese momento aparece en <b>Viajes individuales</b> y en <b>Reservas</b>. Si cerraste la ventana, usá el botón <b>Pasar a viajes individuales</b> del pedido.',
       '<b>Salida grupal:</b> inscribí al pasajero en la salida (ver «Inscribir un pasajero en una salida grupal»).',
       'Después registrá la seña desde <b>Cobros y recibos</b>.',
     ] },
