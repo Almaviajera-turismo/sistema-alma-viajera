@@ -3,7 +3,7 @@
 Sistema online de la agencia: pedidos, salidas grupales, viajes individuales, aéreos,
 pasajeros, reservas, cobros y recibos, caja (Centro y Gaona), proveedores, informes y bitácora.
 
-- **Ingreso:** https://hernanmariano-max.github.io/sistema-alma-viajera/
+- **Ingreso:** https://almaviajera-turismo.github.io/sistema-alma-viajera/
 - **Datos:** Supabase (proyecto `kwybigrovltwbgvbngdx`). Cada persona entra con su email y contraseña;
   los permisos (socio / vendedor) los controla el servidor.
 
