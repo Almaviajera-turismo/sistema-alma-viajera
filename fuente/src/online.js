@@ -27,11 +27,19 @@ async function auth(path, body, method = 'POST', token) {
   if (token) h.Authorization = 'Bearer ' + token;
   let r;
   try { r = await fetch(CFG.url + '/auth/v1/' + path, { method, headers: h, body: body ? JSON.stringify(body) : undefined }); }
-  catch (e) { throw new Error('Sin conexión a internet o servidor no disponible.'); }
+  catch (e) { const err = new Error('Sin conexión a internet o servidor no disponible.'); err.offline = true; throw err; }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(authError(j));
   return j;
 }
+// Último email usado en este dispositivo (para no tener que escribirlo)
+const EKEY = 'alma-email-v1';
+const lastEmail = () => { try { return localStorage.getItem(EKEY) || ''; } catch (e) { return ''; } };
+// Si otra pestaña renovó la sesión, usar la misma (evita que se cierre sola)
+window.addEventListener('storage', e => {
+  if (e.key !== SKEY || !e.newValue) return;
+  try { const s = JSON.parse(e.newValue); if (s?.refresh_token) session = s; } catch (err) {}
+});
 function keepSession(j) {
   session = { access_token: j.access_token, refresh_token: j.refresh_token,
               expires_at: Date.now() + (Number(j.expires_in) || 3600) * 1000, user: j.user };
@@ -41,12 +49,42 @@ let refreshing = null;
 async function token() {
   if (!session) throw new Error('Tu sesión se cerró. Volvé a ingresar.');
   if (Date.now() > session.expires_at - 90_000) {
+    // otra pestaña pudo haberla renovado recién
+    try { const s = JSON.parse(localStorage.getItem(SKEY) || 'null'); if (s?.expires_at > session.expires_at) session = s; } catch (e) {}
+  }
+  if (Date.now() > session.expires_at - 90_000) {
     refreshing ||= auth('token?grant_type=refresh_token', { refresh_token: session.refresh_token })
       .then(keepSession).finally(() => { refreshing = null; });
-    try { await refreshing; } catch (e) { logout(true); throw new Error('Tu sesión venció. Volvé a ingresar.'); }
+    try { await refreshing; }
+    catch (e) {
+      if (e.offline) throw new Error('Sin conexión a internet.');   // sin internet no se cierra la sesión
+      logout(true); throw new Error('Tu sesión venció. Volvé a ingresar.');
+    }
   }
   return session.access_token;
 }
+/* Cierre por inactividad: 1 hora sin usar el sistema (compartido entre pestañas) */
+const IDLE_MS = 60 * 60 * 1000, AKEY = 'alma-actividad-v1', IDLE_MSG = 'alma-cierre-inactividad';
+const lastActivity = () => { try { return Number(localStorage.getItem(AKEY)) || 0; } catch (e) { return 0; } };
+let lastMark = 0;
+function markActivity() {
+  const now = Date.now();
+  if (now - lastMark < 15_000) return;            // no escribir en cada movimiento
+  lastMark = now;
+  try { localStorage.setItem(AKEY, String(now)); } catch (e) {}
+}
+['pointerdown', 'keydown', 'touchstart', 'wheel', 'scroll'].forEach(ev =>
+  window.addEventListener(ev, () => { if (session) markActivity(); }, { passive: true, capture: true }));
+function idleExpired() { const a = lastActivity(); return !!a && Date.now() - a > IDLE_MS; }
+function checkIdle() {
+  if (!session || !idleExpired()) return;
+  if (syncing) return;                             // esperar a que termine de guardar
+  try { sessionStorage.setItem(IDLE_MSG, '1'); } catch (e) {}
+  logout(false);
+}
+setInterval(checkIdle, 30_000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkIdle(); });
+
 async function logout(expired) {
   const t = session?.access_token;
   session = null; profile = null;
@@ -363,11 +401,22 @@ function status(s) {
 function showLogin(msg) {
   $('almaLogin').hidden = false; $('almaLoading').hidden = true;
   $('almaLoginMsg').textContent = msg || '';
-  setTimeout(() => $('almaEmail')?.focus(), 50);
+  const em = $('almaEmail');
+  if (em && !em.value) em.value = lastEmail();
+  setTimeout(() => (em?.value ? $('almaPass') : em)?.focus(), 50);
 }
 async function boot() {
   try { session = JSON.parse(localStorage.getItem(SKEY) || 'null'); } catch (e) { session = null; }
-  if (!session) return showLogin();
+  let idleMsg = '';
+  try { if (sessionStorage.getItem(IDLE_MSG)) { idleMsg = 'Por seguridad se cerró la sesión después de 1 hora sin uso. Volvé a ingresar.'; sessionStorage.removeItem(IDLE_MSG); } } catch (e) {}
+  if (session && idleExpired()) {                  // quedó abierta y pasó más de 1 hora sin uso
+    const t = session.access_token; session = null;
+    try { localStorage.removeItem(SKEY); } catch (e) {}
+    auth('logout', null, 'POST', t).catch(() => {});
+    idleMsg = 'Por seguridad se cerró la sesión después de 1 hora sin uso. Volvé a ingresar.';
+  }
+  if (!session) return showLogin(idleMsg);
+  markActivity();
   $('almaLoading').hidden = false;
   try {
     const uid = session.user?.id;
@@ -609,8 +658,13 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const btn = $('almaLoginBtn'); btn.disabled = true; $('almaLoginMsg').textContent = '';
     try {
-      const j = await auth('token?grant_type=password', { email: $('almaEmail').value.trim().toLowerCase(), password: $('almaPass').value });
+      const email = $('almaEmail').value.trim().toLowerCase(), password = $('almaPass').value;
+      const j = await auth('token?grant_type=password', { email, password });
       keepSession(j);
+      lastMark = 0; markActivity();
+      try { localStorage.setItem(EKEY, email); } catch (e) {}
+      // Ofrecer guardar la contraseña en el navegador (Chrome / Android)
+      try { if (window.PasswordCredential && navigator.credentials?.store) await navigator.credentials.store(new PasswordCredential({ id: email, password, name: email })); } catch (e) {}
       $('almaLogin').hidden = true;
       await boot();
     } catch (err) { $('almaLoginMsg').textContent = err.message; }
