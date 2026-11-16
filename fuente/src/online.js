@@ -428,6 +428,7 @@ async function boot() {
       return showLogin('Tu usuario no está habilitado en el sistema. Pedile a un socio que te agregue a la lista de usuarios autorizados.');
     }
     const state = await loadAll();
+    try { window.__ALMA_PERSONAL__ = await rest('POST', 'rpc/lista_personal', {}); } catch (e) { window.__ALMA_PERSONAL__ = null; }
     start(state);
   } catch (e) {
     if (!session) return showLogin(e.message);
