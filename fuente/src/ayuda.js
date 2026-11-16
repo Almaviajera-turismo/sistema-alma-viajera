@@ -248,7 +248,8 @@ const AYUDA = [
   { tema: 'Proveedores', titulo: 'Anotar lo que le debemos a un operador y pagarle', pantallas: ['proveedores', 'tesoreria'], socios: true,
     claves: 'deuda compromiso pagar operador proveedor pago vencimiento',
     pasos: [
-      'Primero la deuda: <b>+ Registrar compromiso</b>. Elegí la salida o reserva, el proveedor, el concepto, el importe y el vencimiento. (Esto todavía no descuenta plata.)',
+      'Primero la deuda: <b>+ Registrar compromiso</b>. Elegí el proveedor y después el <b>file propio</b> (arriba aparecen los files de ese proveedor), cargá el <b>localizador del proveedor</b>, el concepto, el importe y los vencimientos de <b>seña</b> y de <b>saldo</b>. (Esto todavía no descuenta plata.)',
+      'Cuando pagás la seña, el aviso de seña desaparece y queda solo el vencimiento del saldo. Cuando se paga el total, el compromiso queda <b>Saldado · cerrado</b>.',
       'Cuando pagás: <b>+ Registrar pago</b>, elegí el compromiso, la oficina, el monto y el medio.',
       'Tocá <b>Revisar pago</b>, escribí <b>PAGAR</b> y confirmá. El egreso aparece solo en la caja.',
     ],
