@@ -40,5 +40,19 @@ body:not(.alma-online) .app, body:not(.alma-online) .mobile-nav { visibility: hi
 .alma-formdoc { background: #faf8fc; border: 1px dashed #c9bddb; border-radius: 10px; padding: 12px; }
 .alma-formdoc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
 #almaFormDocPrev img { max-width: 260px; width: 100%; border-radius: 8px; border: 1px solid #e7e1ed; display: block; margin-bottom: 6px; }
+.alma-help .modalbody { max-height: 75vh; overflow: auto; }
+.alma-help-q { width: 100%; box-sizing: border-box; font-size: 16px; padding: 12px 14px; border: 1px solid #c9bddb; border-radius: 12px; margin-bottom: 8px; }
+.alma-help-q:focus { outline: 2px solid #51407a; border-color: transparent; }
+.alma-help-h { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #a8571a; margin: 16px 0 6px; }
+.alma-help-item { border: 1px solid #e7e1ed; border-radius: 10px; margin: 6px 0; background: #fff; }
+.alma-help-item summary { cursor: pointer; padding: 11px 12px; font-weight: 700; color: #30254e; list-style: none; }
+.alma-help-item summary::-webkit-details-marker { display: none; }
+.alma-help-tit::before { content: '▸ '; color: #a8571a; }
+.alma-help-item[open] .alma-help-tit::before { content: '▾ '; }
+.alma-help-item ol { margin: 0 12px 10px 30px; padding: 0; line-height: 1.5; color: #332f41; }
+.alma-help-item li { margin: 4px 0; }
+.alma-help-tema { display: block; font-size: 11px; font-weight: 600; color: #6e6879; }
+.alma-help-socio { font-size: 10.5px; font-weight: 700; color: #51407a; background: #efe9f8; border-radius: 99px; padding: 2px 7px; margin-left: 4px; }
+.alma-help-nota { margin: 0 12px 12px; padding: 8px 10px; background: #fff8ee; border-radius: 8px; font-size: 13.5px; color: #5a4a2a; }
 .alma-clip { font-size: 11.5px; font-weight: 700; color: #2e7d4f; }
 </style>

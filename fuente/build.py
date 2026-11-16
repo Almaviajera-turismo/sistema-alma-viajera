@@ -86,6 +86,7 @@ before = sub('Versión de prueba · datos solo en este navegador', 'Sistema onli
 before = sub('<div class="pill">DEMO V32</div>',
              '<div id="almaUserBox" class="alma-user" hidden><span id="almaSync" class="alma-sync" data-s="ok">✓ Guardado</span>'
              '<div class="alma-who"><b id="almaUserName"></b><small id="almaUserRole"></small></div>'
+             '<button type="button" class="btn ghost tiny" onclick="almaOpenHelp()" title="Cómo usar el sistema">❓ Ayuda</button>'
              '<button type="button" class="btn ghost tiny" onclick="almaRefresh()" title="Traer los últimos cambios">↻</button>'
              '<button type="button" id="almaPwBtn" class="btn ghost tiny" onclick="almaOpenPassword()">Contraseña</button>'
              '<button type="button" class="btn ghost tiny" onclick="almaLogout()">Salir</button></div>', before)
@@ -110,6 +111,7 @@ assert 'almaFormDoc' in before
 logo = re.search(r'<img src="(data:image/png;base64,[^"]+)"', before).group(1)
 login = (HERE / 'src' / 'login.html').read_text(encoding='utf-8').replace('{{LOGO}}', logo)
 online = (HERE / 'src' / 'online.js').read_text(encoding='utf-8')
+online += '\n' + (HERE / 'src' / 'ayuda.js').read_text(encoding='utf-8')
 
 before = sub('</head>', (HERE / 'src' / 'login.css').read_text(encoding='utf-8') + '</head>', before)
 out = (before + login
