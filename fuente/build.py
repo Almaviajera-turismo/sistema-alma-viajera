@@ -42,6 +42,17 @@ for old, new in [(' en esta demostración', ''), (' en la demostración', ''), (
                  ('DNI (ficticio)', 'DNI'), ('usuario ficticio', 'usuario'), ('Todas las acciones son DEMOSTRACIÓN LOCAL; no hay autenticación ni servidor.', ''),
                  (' | Documento de prueba', '')]:
     app = app.replace(old, new)
+# Directorio de pasajeros: columna Documento con pasaporte (y su vencimiento) + DNI
+app = sub("table('passengersDirectory',['Pasajero','Contacto','DNI','Viajes','Acción']",
+          "table('passengersDirectory',['Pasajero','Contacto','Documento','Viajes','Acción']", app)
+app = sub("</td><td>'+esc(p.doc||'—')+'<span class=\"sub\">Vence: '+fmt(p.passportExpiry)+'</span></td>",
+          "</td><td>'+docCell(p)+'</td>", app)
+app = sub("// Semana de lunes a domingo y mes calendario",
+          "function docCell(p){const parts=[];"
+          "if(p.passportNumber){const venc=p.passportExpiry&&p.passportExpiry<new Date().toISOString().slice(0,10);"
+          "parts.push('Pasaporte '+esc(p.passportNumber)+(p.passportExpiry?'<span class=\"sub\"'+(venc?' style=\"color:#b42318;font-weight:600\"':'')+'>Vence: '+fmt(p.passportExpiry)+(venc?' · vencido':'')+'</span>':''))}"
+          "if(p.doc)parts.push((p.passportNumber?'<span class=\"sub\">':'')+'DNI '+esc(p.doc)+(p.passportNumber?'</span>':''));"
+          "return parts.join('')||'—'}\n// Semana de lunes a domingo y mes calendario", app)
 app = sub(" // El acumulado es por oficina y moneda", " if(window.demoRole==='vendedor')for(const m of state.cashOthers||[])out.push({...m});\n // El acumulado es por oficina y moneda", app)
 # Acceso para la capa online
 app = sub("render();\nupdateBackButton();\n})();",
@@ -84,6 +95,7 @@ TEXTOS = [
     ('placeholder="Cliente de prueba"', 'placeholder="Nombre y apellido"'), ('placeholder="Pasajero de prueba"', 'placeholder="Nombre y apellido"'),
     ('Registrado por (usuario de prueba)', 'Registrado por'), ('Opcional (datos de prueba)', 'Opcional'),
     ('Para enviar en esta demo: ', 'Para enviar: '), ('placeholder="Solo datos ficticios"', 'placeholder="Opcional"'),
+    ('Buscar por nombre, teléfono o datos ficticios de documento', 'Buscar por nombre, teléfono, DNI o pasaporte'),
     ('DNI (ficticio)', 'DNI'), ('CUIL / CUIT (ficticio)', 'CUIL / CUIT'), (' · solo pruebas', ''),
     ('Nº de pasaporte (ficticio)', 'Nº de pasaporte'), ('Pasaporte ficticio:', 'Pasaporte:'),
     ('Imagen de pasaporte · pendiente de implementación segura', 'Imagen de pasaporte · próximamente'),
