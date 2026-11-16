@@ -13,6 +13,7 @@ pasajeros, reservas, cobros y recibos, caja (Centro y Gaona), proveedores, infor
 - `cotizador/` — logo, fondos y tipografía del flyer de cotización (botón «Cotizar» en Pedidos).
 - `fuente/` — base original (v32) y el script que arma `index.html`:
   `python3 fuente/build.py fuente/Alma_Viajera_Sistema_v32.html index.html`
+- `fuente/src/tema.css` y `fuente/tema.py` — apariencia (colores, menú con íconos, tablas, ventanas). Solo estética.
 
 ## Agregar un usuario
 1. Supabase → SQL Editor:

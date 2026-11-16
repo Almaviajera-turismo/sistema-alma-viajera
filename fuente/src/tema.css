@@ -1,0 +1,155 @@
+<style id="alma-tema">
+/* ============================================================
+   Tema visual 2026 · Alma Viajera Turismo
+   Solo cambia la apariencia: no toca datos ni lógica.
+   ============================================================ */
+:root{
+  --purple:#51407a; --purple-600:#45366a; --purple-50:#f4f1f9; --purple-100:#ebe5f4;
+  --orange:#d66c1c; --orange-50:#fff4ea;
+  --deep:#271d42; --text:#2b2638; --muted:#6c6679; --bg:#f6f4f9; --line:#e9e4ef; --white:#fff;
+  --ok:#23784a; --ok-50:#e9f6ee; --warn:#a2560c; --warn-50:#fff4e2; --bad:#b42318; --bad-50:#fdeceb;
+  --r-sm:8px; --r:12px; --r-lg:16px;
+  --sh-1:0 1px 2px rgba(30,18,52,.05),0 1px 3px rgba(30,18,52,.04);
+  --sh-2:0 4px 14px rgba(30,18,52,.07),0 1px 3px rgba(30,18,52,.05);
+  --sh-3:0 24px 64px rgba(25,14,45,.22);
+  --ring:0 0 0 3px rgba(81,64,122,.18);
+}
+body{background:var(--bg);color:var(--text);font:15px/1.5 "Inter","Segoe UI Variable","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:#e4dbf3}
+*{scrollbar-color:#cfc6dc transparent}
+h1,h2,h3{letter-spacing:-.01em}
+
+/* ---------- Barra lateral ---------- */
+.app{grid-template-columns:252px minmax(0,1fr)}
+.side{background:linear-gradient(180deg,#2c2149 0%,#241a3d 100%);padding:16px 12px;overflow-y:auto;border-right:1px solid #1c1433}
+.side-brand{border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.side-brand img{max-height:70px}
+.side-caption{font-size:10.5px;color:#b9acd2;letter-spacing:.16em;margin-bottom:14px}
+.nav{gap:2px}
+.nav-label{font-size:10.5px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:#8f83a9;padding:14px 12px 6px}
+.nav-label:first-child{padding-top:4px}
+body[data-role="vendedor"] .nav-label.admin{display:none}
+.nav button{display:flex;align-items:center;gap:11px;position:relative;color:#d9d1e8;padding:9px 12px;border-radius:10px;font-weight:600;font-size:14px;transition:background .15s,color .15s}
+.nav button svg{width:18px;height:18px;flex:none;opacity:.85}
+.nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav button.active{background:rgba(255,255,255,.12);color:#fff}
+.nav button.active svg{opacity:1;color:#ffb27a}
+.nav button.active::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--orange)}
+.nav button:focus-visible{outline:2px solid #ffb27a;outline-offset:1px}
+.side-foot{color:#a597bf;font-size:11px;padding:16px 10px 4px;display:flex;align-items:center;gap:7px}
+.side-foot::before{content:"";width:7px;height:7px;border-radius:50%;background:#4cc285;box-shadow:0 0 0 3px rgba(76,194,133,.18);flex:none}
+
+/* ---------- Encabezado ---------- */
+.main{max-width:1440px;padding:0 32px 100px;margin:0 auto;align-self:start}
+.head{position:sticky;top:0;z-index:15;margin:0 -32px 22px;padding:14px 32px 14px;background:rgba(246,244,249,.86);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);align-items:center}
+.head h1{font-size:clamp(20px,2.4vw,26px);font-weight:750;margin-top:1px;color:#211a33}
+.kicker{font-size:10.5px;letter-spacing:.14em;font-weight:750}
+.nav-back{margin-bottom:8px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:12.5px;font-weight:650;box-shadow:var(--sh-1);transition:border-color .15s,background .15s}
+.nav-back:not(:disabled):hover{border-color:#cbbfdc;background:var(--purple-50)}
+.alma-user{gap:6px}
+.alma-who{padding:4px 10px 4px 8px;border-left:1px solid var(--line);margin-left:2px}
+.alma-who b{font-size:13.5px}
+.notice{border-radius:var(--r)}
+
+/* ---------- Tarjetas y paneles ---------- */
+.panel,.stat{border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-1)}
+.panel{padding:22px}
+.panelhead{margin-bottom:14px}
+.panelhead h2,.panel>h2{font-size:17px;font-weight:720;color:#211a33}
+.description{color:var(--muted)}
+.stat strong{font-size:26px;font-weight:780;letter-spacing:-.02em}
+.dashboard-grid{gap:14px}
+.dashboard-tile{border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh-1);position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s}
+.dashboard-tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--purple-100)}
+.dashboard-tile h3{font-size:12px;font-weight:700;letter-spacing:.02em;color:var(--purple);margin-bottom:10px}
+.dashboard-tile .dashboard-number{font-size:20px;font-weight:780;letter-spacing:-.015em;color:#211a33}
+.dashboard-tile-link:hover,.stat-nav:hover{transform:translateY(-2px);box-shadow:var(--sh-2);border-color:#d6cbe6;background:#fff}
+.dashboard-tile-link:hover::before,.stat-nav:hover::before{background:var(--orange)}
+.dashboard-alert{border-radius:var(--r);padding:11px 14px;border-color:#f3dcc0;background:#fffaf2}
+.dashboard-alert.ok{border-color:#d5ebdd;background:#f4fbf6}
+.quick{background:#fff;border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh-1);transition:transform .15s,box-shadow .15s,border-color .15s}
+.quick:hover{transform:translateY(-2px);box-shadow:var(--sh-2);border-color:#d6cbe6}
+.quick b{color:#211a33}
+.fin-box,.metric,.finance-tiles>div,.group-finance-header>div{border-radius:var(--r)}
+.room-card,.cash-record,.account-receipt-card{border-radius:var(--r);box-shadow:var(--sh-1)}
+
+/* ---------- Botones ---------- */
+.btn{border-radius:10px;padding:9px 15px;font-weight:650;letter-spacing:.005em;box-shadow:0 1px 2px rgba(30,18,52,.12);transition:background .15s,border-color .15s,box-shadow .15s,transform .05s}
+.btn:hover{background:var(--purple-600);border-color:var(--purple-600)}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:none;box-shadow:var(--ring)}
+.btn.orange:hover{background:#bf5f16;border-color:#bf5f16}
+.btn.ghost{background:var(--purple-50);border-color:var(--purple-100);box-shadow:none}
+.btn.ghost:hover{background:var(--purple-100);border-color:#ddd3ec}
+.btn.plain{box-shadow:none}
+.btn.plain:hover{background:var(--purple-50)}
+.btn.danger{box-shadow:none}
+.btn.tiny{padding:5px 10px;font-size:12.5px;border-radius:8px}
+.textlink{text-decoration-color:#c9bde0}
+.textlink:hover{text-decoration-color:currentColor}
+
+/* ---------- Formularios ---------- */
+.field{font-weight:650;font-size:12.5px;color:#463f55}
+.field input,.field textarea,.field select,.search,.panel select,.panel input[type=date],.panel input[type=text],.panel input[type=number]{border:1px solid #d9d2e3;border-radius:10px;background:#fff;transition:border-color .15s,box-shadow .15s}
+.field input,.field select,.search{min-height:41px}
+.field input:hover,.field textarea:hover,.field select:hover,.search:hover{border-color:#c4b9d4}
+.field input:focus,.field textarea:focus,.field select:focus,.search:focus,.panel select:focus,.panel input:focus{outline:none;border-color:var(--purple);box-shadow:var(--ring)}
+.search{width:260px;padding-left:34px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%238a829a' stroke-width='2' stroke-linecap='round' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 11px center}
+.table select{border:1px solid #d9d2e3;border-radius:8px;padding:6px 8px;background:#fff}
+input[type=checkbox],input[type=radio]{accent-color:var(--purple)}
+
+/* ---------- Tablas ---------- */
+.tablewrap{border:1px solid var(--line);border-radius:var(--r);background:#fff}
+.panel .tablewrap{margin:0 -1px}
+.table th{background:#faf8fc;color:#7a7389;font-size:10.5px;font-weight:700;letter-spacing:.07em;padding:11px 12px;border-bottom:1px solid var(--line)}
+.table th:first-child{border-top-left-radius:var(--r)}
+.table th:last-child{border-top-right-radius:var(--r)}
+.table td{padding:12px;border-bottom:1px solid #f0ecf4}
+.table tbody tr:last-child td{border-bottom:0}
+.table tbody tr{transition:background .12s}
+.table tbody tr:hover{background:#fbf9fd}
+.sub{color:var(--muted)}
+
+/* ---------- Etiquetas de estado ---------- */
+.tag,.mini-stage{font-size:11px;font-weight:650;padding:3px 9px 3px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;background:var(--purple-50);color:#5a4688;border:1px solid var(--purple-100)}
+.tag::before,.mini-stage::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.75}
+.tag.green,.mini-stage.green{background:var(--ok-50);color:var(--ok);border-color:#cfe9d9}
+.tag.orange,.mini-stage.warn{background:var(--warn-50);color:var(--warn);border-color:#f4dfbf}
+.tag.grey{background:#f1f2f5;color:#556173;border-color:#e3e6ec}
+
+/* ---------- Ventanas ---------- */
+.dialog{border-radius:18px;box-shadow:var(--sh-3);border:1px solid rgba(255,255,255,.6)}
+.dialog::backdrop{background:rgba(28,18,48,.42);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.dialog[open]{animation:almaPop .18s ease-out}
+@keyframes almaPop{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+.modalhead{padding:16px 22px;background:#fff}
+.modalhead h2{font-size:17px;font-weight:720;color:#211a33}
+.modalfoot{background:#faf8fc;padding:13px 22px}
+.formgrid{gap:14px 16px}
+
+/* ---------- Avisos ---------- */
+.toast{border-radius:12px;padding:12px 18px;font-weight:600;box-shadow:0 12px 32px rgba(30,18,52,.28);background:#2c2149}
+
+/* ---------- Celular ---------- */
+.mobile-nav svg{width:21px;height:21px;display:block;margin:0 auto 3px}
+@media(max-width:760px){
+  .main{padding:0 12px 96px}
+  .head{margin:0 -12px 16px;padding:10px 12px;position:static;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
+  .mobile-logo{margin:12px 0 4px}
+  .head h1{font-size:21px}
+  .kicker{display:none}
+  .panel{padding:16px;border-radius:14px}
+  .search{width:100%}
+  .mobile-nav{padding:6px 6px max(8px,env(safe-area-inset-bottom));gap:2px;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 -6px 24px rgba(30,18,52,.08);scrollbar-width:none}
+  .mobile-nav::-webkit-scrollbar{display:none}
+  .mobile-nav button{font-size:10.5px;font-weight:600;color:#7a7389;padding:6px 8px;border-radius:12px;min-width:64px;flex:0 0 auto}
+  .mobile-nav button br{display:none}
+  .mobile-nav button.active{color:var(--purple);background:var(--purple-50);font-weight:750}
+  .mobile-nav button.active svg{color:var(--orange)}
+  .tablewrap{border-radius:10px}
+  .dialog{border-radius:16px}
+  .alma-who{border-left:0;padding-left:2px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{.head{position:static!important;background:#fff!important;backdrop-filter:none!important;border:0!important}.tablewrap{border:0!important}.table th{background:#fff!important}.tag::before,.mini-stage::before{display:none}}
+</style>
