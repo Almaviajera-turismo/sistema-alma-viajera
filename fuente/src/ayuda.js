@@ -58,6 +58,15 @@ const AYUDA = [
       'Las opciones de un mismo pasajero aparecen juntas, marcadas <b>Opción 1 de 3</b>, <b>Opción 2 de 3</b>, etc.',
       'Cuando el pasajero elige una, confirmá esa opción. El sistema te pregunta si querés marcar las demás como <b>Otra opción elegida</b>.',
     ] },
+  { tema: 'Pedidos', titulo: 'Varios pasajeros en el mismo pedido o file', pantallas: ['pedidos', 'individuales', 'reservas', 'pasajeros'],
+    claves: 'acompañante acompañantes varios pasajeros familia pareja agregar pasajero file grupo familiar',
+    pasos: [
+      'En el pedido tocá <b>👥 Pasajeros</b>. En un viaje individual ya creado, el mismo botón está en <b>Viajes individuales</b> y en <b>Reservas</b>.',
+      'Si el pasajero ya está en la base, elegilo en la lista y tocá <b>Agregar el elegido</b>.',
+      'Si es nuevo, tocá <b>+ Pasajero nuevo</b> y cargá sus datos (nombre, DNI, nacimiento, pasaporte…). Se crea su ficha en la <b>Base de pasajeros</b> y queda agregado al viaje.',
+      'Al pasar el pedido a viaje individual, los pasajeros del pedido pasan solos como <b>acompañantes</b> del file. También podés agregarlos en la misma ficha con <b>+ Agregar acompañantes</b>.',
+    ],
+    nota: 'Si cargás uno nuevo con el mismo DNI o nombre que alguien de la base, el sistema te ofrece usar esa ficha y completarle los datos que falten, para no duplicar. El file y la cuenta (total, cobros, saldo) son uno solo, a nombre del titular. En la ficha de cada acompañante aparece el viaje como «acompañante de…».' },
   { tema: 'Pedidos', titulo: 'El cliente aceptó: pasar el pedido a reserva', pantallas: ['pedidos', 'individuales'],
     claves: 'acepto aceptada reserva confirmar viaje individual crear',
     pasos: [

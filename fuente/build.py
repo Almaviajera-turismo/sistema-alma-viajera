@@ -77,7 +77,7 @@ app = sub("function renderGroupDetail(){const id=window.currentGroupDetail;if(!i
 # Pedidos: botón «Cotizar» que abre el flyer de cotización (lo maneja cotizador.js)
 app = sub("onclick=\"editOrder(&quot;'+o.id+'&quot;)\">✎ Editar pedido</button></div>",
           "onclick=\"editOrder(&quot;'+o.id+'&quot;)\">✎ Editar pedido</button> "
-          "<button class=\"btn tiny\" style=\"margin:6px 0\" onclick=\"almaCotizar(&quot;'+o.id+'&quot;)\">'+(o.quote?'🖼 Ver cotización':'🖼 Cotizar')+'</button> <button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"newQuoteOption(&quot;'+o.id+'&quot;)\">+ Otra opción</button></div>"
+          "<button class=\"btn tiny\" style=\"margin:6px 0\" onclick=\"almaCotizar(&quot;'+o.id+'&quot;)\">'+(o.quote?'🖼 Ver cotización':'🖼 Cotizar')+'</button> <button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"newQuoteOption(&quot;'+o.id+'&quot;)\">+ Otra opción</button> <button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"openTripPassengers(&quot;order&quot;,&quot;'+o.id+'&quot;)\">👥 Pasajeros ('+(o.travelers||[]).length+')</button></div>"
           "'+optionTag(o)+(o.quote&&o.quote.precio?'<span class=\"sub\" style=\"color:#1f8fa8;font-weight:600\">Cotizado: '+esc(o.quote.moneda||'')+' '+esc(Number(o.quote.precio).toLocaleString('es-AR'))+' por pasajero</span>':'')+'", app)
 
 # Acceso para la capa online
