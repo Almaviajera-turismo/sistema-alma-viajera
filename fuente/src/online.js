@@ -206,12 +206,14 @@ const MAPS = {
     seller: ['vendedor'], percent: ['porcentaje', N] } },
   commissionPayouts: { table: 'liquidaciones_comision', order: 'creado.desc', cols: {
     seller: ['vendedor'], month: ['mes'], currency: ['moneda'], amount: ['importe', N], detail: ['detalle', J],
-    paidDate: ['pagado', D], paidBy: ['pagado_por'] } }
+    paidDate: ['pagado', D], paidBy: ['pagado_por'] } },
+  bankAccounts: { table: 'cuentas_banco', order: 'creado.asc', cols: {
+    name: ['nombre'], opening: [['saldo_inicial_ars', 'saldo_inicial_usd'], PAIR], since: ['desde', D] } }
 };
 // Orden de guardado (respeta las dependencias entre tablas)
 const ORDER = ['passengers', 'groups', 'rooms', 'orders', 'bookings', 'extensions', 'flights', 'payments',
   'cashSessions', 'cashMovements', 'cashTransfers', 'providers', 'expenses', 'supplierPayments', 'groupExtras',
-  'commissionRates', 'commissionPayouts'];
+  'commissionRates', 'commissionPayouts', 'bankAccounts'];
 // Columnas que fija el servidor y nunca se reenvían al editar
 const SERVER_ONLY = new Set(['creado', 'creado_por', 'registrado', 'abierto', 'cerrado', 'anulado_por']);
 
@@ -268,7 +270,7 @@ const TABLE_LABEL = { pasajeros: 'Pasajero', salidas: 'Salida grupal', habitacio
   movimientos_caja: 'Movimiento de caja', transferencias_caja: 'Transferencia entre cajas', proveedores: 'Proveedor',
   compromisos: 'Compromiso con proveedor', pagos_proveedores: 'Pago a proveedor', extras_salida: 'Extra de salida',
   perfiles: 'Usuario', usuarios_autorizados: 'Usuario autorizado', archivos: 'Archivo',
-  comisiones_vendedor: 'Porcentaje de comisión', liquidaciones_comision: 'Liquidación de comisión' };
+  comisiones_vendedor: 'Porcentaje de comisión', liquidaciones_comision: 'Liquidación de comisión', cuentas_banco: 'Cuenta bancaria' };
 
 async function loadAll() {
   const rows = {};

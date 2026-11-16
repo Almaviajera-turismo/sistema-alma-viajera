@@ -50,6 +50,14 @@ const AYUDA = [
       'Para corregir datos tocá <b>✎ Editar pedido</b> debajo del nombre del cliente y después <b>Guardar cambios</b>. Así no se duplica.',
       'Usá el buscador para encontrar un pedido por cliente o destino.',
     ] },
+  { tema: 'Pedidos', titulo: 'Mandarle varias opciones de cotización al mismo pasajero', pantallas: ['pedidos'],
+    claves: 'opcion opciones varias cotizaciones otra cotizacion hotel alternativa comparar',
+    pasos: [
+      'En el pedido tocá <b>+ Otra opción</b>. Se crea una copia del pedido con la misma cotización y se abre el cotizador.',
+      'Cambiá lo que sea distinto (hotel, precio, fechas, fotos) y tocá <b>Guardar cotización</b>. Cada opción tiene su propio flyer para mandar.',
+      'Las opciones de un mismo pasajero aparecen juntas, marcadas <b>Opción 1 de 3</b>, <b>Opción 2 de 3</b>, etc.',
+      'Cuando el pasajero elige una, confirmá esa opción. El sistema te pregunta si querés marcar las demás como <b>Otra opción elegida</b>.',
+    ] },
   { tema: 'Pedidos', titulo: 'El cliente aceptó: pasar el pedido a reserva', pantallas: ['pedidos', 'individuales'],
     claves: 'acepto aceptada reserva confirmar viaje individual crear',
     pasos: [
@@ -179,6 +187,23 @@ const AYUDA = [
       'El nombre y el documento se corrigen desde la ficha del pasajero.',
     ],
     nota: 'Los cambios de importes, fechas o servicios sensibles los hacen los socios. Si la cuenta está cerrada, primero un socio tiene que reabrirla.' },
+  { tema: 'Reservas', titulo: 'Fechas de vencimiento de la seña y del saldo del pasajero', pantallas: ['reservas', 'individuales', 'grupales'],
+    claves: 'vencimiento seña saldo fecha limite cobrar deuda vencida aviso',
+    pasos: [
+      'Al crear un viaje individual, o desde <b>✎ Editar reserva</b>, cargá <b>Vencimiento de la seña</b>, el <b>Importe de la seña</b> (opcional) y <b>Vencimiento del saldo</b>.',
+      'En <b>Reservas</b>, debajo del saldo, aparece lo próximo que vence. Si ya pasó la fecha, se ve en rojo.',
+      'Cuando el pasajero paga la seña, el aviso de seña desaparece y queda solo el del saldo. Cuando paga todo, no queda ningún aviso.',
+      'En el Inicio y en el resumen de Finanzas se cuentan las cuentas con seña o saldo vencido.',
+    ],
+    nota: 'Si no cargás importe de seña, el primer pago cuenta como seña. En una salida grupal nueva podés poner un «Vencimiento del saldo de los pasajeros» para todos los inscriptos que no tengan fecha propia.' },
+  { tema: 'Reservas', titulo: 'Hacer un descuento a un pasajero', pantallas: ['reservas', 'grupales'], socios: true,
+    claves: 'descuento rebaja bonificacion precio especial contado restar',
+    pasos: [
+      'En <b>Reservas</b> tocá <b>✎ Editar reserva</b> en la reserva del pasajero.',
+      'Cargá el importe en <b>Descuento al pasajero</b> (en la misma moneda del viaje) y el <b>Motivo del descuento</b>.',
+      'Tocá <b>Guardar cambios</b>. El descuento se resta del total y del saldo, y en Reservas aparece debajo del total.',
+    ],
+    nota: 'Solo un socio puede aplicar descuentos. No se puede dejar el total por debajo de lo que el pasajero ya pagó. El descuento también baja la ganancia del file y la comisión del vendedor.' },
   { tema: 'Cobros', titulo: 'Registrar un cobro y emitir el recibo', pantallas: ['cobros', 'reservas', 'inicio'],
     claves: 'cobrar pago seña recibo cobro efectivo transferencia tarjeta registrar',
     pasos: [
@@ -221,14 +246,15 @@ const AYUDA = [
       'Tocá <b>Confirmar cierre</b>. Si hay diferencia, queda registrada.',
     ],
     nota: 'Si entra un pago después del cierre, un socio puede abrir otro turno indicando el motivo.' },
-  { tema: 'Caja', titulo: 'Registrar un gasto o ingreso de la oficina', pantallas: ['caja'], socios: true,
-    claves: 'gasto ingreso retiro alquiler sueldo servicios movimiento caja chica',
+  { tema: 'Caja', titulo: 'Registrar un gasto o ingreso de la oficina', pantallas: ['caja', 'cajaoperativa'],
+    claves: 'gasto ingreso retiro alquiler sueldo servicios movimiento caja chica libreria',
     pasos: [
-      'Andá a <b>Finanzas → Caja → + Registrar movimiento</b>.',
-      'Elegí oficina, si es ingreso, gasto o retiro, la categoría, moneda, importe y medio.',
-      'Escribí el motivo y tocá <b>Guardar movimiento</b>.',
+      'Vendedores: <b>Caja operativa → + Registrar movimiento</b>. Socios: <b>Finanzas → Caja → + Registrar movimiento</b>.',
+      'Elegí si es ingreso o gasto, la categoría, la moneda, el importe y el medio. (Los vendedores solo pueden cargar en la caja de su oficina.)',
+      'Escribí el motivo y tocá <b>Guardar movimiento</b>. Si es en efectivo, se descuenta del efectivo esperado para el cierre.',
+      'Los vendedores ven lo que cargaron en <b>Mis movimientos de caja</b>.',
     ],
-    nota: 'No cargues acá los cobros a pasajeros (van en Cobros) ni los pagos a operadores (van en Proveedores): ya aparecen solos en la caja.' },
+    nota: 'Los retiros y las correcciones de movimientos los hace un socio. No cargues acá los cobros a pasajeros (van en Cobros) ni los pagos a operadores (van en Proveedores): ya aparecen solos en la caja.' },
   { tema: 'Caja', titulo: 'Pasar efectivo entre Centro y Gaona', pantallas: ['caja', 'tesoreria'], socios: true,
     claves: 'transferir transferencia entre cajas mover plata oficinas',
     pasos: [
@@ -236,6 +262,17 @@ const AYUDA = [
       'Elegí desde qué oficina, hacia cuál, la moneda y el importe.',
       'Tocá <b>Guardar transferencia</b>. Sale de una caja y entra en la otra.',
     ] },
+
+  { tema: 'Caja', titulo: 'Cuenta BBVA: saldo, depósitos y extracciones', pantallas: ['caja', 'tesoreria'], socios: true,
+    claves: 'banco bbva cuenta transferencia deposito depositar extraer extraccion saldo bancario',
+    pasos: [
+      'Andá a <b>Finanzas → Caja y banco</b>, panel <b>Banco BBVA</b>.',
+      'La primera vez tocá <b>Saldo inicial</b> y cargá lo que figura en el banco en pesos y en dólares, y desde qué fecha.',
+      'Desde ahí el saldo se calcula solo: suma los cobros y resta los pagos hechos por <b>transferencia, depósito o tarjeta</b>.',
+      'Para llevar efectivo al banco tocá <b>Depositar efectivo</b> (sale de la caja y entra al banco). Para traer efectivo, <b>Extraer efectivo</b>.',
+      'Abajo ves la lista de movimientos del banco.',
+    ],
+    nota: 'Compará cada tanto el saldo del sistema con el del home banking. Si no coincide, suele ser un cobro o pago cargado con el medio equivocado (efectivo en vez de transferencia o al revés). Las comisiones e impuestos del banco cargalos como gasto de caja con medio Transferencia.' },
 
   /* ---------------- Proveedores ---------------- */
   { tema: 'Proveedores', titulo: 'Cargar un proveedor u operador', pantallas: ['proveedores'], socios: true,
@@ -254,6 +291,44 @@ const AYUDA = [
       'Tocá <b>Revisar pago</b>, escribí <b>PAGAR</b> y confirmá. El egreso aparece solo en la caja.',
     ],
     nota: 'Si el pago es en efectivo, la caja tiene que estar abierta y tener dinero suficiente en esa moneda.' },
+
+  /* ---------------- Rentabilidad y comisiones ---------------- */
+  { tema: 'Rentabilidad y comisiones', titulo: 'Leer el resumen de Finanzas', pantallas: ['tesoreria'], socios: true,
+    claves: 'resumen tablero finanzas disponible nos deben debemos ganancia del mes',
+    pasos: [
+      'Andá a <b>Finanzas</b>. Arriba está el <b>Resumen</b>, en pesos y en dólares por separado.',
+      '<b>Disponible</b>: efectivo de las dos cajas más el saldo de BBVA.',
+      '<b>Nos deben</b>: saldos de los pasajeros con cuenta abierta, y cuántos tienen seña o saldo vencido.',
+      '<b>Debemos</b>: lo que falta pagar a proveedores, con los vencidos y lo que vence en 7 días.',
+      '<b>Ganancia del mes</b>: ganancia de los files vendidos este mes, ya restando costos de proveedores y comisiones.',
+    ],
+    nota: 'El detalle de cajas por oficina, cuentas por operación y pagos a proveedores quedó abajo, en «Más detalle».' },
+  { tema: 'Rentabilidad y comisiones', titulo: 'Ver cuánto ganamos con cada reserva', pantallas: ['tesoreria'], socios: true,
+    claves: 'ganancia rentabilidad margen utilidad cuanto ganamos file costo',
+    pasos: [
+      'Andá a <b>Finanzas</b> y tocá <b>Rentabilidad</b> (o bajá hasta <b>Rentabilidad por reserva</b>).',
+      'Cada file muestra: lo <b>vendido</b> (ya con descuentos), el <b>costo de proveedores</b>, la <b>comisión del vendedor</b>, la <b>ganancia</b> y el <b>margen</b>.',
+      'Arriba está la ganancia total, separada en dólares y en pesos.',
+    ],
+    nota: 'El costo sale de los compromisos con proveedores cargados para ese file. Si un file dice «Sin costos cargados» en rojo, su ganancia todavía no es real: cargá el compromiso en Proveedores eligiendo ese file. En salidas grupales se restan los gastos extra de la salida y se suman sus ingresos extra.' },
+  { tema: 'Rentabilidad y comisiones', titulo: 'Cargar el porcentaje de comisión de cada vendedor', pantallas: ['tesoreria'], socios: true,
+    claves: 'comision porcentaje vendedor vendedora cuanto cobra',
+    pasos: [
+      'Andá a <b>Finanzas → Comisiones</b>.',
+      'En <b>Porcentaje de cada vendedor</b>, escribí el % al lado de su nombre y tocá <b>Guardar</b>.',
+      'Cuando das de alta un vendedor nuevo, aparece solo en esa lista.',
+    ],
+    nota: 'La comisión es un porcentaje de la <b>ganancia</b> del file (vendido con descuentos − costos de proveedores), no del total vendido. Cada vendedor puede tener un porcentaje distinto. Solo los socios ven y cambian los porcentajes.' },
+  { tema: 'Rentabilidad y comisiones', titulo: 'Liquidar las comisiones a fin de mes', pantallas: ['tesoreria'], socios: true,
+    claves: 'liquidar liquidacion comision fin de mes pagar vendedor',
+    pasos: [
+      'En <b>Finanzas → Comisiones</b> elegí el <b>Mes a liquidar</b>.',
+      'En <b>Contar los files por</b> elegí si entran los files <b>vendidos</b> ese mes o los que <b>salen de viaje</b> ese mes.',
+      'Para cada vendedor ves sus files con lo vendido, el costo, la ganancia y la comisión, y el <b>Total a pagar</b>.',
+      'Revisá que todos los files tengan sus costos cargados y tocá <b>Liquidar y marcar pagada</b>. Queda registrada con la fecha y quién la liquidó.',
+      'Registrá el pago en <b>Caja</b> como gasto (efectivo o transferencia).',
+    ],
+    nota: 'La comisión se le asigna al <b>Responsable</b> de cada file. Si la ganancia de un file da negativa, ese file no paga comisión. Si después de liquidar cambia un costo, el sistema te avisa que el cálculo nuevo da distinto. Una liquidación hecha por error se puede anular con <b>Anular liquidación</b>.' },
 
   /* ---------------- Informes y bitácora ---------------- */
   { tema: 'Informes', titulo: 'Sacar el informe semanal o mensual', pantallas: ['informes'], socios: true,
