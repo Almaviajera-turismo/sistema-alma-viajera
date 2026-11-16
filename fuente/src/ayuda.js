@@ -53,7 +53,7 @@ const AYUDA = [
   { tema: 'Pedidos', titulo: 'El cliente aceptó: pasar el pedido a reserva', pantallas: ['pedidos', 'individuales'],
     claves: 'acepto aceptada reserva confirmar viaje individual crear',
     pasos: [
-      '<b>Viaje individual:</b> poné el pedido en <b>Cotización aceptada</b>. Aparece el botón <b>Crear reserva aceptada</b>; tocalo, completá fechas, hotel, precio total y operador, y tocá <b>Guardar viaje individual</b>.',
+      '<b>Viaje individual:</b> poné el pedido en <b>Confirmado</b> (o <b>Cotización aceptada</b>). Se abre solo el viaje individual con los datos de la cotización; revisá fechas, hotel, precio total y operador, y tocá <b>Guardar viaje individual</b>. Desde ese momento aparece en <b>Viajes individuales</b> y en <b>Reservas</b>. Si cerraste la ventana, usá el botón <b>Pasar a viajes individuales</b> del pedido.',
       '<b>Salida grupal:</b> inscribí al pasajero en la salida (ver «Inscribir un pasajero en una salida grupal»).',
       'Después registrá la seña desde <b>Cobros y recibos</b>.',
     ] },
@@ -109,7 +109,7 @@ const AYUDA = [
   { tema: 'Viajes individuales', titulo: 'Crear un viaje individual', pantallas: ['individuales'],
     claves: 'individual a medida reserva crear viaje hotel operador',
     pasos: [
-      'Si el cliente todavía está pidiendo precio, anotalo como pedido. Cuando acepta, andá a <b>Viajes individuales</b> y tocá <b>+ Crear viaje individual</b>.',
+      'Si el cliente todavía está pidiendo precio, anotalo como pedido. Cuando lo confirma, cambiá el pedido a <b>Confirmado</b> y pasa solo a <b>Viajes individuales</b>.',
       'Completá titular, destino, fechas (las noches se calculan solas), transporte, hotel, habitación, régimen, precio total, moneda y operador.',
       'Tocá <b>Guardar viaje individual</b>. Se crea la cuenta del pasajero con su número de file.',
     ] },
