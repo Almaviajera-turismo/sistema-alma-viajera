@@ -157,7 +157,7 @@ const MAPS = {
     returnDate: ['fecha_regreso', D], currency: ['moneda'], transport: ['transporte'], hotel: ['hotel'],
     room: ['habitacion'], meals: ['regimen'], operator: ['operador'], operatorRef: ['ref_operador'],
     stage: ['etapa'], status: ['estado'], owner: ['responsable'], notes: ['notas'],
-    salesperson: ['vendedor'], sourceOrderId: ['pedido_id', FK] },
+    salesperson: ['vendedor'], sourceOrderId: ['pedido_id', FK], soldAt: ['creado'] },
     toExtra(o, row) { row.precio = num(o.kind === 'grupal' ? o.basePrice : o.total); },
     fromExtra(row, o) { if (row.tipo === 'grupal') o.basePrice = Number(row.precio); else o.total = Number(row.precio); } },
   extensions: { table: 'extensiones', order: 'creado.asc', parent: ['bookings', 'extensions', 'reserva_id'], cols: {
@@ -201,11 +201,17 @@ const MAPS = {
     method: ['medio'], reference: ['referencia'], recordedBy: ['registrado_por'], recordedAt: ['registrado'] } },
   groupExtras: { table: 'extras_salida', order: 'registrado.asc', cols: {
     groupId: ['salida_id', FK], kind: ['tipo'], currency: ['moneda'], concept: ['concepto'], amount: ['importe', N],
-    date: ['fecha', D], notes: ['notas'], recordedBy: ['registrado_por'], recordedAt: ['registrado'] } }
+    date: ['fecha', D], notes: ['notas'], recordedBy: ['registrado_por'], recordedAt: ['registrado'] } },
+  commissionRates: { table: 'comisiones_vendedor', order: 'vendedor.asc', cols: {
+    seller: ['vendedor'], percent: ['porcentaje', N] } },
+  commissionPayouts: { table: 'liquidaciones_comision', order: 'creado.desc', cols: {
+    seller: ['vendedor'], month: ['mes'], currency: ['moneda'], amount: ['importe', N], detail: ['detalle', J],
+    paidDate: ['pagado', D], paidBy: ['pagado_por'] } }
 };
 // Orden de guardado (respeta las dependencias entre tablas)
 const ORDER = ['passengers', 'groups', 'rooms', 'orders', 'bookings', 'extensions', 'flights', 'payments',
-  'cashSessions', 'cashMovements', 'cashTransfers', 'providers', 'expenses', 'supplierPayments', 'groupExtras'];
+  'cashSessions', 'cashMovements', 'cashTransfers', 'providers', 'expenses', 'supplierPayments', 'groupExtras',
+  'commissionRates', 'commissionPayouts'];
 // Columnas que fija el servidor y nunca se reenvían al editar
 const SERVER_ONLY = new Set(['creado', 'creado_por', 'registrado', 'abierto', 'cerrado', 'anulado_por']);
 
@@ -261,7 +267,8 @@ const TABLE_LABEL = { pasajeros: 'Pasajero', salidas: 'Salida grupal', habitacio
   reservas: 'Reserva', extensiones: 'Extensión', aereos: 'Aéreo', cobros: 'Recibo', turnos_caja: 'Caja',
   movimientos_caja: 'Movimiento de caja', transferencias_caja: 'Transferencia entre cajas', proveedores: 'Proveedor',
   compromisos: 'Compromiso con proveedor', pagos_proveedores: 'Pago a proveedor', extras_salida: 'Extra de salida',
-  perfiles: 'Usuario', usuarios_autorizados: 'Usuario autorizado', archivos: 'Archivo' };
+  perfiles: 'Usuario', usuarios_autorizados: 'Usuario autorizado', archivos: 'Archivo',
+  comisiones_vendedor: 'Porcentaje de comisión', liquidaciones_comision: 'Liquidación de comisión' };
 
 async function loadAll() {
   const rows = {};
