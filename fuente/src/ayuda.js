@@ -83,6 +83,14 @@ const AYUDA = [
       'Completá nombre, destino, fechas de salida y regreso, precio del paquete por pasajero, moneda, cupos y el programa con los servicios incluidos.',
       'Tocá <b>Guardar salida</b>. El número de file se asigna solo.',
     ] },
+  { tema: 'Salidas grupales', titulo: 'Ver la ficha de una salida y editarla', pantallas: ['grupales'],
+    claves: 'ficha salida datos editar modificar cambiar precio fechas cupos programa vencimiento operador',
+    pasos: [
+      'En <b>Salidas grupales</b> tocá <b>Abrir salida</b>: se abre en la pestaña <b>Ficha de la salida</b> con file, destino, fechas, duración, precio, cupos libres, vencimiento del saldo, responsable, programa y el resumen de lo vendido y cobrado.',
+      'Socios: tocá <b>✎ Editar salida</b>, cambiá lo que haga falta y <b>Guardar salida</b>. El número de file no cambia.',
+      'Si cambiás el precio, se aplica a los próximos inscriptos; los que ya están conservan el suyo (se cambia en cada reserva).',
+      'Socios: en <b>Pagos al operador y vencimientos</b> tocá <b>+ Agregar compromiso y vencimientos</b>, cargá proveedor, importe, fecha de la seña y fecha del saldo. Ahí mismo ves lo pagado, lo pendiente y el botón <b>Pagar</b>.',
+    ] },
   { tema: 'Salidas grupales', titulo: 'Inscribir un pasajero en una salida grupal', pantallas: ['grupales', 'reservas'],
     claves: 'inscribir agregar pasajero grupo salida reserva',
     pasos: [

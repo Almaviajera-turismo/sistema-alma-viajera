@@ -88,7 +88,12 @@ app = sub("render();\nupdateBackButton();\n})();",
 
 # Botón «Eliminar» (solo socios, con reglas): lógica en src/eliminar.js, dentro del script principal
 app = sub("render();\nupdateBackButton();\n})();",
-          (HERE / 'src' / 'eliminar.js').read_text(encoding='utf-8') + "\nrender();\nupdateBackButton();\n})();", app)
+          (HERE / 'src' / 'eliminar.js').read_text(encoding='utf-8') + '\n' + (HERE / 'src' / 'salida.js').read_text(encoding='utf-8')
+          + "\nrender();\nupdateBackButton();\n})();", app)
+# Ficha de la salida grupal: pestaña nueva (se abre primero) y edición (src/salida.js)
+app = sub("$('groupDetailTitle').textContent=g.name+' · pasajeros';showGroupTab('pasajeros',true);",
+          "$('groupDetailTitle').textContent=g.name;showGroupTab('ficha',true);", app)
+app = sub("renderRooming()}\n\nwindow.showGroupTab=", "renderRooming();window.almaRenderGroupFicha&&almaRenderGroupFicha()}\n\nwindow.showGroupTab=", app)
 app = sub("onclick=\"openPassengerForm(&quot;'+p.id+'&quot;)\">Editar ficha</button>",
           "onclick=\"openPassengerForm(&quot;'+p.id+'&quot;)\">Editar ficha</button> '+almaDelBtn('almaEliminarPasajero',p.id,'Eliminar pasajero')+'", app)
 app = sub("onclick=\"openTripPassengers(&quot;booking&quot;,&quot;'+b.id+'&quot;)\">👥 Pasajeros ('+paxCount(b)+')</button></div><span class=\"sub\">'+'<b>File '+esc(b.fileNumber||'—')+'</b> · '+esc(b.tour)",
@@ -106,6 +111,10 @@ app = sub("money(p.amount,e?.currency||'USD')+'</b></td></tr>'}),'Sin pagos regi
           "money(p.amount,e?.currency||'USD')+'</b></td><td>'+almaDelBtn('almaEliminarPagoProveedor',p.id)+'</td></tr>'}),'Sin pagos registrados')", app)
 
 # ---------- cambios en la pantalla ----------
+before = sub("""<button id="tabGroupPassengers" type="button" class="btn tiny" onclick="showGroupTab('pasajeros')">Pasajeros</button>""",
+             """<button id="tabGroupFicha" type="button" class="btn tiny" onclick="showGroupTab('ficha')">Ficha de la salida</button>"""
+             """<button id="tabGroupPassengers" type="button" class="btn tiny ghost" onclick="showGroupTab('pasajeros')">Pasajeros</button>""", before)
+before = sub('<div id="groupPassengersPanel">', '<div id="groupFichaPanel" style="display:none"><div id="almaGroupFicha" class="alma-ficha"></div></div><div id="groupPassengersPanel">', before)
 before = sub('<button type="button" class="nav-back" id="navBackButton" onclick="goBack()" aria-label="Volver a la pantalla anterior">← Volver</button>',
              '<div style="display:flex;gap:8px"><button type="button" class="nav-back" id="navBackButton" onclick="goBack()" aria-label="Volver a la pantalla anterior">← Volver</button>'
              '<button type="button" class="nav-back" id="navHomeButton" onclick="goHome()" aria-label="Ir al inicio" style="display:none">⌂ Inicio</button></div>', before)
