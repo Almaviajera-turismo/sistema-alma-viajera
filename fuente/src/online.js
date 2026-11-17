@@ -661,6 +661,18 @@ window.almaDeleteDoc = async (pid, name) => {
   } catch (e) { alert('No se pudo borrar: ' + e.message); }
   window.almaLoadDocs(pid); APP?.render();
 };
+/* Al eliminar un pasajero (botón de socios): borra todas las fotos de su pasaporte */
+window.almaBorrarDocsPasajero = async pid => {
+  try {
+    const paths = [];
+    for (const it of await listDocs(pid + '/')) {
+      if (it.id) paths.push(pid + '/' + it.name);
+      else for (const sub of await listDocs(pid + '/' + it.name + '/')) if (sub.id) paths.push(pid + '/' + it.name + '/' + sub.name);
+    }
+    if (paths.length) await storage('DELETE', 'object/' + BUCKET, JSON.stringify({ prefixes: paths }), JSONH);
+    docIds.delete(pid);
+  } catch (e) { alert('El pasajero se eliminó, pero no se pudieron borrar las fotos del pasaporte: ' + e.message); }
+};
 function notifyOk(t) { const el = $('toast'); if (!el) return; el.textContent = t; el.style.display = 'block'; setTimeout(() => { el.style.display = 'none'; }, 3000); }
 
 /* Formulario de alta / edición: foto del pasaporte opcional, se sube al guardar */

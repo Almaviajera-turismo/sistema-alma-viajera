@@ -354,6 +354,14 @@ const AYUDA = [
       'Ves cada alta, cambio y baja con la fecha, la hora y el usuario que lo hizo.',
       'Nadie puede editar ni borrar estos registros.',
     ] },
+  { tema: 'General', titulo: 'Eliminar algo cargado por error', pantallas: ['pasajeros', 'individuales', 'aereos', 'grupales', 'proveedores'], socios: true,
+    claves: 'eliminar borrar error duplicado mal cargado quitar sacar suprimir',
+    pasos: [
+      'Tocá <b>🗑 Eliminar</b>: está en la ficha del pasajero, en cada viaje individual y aéreo, en cada salida grupal, y en Proveedores en cada compromiso y cada pago.',
+      'Si tiene algo asociado, el sistema te dice qué es y no lo borra: un pasajero con viajes, un viaje con recibos o compromisos, una salida con inscriptos o pedidos, un compromiso con pagos.',
+      'Escribí <b>ELIMINAR</b> para confirmar. No se puede deshacer y queda registrado en la Bitácora con tu usuario.',
+    ],
+    nota: 'Los recibos nunca se borran (ni anulados), así que un viaje que ya tuvo recibos no se puede eliminar: anulá los recibos que estén mal y dejá la reserva. Un pago en efectivo a un proveedor solo se elimina con la caja abierta y si ese día no está cerrado. Un pedido mal cargado se pasa a «Cancelado».' },
   { tema: 'General', titulo: 'Agregar un usuario nuevo o restablecer una contraseña', pantallas: ['inicio'], socios: true,
     claves: 'usuario nuevo vendedor alta acceso contraseña olvido restablecer',
     pasos: [

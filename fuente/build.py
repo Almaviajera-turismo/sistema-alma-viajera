@@ -86,6 +86,25 @@ app = sub("render();\nupdateBackButton();\n})();",
           "window.__ALMA_APP={getState:()=>state,render:()=>render(),refreshDetail:()=>{try{if(window.currentGroupDetail&&document.getElementById('groupDetailPanel')?.style.display!=='none')renderGroupDetail()}catch(e){}}};\n"
           "render();\nupdateBackButton();\n})();", app)
 
+# Botón «Eliminar» (solo socios, con reglas): lógica en src/eliminar.js, dentro del script principal
+app = sub("render();\nupdateBackButton();\n})();",
+          (HERE / 'src' / 'eliminar.js').read_text(encoding='utf-8') + "\nrender();\nupdateBackButton();\n})();", app)
+app = sub("onclick=\"openPassengerForm(&quot;'+p.id+'&quot;)\">Editar ficha</button>",
+          "onclick=\"openPassengerForm(&quot;'+p.id+'&quot;)\">Editar ficha</button> '+almaDelBtn('almaEliminarPasajero',p.id,'Eliminar pasajero')+'", app)
+app = sub("onclick=\"openTripPassengers(&quot;booking&quot;,&quot;'+b.id+'&quot;)\">👥 Pasajeros ('+paxCount(b)+')</button></div><span class=\"sub\">'+'<b>File '+esc(b.fileNumber||'—')+'</b> · '+esc(b.tour)",
+          "onclick=\"openTripPassengers(&quot;booking&quot;,&quot;'+b.id+'&quot;)\">👥 Pasajeros ('+paxCount(b)+')</button> '+almaDelBtn('almaEliminarViaje',b.id)+'</div><span class=\"sub\">'+'<b>File '+esc(b.fileNumber||'—')+'</b> · '+esc(b.tour)", app)
+app = sub("onclick=\"editBooking(&quot;'+f.bookingId+'&quot;)\">✎ Editar reserva</button></div>",
+          "onclick=\"editBooking(&quot;'+f.bookingId+'&quot;)\">✎ Editar reserva</button> '+almaDelBtn('almaEliminarViaje',f.bookingId)+'</div>", app)
+app = sub("onclick=\"exportGroupExcel(&quot;'+g.id+'&quot;,&quot;rooming&quot;)\">↓ Excel rooming</button></div></td></tr>'}),'No hay salidas",
+          "onclick=\"exportGroupExcel(&quot;'+g.id+'&quot;,&quot;rooming&quot;)\">↓ Excel rooming</button>'+almaDelBtn('almaEliminarSalida',g.id)+'</div></td></tr>'}),'No hay salidas", app)
+app = sub("'Concepto / operación','Comprometido','Pendiente','Pagar']", "'Concepto / operación','Comprometido','Pendiente','Acción']", app)
+app = sub("'+(pending>.001?'<button class=\"btn tiny\" onclick=\"openSupplierPayment(&quot;'+e.id+'&quot;)\">Pagar</button>':'Saldado')+'</td></tr>'}),'No hay compromisos registrados')",
+          "'+(pending>.001?'<button class=\"btn tiny\" onclick=\"openSupplierPayment(&quot;'+e.id+'&quot;)\">Pagar</button>':'Saldado')+' '+almaDelBtn('almaEliminarCompromiso',e.id,'Eliminar')+'</td></tr>'}),'No hay compromisos registrados')", app)
+app = sub("table('providerPaymentHistory',['Fecha','Proveedor / concepto','Oficina','Medio / ref.','Importe']",
+          "table('providerPaymentHistory',['Fecha','Proveedor / concepto','Oficina','Medio / ref.','Importe','Acción']", app)
+app = sub("money(p.amount,e?.currency||'USD')+'</b></td></tr>'}),'Sin pagos registrados')",
+          "money(p.amount,e?.currency||'USD')+'</b></td><td>'+almaDelBtn('almaEliminarPagoProveedor',p.id)+'</td></tr>'}),'Sin pagos registrados')", app)
+
 # ---------- cambios en la pantalla ----------
 before = sub('<button type="button" class="nav-back" id="navBackButton" onclick="goBack()" aria-label="Volver a la pantalla anterior">← Volver</button>',
              '<div style="display:flex;gap:8px"><button type="button" class="nav-back" id="navBackButton" onclick="goBack()" aria-label="Volver a la pantalla anterior">← Volver</button>'
