@@ -374,7 +374,8 @@ fsub("function renderPayments(){table('paymentsTable',['Recibo','Pasajero / viaj
      "function renderPayments(){table('paymentsTable',['Recibo','Pasajero / viaje','Fecha','Cobrado','Acción'],almaRecibosFiltrados().map(")
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
-             ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización')]:
+             ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización'),
+             ('Ingreso extraordinario', 'Ingreso')]:
     out = out.replace(a, b)
 
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
