@@ -92,10 +92,11 @@ const AYUDA = [
       'Socios: en <b>Pagos al operador y vencimientos</b> tocá <b>+ Agregar compromiso y vencimientos</b>, cargá proveedor, importe, fecha de la seña y fecha del saldo. Ahí mismo ves lo pagado, lo pendiente y el botón <b>Pagar</b>.',
     ] },
   { tema: 'Salidas grupales', titulo: 'Inscribir un pasajero en una salida grupal', pantallas: ['grupales', 'reservas'],
-    claves: 'inscribir agregar pasajero grupo salida reserva',
+    claves: 'inscribir agregar pasajero grupo salida reserva habitacion doble triple single twin comparte',
     pasos: [
       'En <b>Salidas grupales</b> tocá <b>Abrir salida</b> en la salida que corresponde, y después <b>+ Inscribir pasajero</b>. (También desde <b>Reservas → + Inscribir al grupo</b>.)',
       'Buscalo por nombre, DNI o pasaporte y elegilo de la lista. Si no está, tocá <b>➕ Dar de alta pasajero nuevo</b>, completá su ficha y queda elegido solo (sin ficha en la base no se puede inscribir).',
+      'Elegí el <b>Tipo de habitación</b>. Si es doble o triple, elegí con quién comparte: si todavía no está inscripto, el sistema ofrece inscribirlo también (cada uno con su cuenta) y arma la habitación en el rooming.',
       'Revisá el precio (es el del paquete) y tocá <b>Inscribir pasajero</b>. Se crea su cuenta para esa salida.',
     ],
     nota: 'Cada pasajero tiene una cuenta separada por cada viaje: los pagos de una salida no se mezclan con otra.' },
