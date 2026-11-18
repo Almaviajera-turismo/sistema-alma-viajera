@@ -226,6 +226,7 @@ const AYUDA = [
     claves: 'cobrar pago seña recibo cobro efectivo transferencia tarjeta registrar',
     pasos: [
       'Andá a <b>Cobros y recibos → + Registrar cobro</b> (o tocá <b>Cobrar</b> en la reserva del pasajero).',
+      'Arriba, en <b>Pasajero</b>, buscalo por nombre, DNI o pasaporte: aparecen sus viajes con saldo y elegís a cuál le cobrás. Los datos de la cuenta se completan solos. Si no tiene viaje, elegí «➕ Cuenta nueva».',
       'Elegí el tipo de operación (salida grupal, viaje individual o solo aéreo) y la cuenta del pasajero. Si todavía no tiene cuenta, elegí <b>Pasajero nuevo / cuenta nueva</b>.',
       'Elegí la oficina (Centro o Gaona), el importe, la fecha y el medio de pago.',
       'Tocá <b>Guardar y ver recibo</b>. El número y el concepto (Seña, A cuenta o Saldo) se ponen solos.',

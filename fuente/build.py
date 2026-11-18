@@ -342,6 +342,12 @@ fsub("'+esc(b.client)+'</button><span class=\"sub\">ID cuenta: '+esc(b.id.slice(
 # Excel: una fila por integrante de la cuenta familiar
 fsub("if(mode==='pasajeros')sorted.sort(", "{const ex=[];for(const e of sorted){ex.push(e);for(const c of (e.b.companions||[]))ex.push({b:{...e.b,__pid:c,client:state.passengers.find(x=>x.id===c)?.name||''},room:e.room})}sorted.length=0;sorted.push(...ex)}if(mode==='pasajeros')sorted.sort(")
 fsub("const p=state.passengers.find(x=>x.id===b.passengerId)||{},style=room?excelRowColor", "const p=state.passengers.find(x=>x.id===(b.__pid||b.passengerId))||{},style=room?excelRowColor")
+# Cobro: primero el pasajero (de la base) y el viaje a cobrar (src/mejoras.js, punto 9)
+fsub('<form id="paymentForm"><div class="modalbody"><div class="formgrid">',
+     '<form id="paymentForm"><div class="modalbody"><div class="formgrid">'
+     '<div class="field full alma-mates alma-paybox"><label class="field full">Pasajero (de la Base de pasajeros)<select id="almaPayPax"></select></label>'
+     '<div class="alma-alta"><button type="button" class="btn ghost tiny" onclick="almaPayAlta()">➕ Dar de alta pasajero nuevo</button></div>'
+     '<label class="field full" id="almaPayTripWrap" style="display:none">Viaje al que le cobrás<select id="almaPayTrip" onchange="almaPayTripSync()"></select><small class="hint" id="almaPayTripInfo"></small></label></div>')
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización')]:

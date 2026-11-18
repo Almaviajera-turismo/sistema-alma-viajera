@@ -255,3 +255,34 @@ $('groupBookingForm')?.addEventListener('submit',e=>{window.__almaFam=null;if(!$
  if(ya.length){e.preventDefault();e.stopImmediatePropagation();alert('Ya están inscriptos en esta salida: '+ya.map(i=>almaPax(i)?.name).join(', ')+'. Sacalos de la lista o usá una cuenta por pasajero.');return}
  if(g.capacity>0&&almaPlazas(g.id)+1+mates.length>g.capacity){e.preventDefault();e.stopImmediatePropagation();alert('No hay cupos para '+(1+mates.length)+' pasajeros en esta salida.');return}
  window.__almaFam={mates}},true);
+
+/* ---------- 9) Registrar cobro: empezar por el pasajero de la base y elegir el viaje ---------- */
+function almaPayTrips(pid){return state.bookings.filter(b=>payable(b)&&almaViajeros(b).includes(pid))}
+function almaTripLabel(b,pid){const k=b.kind==='grupal'?'Salida grupal':b.kind==='aereo'?'Aéreo':'Viaje individual';
+ const t=trip(b),fi=b.fileNumber||bookingFile(b);return (t.startsWith(k)?t:k+' · '+t)+(fi&&fi!=='Aéreo'?' · File '+fi:'')+' · saldo '+money(balance(b),cur(b))+(b.passengerId!==pid?' (cuenta de '+b.client+')':'')}
+window.almaPayPaxSync=()=>{const pid=$('almaPayPax').value,ts=$('almaPayTrip'),p=almaPax(pid);
+ if(!p){ts.innerHTML='<option value="">Primero elegí el pasajero</option>';$('almaPayTripWrap').style.display='none';almaPayOcultar(false);return}
+ const list=almaPayTrips(pid);$('almaPayTripWrap').style.display='';
+ ts.innerHTML=list.map(b=>'<option value="'+esc(b.id)+'">'+esc(almaTripLabel(b,pid))+'</option>').join('')
+  +'<option value="nuevo:grupal">➕ Cuenta nueva: inscribirlo en una salida grupal</option><option value="nuevo:individual">➕ Cuenta nueva: viaje individual</option><option value="nuevo:aereo">➕ Cuenta nueva: solo aéreo</option>';
+ $('almaPayTripInfo').textContent=list.length?(list.length===1?'Tiene 1 viaje con saldo.':'Tiene '+list.length+' viajes con saldo: elegí a cuál le cobrás.'):'No tiene viajes con saldo pendiente: abrí una cuenta nueva.';
+ ts.value=list[0]?.id||'nuevo:individual';almaPayTripSync()};
+window.almaPayTripSync=()=>{const v=$('almaPayTrip').value,p=almaPax($('almaPayPax').value);if(!p)return;const f=$('paymentForm');
+ if(v.startsWith('nuevo:')){$('payKind').value=v.slice(6);$('payMode').value='nuevo';syncPayMode();
+  f.elements.newClient.value=p.name;f.elements.newClient.readOnly=true;f.elements.newPhone.value=p.phone||'';if(f.elements.newEmail)f.elements.newEmail.value=p.email||''}
+ else{const b=findBooking(v);if(!b)return;f.elements.newClient.readOnly=false;$('payKind').value=b.kind;$('payMode').value='existente';
+  if(b.kind==='grupal')$('payExistingGroup').dataset.targetGroup=b.groupId;syncPayMode();$('payBooking').value=b.id;syncPaymentInfo()}
+ almaPayOcultar(true);$('almaPayCur').dataset.tocado='';almaPayFxSync()};
+function almaPayOcultar(si){for(const el of [$('payKind')?.closest('label'),$('payMode')?.closest('label'),$('payExistingGroupBox'),$('payExistingBox')])if(el)el.style.display=si?'none':(el.id==='payExistingGroupBox'?($('payKind').value==='grupal'&&$('payMode').value!=='nuevo'?'flex':'none'):el.id==='payExistingBox'?($('payMode').value==='nuevo'?'none':'flex'):'')}
+window.almaPayAlta=()=>{window.__almaAltaFor='almaPayPax';openPassengerForm('');const q=$('almaPayPaxBuscar')?.value||'';if(q&&!/\d/.test(q))$('passengerForm').elements.name.value=q};
+{const o=window.openPayment;window.openPayment=(id,...a)=>{o(id,...a);const s=$('almaPayPax');if(!s)return;
+ s.innerHTML=almaPaxOpts('');almaBuscadorReset('almaPayPax');const b=findBooking(id);
+ if(b){s.value=b.passengerId;almaPayPaxSync();$('almaPayTrip').value=b.id;almaPayTripSync()}else{s.value='';almaPayPaxSync()}}}
+$('almaPayPax')?.addEventListener('change',()=>almaPayPaxSync());
+almaBuscadorInit('almaPayPax');
+/* Cuenta nueva: el pasajero tiene que estar en la base */
+$('paymentForm')?.addEventListener('submit',e=>{const f=e.target;if($('payMode').value!=='nuevo')return;
+ const n=String(f.elements.newClient.value||'').trim().toLocaleLowerCase('es-AR');
+ if(n&&state.passengers.some(p=>String(p.name||'').trim().toLocaleLowerCase('es-AR')===n))return;
+ e.preventDefault();e.stopImmediatePropagation();
+ if(confirm('El pasajero tiene que estar en la Base de pasajeros.\n\nBuscalo arriba en «Pasajero» o tocá Aceptar para darlo de alta ahora.'))almaPayAlta()},true);
