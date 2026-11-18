@@ -4003,7 +4003,7 @@ function almaBuscar(selId){
  sel.innerHTML=first.concat(list).map(o=>'<option value="'+esc(o.v)+'">'+esc(o.t)+'</option>').join('');
  if(q&&list.length){sel.value=list[0].v;sel.dispatchEvent(new Event('change',{bubbles:true}))}
  else if(!q){sel.value='';sel.dispatchEvent(new Event('change',{bubbles:true}))}
- info.textContent=q?(list.length?list.length+(list.length===1?' coincidencia':' coincidencias')+(list.length>1?' · elegí abajo si no es el primero':''):'Sin coincidencias: se carga como pasajero nuevo'):'';
+ info.textContent=q?(list.length?list.length+(list.length===1?' coincidencia':' coincidencias')+(list.length>1?' · elegí abajo si no es el primero':''):(selId==='expenseOperation'?'Sin coincidencias: probá con el número de file o el nombre':'Sin coincidencias: se carga como pasajero nuevo')):'';
 }
 
 /* ---------- 3) Documento: DNI o Pasaporte ---------- */
@@ -4338,6 +4338,11 @@ window.almaDestEditar=id=>{const p=state.payments.find(x=>x.id===id);if(!p)retur
  $('almaDestInfo').textContent=p.number+' · '+(p.snapshot?.client||'')+' · '+p.method;openDlg('almaDestDialog')};
 
 $('paymentForm')?.elements.almaDest?.addEventListener('change',()=>almaPayFxSync());
+
+/* ---------- 14) Compromiso con proveedor: buscador de file ---------- */
+almaBuscadorInit('expenseOperation');
+{const i=$('expenseOperationBuscar');if(i)i.placeholder='🔍 Buscar file por número, pasajero, salida o destino'}
+{const o=window.refreshExpenseFiles;if(o)window.refreshExpenseFiles=(...a)=>{const r=o(...a);const s=$('expenseOperation'),v=s?.value;almaBuscadorReset('expenseOperation');if(s&&v)s.value=v;return r}}
 
 render();
 updateBackButton();
