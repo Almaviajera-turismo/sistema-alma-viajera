@@ -277,8 +277,13 @@ fsub('<button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</butt
      '<button data-page="cajaoperativa" class="alma-nav-vend">' + CAJA_SVG + 'Caja</button><button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</button>')
 
 # Pedidos: botón «Eliminar pedido» (socios)
-fsub("👥 Pasajeros ('+(o.travelers||[]).length+')</button></div>'+optionTag(o)",
-     "👥 Pasajeros ('+(o.travelers||[]).length+')</button> '+almaDelBtn('almaEliminarPedido',o.id,'Eliminar pedido')+'</div>'+optionTag(o)")
+# (abajo de «Confirmar pedido», separado de «+ Otra opción»)
+fsub("orderNextStep(o)+'</td></tr>'",
+     "orderNextStep(o)+(almaEsSocio()?'<div style=\"margin-top:10px\">'+almaDelBtn('almaEliminarPedido',o.id,'Eliminar pedido')+'</div>':'')+'</td></tr>'")
+
+# «+ Otra opción» pide confirmación antes de copiar el pedido
+fsub("window.newQuoteOption=id=>{const o=findOrder(id);if(!o)return;",
+     "window.newQuoteOption=id=>{const o=findOrder(id);if(!o)return;if(!confirm('¿Crear otra opción de cotización para '+o.client+'?\\n\\nSe hace una copia de este pedido para cotizar otro hotel, fecha o precio. El pedido original no cambia.'))return;")
 
 
 # Pedidos de cotización: la columna muestra el responsable (quien lo cargó)
