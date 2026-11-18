@@ -7,6 +7,36 @@
 (() => {
 'use strict';
 const AYUDA = [
+  { tema: 'Novedades', titulo: 'Qué cambió en el sistema (17 y 18 de noviembre)', pantallas: ['inicio'],
+    claves: 'novedades cambios nuevo nuevas funciones actualizacion que hay de nuevo',
+    pasos: [
+      '<b>Pedidos de cotización</b>: es el nuevo nombre de «Pedidos recibidos». Cada pedido queda a nombre de quien lo carga.',
+      '<b>Responsable automático</b>: en todos los formularios aparece tu nombre; en cobros y caja «Registrado por» es siempre tu usuario.',
+      '<b>Pasajeros siempre de la base</b>: para inscribir, crear un viaje individual o abrir una cuenta en un cobro, el pasajero tiene que estar en la Base. Hay un buscador y el botón <b>➕ Dar de alta pasajero nuevo</b>.',
+      '<b>DNI o pasaporte</b> en la ficha, cada uno con su vencimiento (en rojo si venció).',
+      '<b>Habitaciones</b>: al inscribir o al editar la reserva elegís single, doble, twin, triple o cuádruple y con quién comparte; el rooming se arma solo y la ficha muestra con quién comparte.',
+      '<b>Familias</b>: padres vinculados a la ficha del menor, cuenta familiar a nombre de un padre y aviso de autorización de viaje.',
+      '<b>Cobros</b>: empezás buscando al pasajero y elegís el viaje; podés cobrar en pesos, dólares o euros con cotización y adjuntar el comprobante.',
+      '<b>Teléfono de contacto</b> al inscribir: viene de la ficha y, si falta, se guarda en la ficha.',
+      '<b>Salidas grupales</b>: pestaña <b>Ficha de la salida</b> con todos los datos; los socios pueden editarla y cargar los vencimientos con el operador.',
+      '<b>Caja</b> en el menú para todos. <b>🗑 Eliminar</b> (socios) en pedidos, pasajeros, viajes, aéreos, salidas, compromisos y pagos.',
+    ],
+    nota: 'Cada tema tiene su explicación completa: buscalo arriba (por ejemplo «familia», «habitación», «moneda» o «eliminar»).' },
+  { tema: 'General', titulo: 'Quién figura como responsable', pantallas: ['pedidos', 'grupales', 'individuales', 'cobros', 'cajaoperativa'],
+    claves: 'responsable vendedor registrado por nombre usuario quien cargo comision',
+    pasos: [
+      'Cuando cargás algo nuevo (pedido, salida, inscripción, viaje individual), en <b>Responsable</b> aparece tu nombre.',
+      'En los pedidos de cotización, los cobros y los movimientos de caja queda fijo tu usuario: no se puede poner a otra persona.',
+      'Si un viaje individual viene de confirmar un pedido, conserva el responsable del pedido (para que la comisión sea de quien lo vendió).',
+    ] },
+  { tema: 'Salidas grupales', titulo: 'Cambiar la habitación o el compañero de un pasajero del grupo', pantallas: ['grupales', 'reservas'],
+    claves: 'habitacion compañero comparte cambiar doble triple single twin cuadruple rooming editar',
+    pasos: [
+      'En la salida (o en Reservas) tocá <b>✎ Editar reserva</b> del pasajero.',
+      'En <b>Tipo de habitación</b> ves la habitación de hoy y con quién la comparte («Hoy: Doble 01 con…»).',
+      'Cambiá el tipo o los compañeros y tocá <b>Guardar cambios</b>. El rooming se reacomoda solo; quienes quedan en la habitación anterior siguen ahí.',
+      'Para quitarle la habitación, elegí <b>Sin definir</b>.',
+    ] },
   /* ---------------- General ---------------- */
   { tema: 'General', titulo: 'Ingresar, salir y cambiar la contraseña', pantallas: ['inicio'],
     claves: 'login clave usuario email entrar sesion cerrar olvide',
@@ -23,16 +53,17 @@ const AYUDA = [
       '<b>← Volver</b> te lleva a la pantalla anterior; <b>⌂ Inicio</b> te lleva directo a la pantalla principal. Los dos aparecen arriba y en cada ventana.',
       'Todo se guarda solo: arriba ves <b>✓ Guardado</b>. Si dice <b>Guardando…</b> esperá un momento antes de cerrar.',
       'Lo que cargan los demás (Centro y Gaona) se actualiza cada minuto. Para verlo ya, tocá <b>↻</b>.',
+      'Si no ves un cambio nuevo del sistema, recargá la página con <b>Ctrl + F5</b> (en el celular, cerrá la pestaña y volvé a entrar).',
     ] },
 
   /* ---------------- Pedidos ---------------- */
   { tema: 'Pedidos', titulo: 'Anotar un pedido que llegó por WhatsApp', pantallas: ['pedidos', 'inicio'],
     claves: 'consulta cotizacion whatsapp nuevo pedido cliente presupuesto',
     pasos: [
-      'Andá a <b>Pedidos recibidos</b> y tocá <b>+ Nuevo pedido</b> (o desde el Inicio: <b>Anotar pedido recibido</b>).',
+      'Andá a <b>Pedidos de cotización</b> y tocá <b>+ Nuevo pedido</b> (o desde el Inicio: <b>Anotar pedido de cotización</b>).',
       'Completá cliente, WhatsApp, tipo de viaje (individual o grupal; si es grupal elegí la salida), destino, fecha deseada y cantidad de pasajeros.',
       'En <b>¿Qué te pidió exactamente?</b> anotá el detalle: hotel, régimen, edades, presupuesto, desde dónde sale, etc.',
-      'Tocá <b>Guardar pedido</b>. Queda en estado <b>Pendiente</b>.',
+      'Tocá <b>Guardar pedido</b>. Queda en estado <b>Pendiente</b> y a tu nombre como <b>Responsable</b> (es quien lo cargó y no se cambia).',
     ] },
   { tema: 'Pedidos', titulo: 'Pegar un WhatsApp para armar el pedido o la cotización', pantallas: ['pedidos', 'inicio'],
     claves: 'pegar whatsapp mensaje copiar automatico armar completar cotizacion',
@@ -97,13 +128,14 @@ const AYUDA = [
       'En <b>Salidas grupales</b> tocá <b>Abrir salida</b> en la salida que corresponde, y después <b>+ Inscribir pasajero</b>. (También desde <b>Reservas → + Inscribir al grupo</b>.)',
       'Buscalo por nombre, DNI o pasaporte y elegilo de la lista. Si no está, tocá <b>➕ Dar de alta pasajero nuevo</b>, completá su ficha y queda elegido solo (sin ficha en la base no se puede inscribir).',
       'Elegí el <b>Tipo de habitación</b>. Si es doble o triple, elegí con quién comparte: si todavía no está inscripto, el sistema ofrece inscribirlo también (cada uno con su cuenta) y arma la habitación en el rooming.',
+      'El <b>Teléfono de contacto</b> viene de su ficha. Si no tiene, cargalo ahí y queda guardado también en la ficha.',
       'Revisá el precio (es el del paquete) y tocá <b>Inscribir pasajero</b>. Se crea su cuenta para esa salida.',
     ],
     nota: 'Cada pasajero tiene una cuenta separada por cada viaje: los pagos de una salida no se mezclan con otra.' },
   { tema: 'Salidas grupales', titulo: 'Armar el rooming y descargar los Excel', pantallas: ['grupales'],
     claves: 'rooming habitaciones excel lista pasajeros descargar compartir',
     pasos: [
-      'Abrí la salida y entrá a la pestaña <b>Rooming · Habitaciones</b>.',
+      'Si al inscribir elegiste el tipo de habitación y con quién comparte, la habitación ya está armada. Para el resto: abrí la salida y entrá a la pestaña <b>Rooming · Habitaciones</b>.',
       'Tocá <b>+ Agregar habitación</b>, poné un identificador (ej. «Hab. 1 – Pérez»), el tipo y la capacidad.',
       'En la lista elegí, para cada pasajero, en qué habitación va.',
       'Para mandarle al operador usá <b>↓ Excel pasajeros</b> o <b>↓ Excel rooming</b>.',
@@ -136,7 +168,8 @@ const AYUDA = [
     claves: 'individual a medida reserva crear viaje hotel operador',
     pasos: [
       'Si el cliente todavía está pidiendo precio, anotalo como pedido. Cuando lo confirma, cambiá el pedido a <b>Confirmado</b> y pasa solo a <b>Viajes individuales</b>.',
-      'Completá titular, destino, fechas (las noches se calculan solas), transporte, hotel, habitación, régimen, precio total, moneda y operador.',
+      'En <b>Titular</b> buscalo y elegilo de la Base de pasajeros (si no está, <b>➕ Dar de alta pasajero nuevo</b>). Su teléfono se completa solo; si la ficha no tenía, el que cargues se guarda en la ficha.',
+      'Completá destino, fechas (las noches se calculan solas), transporte, hotel, habitación, régimen, precio total, moneda y operador.',
       'Tocá <b>Guardar viaje individual</b>. Se crea la cuenta del pasajero con su número de file.',
     ] },
   { tema: 'Aéreos', titulo: 'Registrar una venta de aéreo', pantallas: ['aereos'],
@@ -154,7 +187,9 @@ const AYUDA = [
     claves: 'nuevo pasajero alta ficha cliente agregar pasaporte dni foto',
     pasos: [
       'Andá a <b>Base de pasajeros</b> y tocá <b>+ Agregar pasajero</b>.',
-      'Completá nombre y apellido (tal cual figura en el pasaporte), teléfono, email, DNI y los datos del pasaporte.',
+      'Completá nombre y apellido (tal cual figura en el documento), teléfono y email.',
+      'En <b>Documento de viaje</b> elegí <b>Pasaporte</b> (número, emisión y vencimiento) o <b>DNI</b> (número y vencimiento del DNI).',
+      'Si es menor, cargá su fecha de nacimiento y en <b>Familia · padres o tutores</b> elegí a sus padres (tienen que estar en la base).',
       'Abajo, en <b>Foto del pasaporte</b>, tocá <b>📷 Sacar foto o elegir archivo</b> para adjuntar la página de los datos (foto o PDF).',
       'Tocá <b>Guardar ficha</b>.',
     ],
@@ -203,6 +238,7 @@ const AYUDA = [
       'En <b>Reservas</b> (o dentro de la salida) tocá <b>✎ Editar reserva</b>.',
       'Cambiá lo que haga falta y tocá <b>Guardar cambios</b>. Los recibos ya emitidos no se modifican.',
       'El nombre y el documento se corrigen desde la ficha del pasajero.',
+      'En las salidas grupales, en <b>Tipo de habitación</b> ves la habitación actual y con quién la comparte, y podés cambiarla.',
     ],
     nota: 'Los cambios de importes, fechas o servicios sensibles los hacen los socios. Si la cuenta está cerrada, primero un socio tiene que reabrirla.' },
   { tema: 'Reservas', titulo: 'Fechas de vencimiento de la seña y del saldo del pasajero', pantallas: ['reservas', 'individuales', 'grupales'],
@@ -227,8 +263,7 @@ const AYUDA = [
     pasos: [
       'Andá a <b>Cobros y recibos → + Registrar cobro</b> (o tocá <b>Cobrar</b> en la reserva del pasajero).',
       'Arriba, en <b>Pasajero</b>, buscalo por nombre, DNI o pasaporte: aparecen sus viajes con saldo y elegís a cuál le cobrás. Los datos de la cuenta se completan solos. Si no tiene viaje, elegí «➕ Cuenta nueva».',
-      'Elegí el tipo de operación (salida grupal, viaje individual o solo aéreo) y la cuenta del pasajero. Si todavía no tiene cuenta, elegí <b>Pasajero nuevo / cuenta nueva</b>.',
-      'Elegí la oficina (Centro o Gaona), el importe, la fecha y el medio de pago.',
+      'Elegí la oficina (Centro o Gaona), el importe, la fecha, el medio de pago y la moneda. Si es transferencia, podés adjuntar el comprobante.',
       'Tocá <b>Guardar y ver recibo</b>. El número y el concepto (Seña, A cuenta o Saldo) se ponen solos.',
     ],
     nota: 'Los cobros en efectivo necesitan la caja de esa oficina abierta hoy.' },
@@ -252,7 +287,7 @@ const AYUDA = [
   { tema: 'Caja', titulo: 'Abrir la caja del día', pantallas: ['cajaoperativa', 'caja', 'inicio'],
     claves: 'abrir caja apertura efectivo inicial mañana',
     pasos: [
-      'Vendedores: desde el Inicio tocá <b>Caja operativa</b>. Socios: <b>Finanzas → Caja</b>.',
+      'Tocá <b>Caja</b> en el menú (vendedores: su caja operativa; socios: la caja de Centro y Gaona).',
       'Tocá <b>+ Abrir caja</b> y elegí la oficina.',
       'Contá el efectivo y confirmá los importes en pesos y en dólares (te propone lo que quedó en el último cierre).',
       'Tocá <b>Confirmar apertura</b>.',
@@ -426,6 +461,7 @@ function buscar(q, lista = visibles()) {
     let puntos = 0;
     for (const w of qs) {
       const raiz = w.length > 4 ? w.slice(0, -2) : w;      // cobro/cobrar, pasaporte/pasaportes
+      if (palabrasDe(norm(a.titulo)).some(x => x.startsWith(w.length > 4 ? w.slice(0, -1) : w))) puntos += 1;   // pesa más si está en el título
       if (tit.some(x => x.startsWith(w))) puntos += 3;
       else if (tit.some(x => x.startsWith(raiz))) puntos += 2;
       else if (todo.some(x => x.startsWith(raiz))) puntos += 1;
