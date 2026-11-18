@@ -4098,6 +4098,7 @@ for(const id of ['almaMate1','almaMate2','almaMate3','almaEMate1','almaEMate2','
 /* ---------- 8) Familias: menores con sus padres, cuenta familiar y aviso de autorización ---------- */
 function almaPlaza(b){return 1+(b.companions||[]).length}
 function almaPlazas(gid){return state.bookings.filter(b=>b.kind==='grupal'&&b.groupId===gid&&accountStatus(b)!=='Baja').reduce((n,b)=>n+almaPlaza(b),0)}
+function almaMenor(p,al){const e=almaEdad(p?.birthDate,al);return e!=null&&e<18}
 function almaEdad(nac,al){if(!nac)return null;const a=new Date((al||today())+'T12:00:00'),n=new Date(nac+'T12:00:00');if(isNaN(a)||isNaN(n))return null;let e=a.getFullYear()-n.getFullYear();const m=a.getMonth()-n.getMonth();if(m<0||(m===0&&a.getDate()<n.getDate()))e--;return e}
 function almaPax(id){return state.passengers.find(p=>p.id===id)}
 function almaLink(p){return '<button type="button" class="textlink" onclick="openPassengerProfile(&quot;'+p.id+'&quot;)">'+esc(p.name)+'</button>'}
@@ -4106,7 +4107,7 @@ function almaHijos(p){return state.passengers.filter(x=>x.guardian1===p.id||x.gu
 function almaFamInfo(p){const e=almaEdad(p.birthDate),pa=almaPadres(p),hi=almaHijos(p),out=[];
  if(e!=null&&e<18)out.push('<span class="tag alma-menor">Menor · '+e+' años</span>');
  if(pa.length)out.push('<span>Hijo/a de '+pa.map(almaLink).join(' y ')+'</span>');
- if(hi.length)out.push('<span>Hijos/as: '+hi.map(h=>almaLink(h)+(almaEdad(h.birthDate)<18?' ('+almaEdad(h.birthDate)+')':'')).join(', ')+'</span>');
+ if(hi.length)out.push('<span>Hijos/as: '+hi.map(h=>almaLink(h)+(almaMenor(h)?' ('+almaEdad(h.birthDate)+')':'')).join(', ')+'</span>');
  return out.length?'<div class="alma-fam-info">👪 '+out.join(' · ')+'</div>':''}
 /* Quiénes viajan en una cuenta (titular + acompañantes) y fecha del viaje */
 function almaViajeros(b){return [b.passengerId,...(b.companions||[])].filter(Boolean)}
@@ -4134,7 +4135,7 @@ for(const id of ['almaG1','almaG2'])almaBuscadorInit(id);
 /* Inscribir: cuenta familiar */
 window.almaFamSync=()=>{const n=(ALMA_CAP[$('almaRoomType')?.value]||1)-1,box=$('almaFamBox');if(!box)return;
  const hay=[1,2,3].slice(0,n).some(k=>$('almaMate'+k)?.value);box.style.display=n>0&&hay?'':'none';
- const tit=almaPax($('bookingExistingPassenger')?.value),menores=[1,2,3].slice(0,n).map(k=>almaPax($('almaMate'+k)?.value)).filter(p=>p&&almaEdad(p.birthDate)<18);
+ const tit=almaPax($('bookingExistingPassenger')?.value),menores=[1,2,3].slice(0,n).map(k=>almaPax($('almaMate'+k)?.value)).filter(p=>p&&almaMenor(p));
  $('almaFamHint').textContent=menores.length&&!box.dataset.tocado?'Hay menores: se sugiere cuenta familiar.':'';
  if(menores.length&&!box.dataset.tocado)$('almaFamSi').checked=true;
  const g=findGroup($('bookingGroup')?.value),pr=Number($('bookingBasePrice')?.value||0),cant=1+[1,2,3].slice(0,n).filter(k=>$('almaMate'+k)?.value).length;
