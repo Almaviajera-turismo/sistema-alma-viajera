@@ -318,3 +318,10 @@ $('almaPor')?.addEventListener('change',()=>almaPorSync());
 $('almaPorShare')?.addEventListener('input',()=>{$('almaPorShare').dataset.tocado='1';updatePaymentPreview()});
 {const o=window.syncPaymentInfo;window.syncPaymentInfo=(...a)=>{const r=o(...a);if($('almaPorShare'))$('almaPorShare').dataset.tocado='';almaPorSync();return r}}
 {const o=window.openPayment;window.openPayment=(...a)=>{if($('almaPor'))$('almaPor').value='';if($('almaPorShare'))$('almaPorShare').dataset.tocado='';o(...a);almaPorSync()}}
+
+/* ---------- 11) Imprimir el recibo en una sola hoja A4 ---------- */
+window.addEventListener('beforeprint',()=>{const d=$('receiptDialog'),r=$('receiptPaper');
+ if(!d?.open||!r||document.body.classList.contains('print-report'))return;
+ r.style.zoom='';const w=r.style.width;r.style.width='700px';const h=r.scrollHeight;r.style.width=w;   // ancho útil de A4 con márgenes de 12 mm
+ const z=Math.min(1,990/h);if(z<1)r.style.zoom=String(Math.floor(z*100)/100)});
+window.addEventListener('afterprint',()=>{const r=$('receiptPaper');if(r)r.style.zoom=''});
