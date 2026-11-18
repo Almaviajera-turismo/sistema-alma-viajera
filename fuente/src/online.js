@@ -353,22 +353,23 @@ async function syncOnce() {
   for (const name of ORDER) {
     const map = MAPS[name], before = snap[name] || new Map();
     for (const [id, { o, row }] of cur[name]) {
-      const json = JSON.stringify(row);
+      const json = JSON.stringify(row), parentId = map.parent ? row[map.parent[2]] : undefined;
+      let saved;
       if (!before.has(id)) {
         const body = Object.fromEntries(Object.entries(row).filter(([k, v]) => v !== null && !SERVER_ONLY.has(k)));
-        const [saved] = await rest('POST', map.table, body, 'return=representation');
-        merge(o, saved, map);
+        [saved] = await rest('POST', map.table, body, 'return=representation');
       } else if (before.get(id) !== json) {
         const old = JSON.parse(before.get(id)), diff = {};
         for (const k of Object.keys(row)) if (!SERVER_ONLY.has(k) && JSON.stringify(row[k]) !== JSON.stringify(old[k])) diff[k] = row[k];
         for (const k of Object.keys(old)) if (!(k in row) && !SERVER_ONLY.has(k)) diff[k] = null;
-        if (Object.keys(diff).length) {
-          const [saved] = await rest('PATCH', `${map.table}?id=eq.${encodeURIComponent(id)}`, diff, 'return=representation');
-          if (!saved) throw new Error('No tenés permiso para modificar este registro.');
-          merge(o, saved, map);
-        }
+        if (!Object.keys(diff).length) continue;
+        [saved] = await rest('PATCH', `${map.table}?id=eq.${encodeURIComponent(id)}`, diff, 'return=representation');
+        if (!saved) throw new Error('No tenés permiso para modificar este registro.');
       } else continue;
-      const parentId = map.parent ? row[map.parent[2]] : undefined;
+      // Si mientras se guardaba hubo otro cambio en este registro, no se pisa con la respuesta:
+      // se guarda en la próxima vuelta.
+      if (JSON.stringify(toRow(o, map, parentId)) !== json) { again = true; (snap[name] ||= new Map()).set(id, json); continue; }
+      merge(o, saved, map);
       (snap[name] ||= new Map()).set(id, JSON.stringify(toRow(o, map, parentId)));
     }
   }

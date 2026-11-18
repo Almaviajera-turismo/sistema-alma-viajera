@@ -130,37 +130,59 @@ for(const [form,sel,tel] of [['groupBookingForm','bookingExistingPassenger','alm
  $(form)?.addEventListener('submit',()=>{const p=state.passengers.find(x=>x.id===$(sel)?.value),v=String($(tel)?.value||'').trim();
   if(p&&v&&!p.phone){p.phone=v;audit('Teléfono agregado a la ficha','Pasajero',p.name+' · '+v)}},true)}
 
-/* ---------- 7) Tipo de habitación al inscribir y con quién la comparte ---------- */
-const ALMA_CAP={'Single':1,'Doble matrimonial':2,'Doble twin':2,'Triple':3};
+/* ---------- 7) Tipo de habitación y con quién la comparte (al inscribir y al editar la reserva) ---------- */
+const ALMA_CAP={'Single':1,'Doble matrimonial':2,'Doble twin':2,'Triple':3,'Cuádruple':4};
+const ALMA_TIPO_VIEJO={'Doble':'Doble matrimonial','Twin':'Doble twin'};
 function almaPaxOpts(excl){return '<option value="">— Elegí un pasajero de la base —</option>'+state.passengers.filter(p=>p.name&&p.id!==excl).slice().sort((a,b)=>a.name.localeCompare(b.name,'es')).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+(p.doc?' · DNI '+esc(p.doc):'')+'</option>').join('')}
-window.almaRoomSync=()=>{const t=$('almaRoomType')?.value||'',n=(ALMA_CAP[t]||1)-1;
- $('almaRoomMates').style.display=n>0?'':'none';$('almaMate1Wrap').style.display=n>=1?'':'none';$('almaMate2Wrap').style.display=n>=2?'':'none'};
-function almaRoomReset(){const tit=$('bookingExistingPassenger')?.value||'';
- for(const id of ['almaMate1','almaMate2']){const s=$(id);if(!s)continue;s.innerHTML=almaPaxOpts(tit);almaBuscadorReset(id)}
- if($('almaRoomType'))$('almaRoomType').value='';almaRoomSync()}
-{const o=window.openGroupBooking;window.openGroupBooking=(...a)=>{o(...a);almaRoomReset()}}
-$('bookingExistingPassenger')?.addEventListener('change',()=>{const tit=$('bookingExistingPassenger').value;for(const id of ['almaMate1','almaMate2']){const s=$(id);if(!s)continue;const v=s.value;s.innerHTML=almaPaxOpts(tit);s.value=v===tit?'':v;almaBuscadorReset(id)}});
-function almaRoomLabel(g,type){const pre=type.startsWith('Doble')?'Doble':type;const n=(g.rooms||[]).filter(r=>String(r.label||'').startsWith(pre+' ')).length+1;return pre+' '+String(n).padStart(2,'0')}
+function almaHabSync(pre){const t=$(pre+'RoomType')?.value||'',n=(ALMA_CAP[t]||1)-1;$(pre+'RoomMates').style.display=n>0?'':'none';for(const k of [1,2,3])$(pre+'Mate'+k+'Wrap').style.display=n>=k?'':'none'}
+window.almaRoomSync=()=>almaHabSync('alma');window.almaERoomSync=()=>almaHabSync('almaE');
+function almaHabMates(pre,tit,vals=[]){for(const k of [1,2,3]){const s=$(pre+'Mate'+k);if(!s)continue;s.innerHTML=almaPaxOpts(tit);almaBuscadorReset(pre+'Mate'+k);s.value=vals[k-1]||''}}
+function almaHabLeer(pre,tit){const t=$(pre+'RoomType')?.value||'',cap=ALMA_CAP[t]||1;return {type:t,mates:[...new Set([1,2,3].slice(0,cap-1).map(k=>$(pre+'Mate'+k)?.value).filter(v=>v&&v!==tit))]}}
+function almaRoomLabel(g,type){const pre=type.startsWith('Doble')?'Doble':type;let n=1;while((g.rooms||[]).some(r=>r.label===pre+' '+String(n).padStart(2,'0')))n++;return pre+' '+String(n).padStart(2,'0')}
+/* Ubica a la reserva b (y a sus compañeros) en una habitación del tipo pedido. Devuelve true si cambió algo. */
+function almaAsignarHab(b,type,mates){
+ const g=findGroup(b.groupId);if(!g)return false;g.rooms||=[];const activa=x=>accountStatus(x)!=='Baja';
+ const old=g.rooms.find(r=>r.id===b.roomId),ocup=r=>state.bookings.filter(x=>x.kind==='grupal'&&x.groupId===g.id&&x.roomId===r.id&&activa(x));
+ const limpiar=()=>{g.rooms=g.rooms.filter(r=>ocup(r).length>0)};
+ if(!type){if(!old)return false;b.roomId='';b.roomType='';limpiar();audit('Habitación quitada','Rooming',b.client+' · '+g.name);return true}
+ const cap=ALMA_CAP[type]||1;mates=cap>1?mates.slice(0,cap-1):[];
+ const mb=[],faltan=[];
+ for(const pid of mates){const x=state.bookings.find(y=>y.kind==='grupal'&&y.groupId===g.id&&y.passengerId===pid&&activa(y));if(x)mb.push(x);else{const p=state.passengers.find(z=>z.id===pid);if(p)faltan.push(p)}}
+ if(faltan.length){const libres=g.capacity>0?g.capacity-state.bookings.filter(x=>x.kind==='grupal'&&x.groupId===g.id&&activa(x)).length:99;
+  if(libres<faltan.length)alert(faltan.map(p=>p.name).join(' y ')+': no quedan cupos en la salida, no se pudo/pudieron inscribir.');
+  else if(confirm(faltan.map(p=>p.name).join(' y ')+(faltan.length>1?' no están inscriptos':' no está inscripto/a')+' en '+g.name+'.\n\n¿Inscribir también, con el mismo precio ('+money(b.basePrice,g.currency)+') y en la misma habitación?\nCada pasajero tiene su propia cuenta.'))
+   for(const p of faltan){const x={id:uid(),kind:'grupal',groupId:g.id,client:p.name,phone:p.phone||'',passengerId:p.id,basePrice:Number(b.basePrice),owner:almaYo()||b.owner,notes:'',status:'Abierta',extensions:[]};captureSeller(x);state.bookings.unshift(x);mb.push(x);audit('Pasajero inscripto','Reserva grupal',x.client+' · '+g.name+' (comparte habitación con '+b.client+')')}}
+ const todos=[b,...mb];
+ if(old&&old.type===type&&todos.every(x=>x.roomId===old.id)&&ocup(old).every(x=>todos.includes(x)))return false; // sin cambios
+ let room=null;
+ if(old&&ocup(old).every(x=>todos.includes(x))){room=old}            // la misma habitación, se reacomoda
+ else for(const x of mb){const r=g.rooms.find(r=>r.id===x.roomId);if(r&&r.type===type&&ocup(r).filter(y=>!todos.includes(y)).length+todos.length<=cap){room=r;break}}
+ if(!room){room={id:uid(),label:almaRoomLabel(g,type),type,capacity:cap,notes:''};g.rooms.push(room);audit('Habitación creada','Rooming',g.name+' · '+room.label)}
+ if(room.type!==type){room.type=type;room.capacity=cap;room.label=almaRoomLabel(g,type)}
+ for(const x of todos){x.roomId=room.id;x.roomType=type}
+ limpiar();audit('Habitación asignada','Rooming',g.name+' · '+room.label+' · '+todos.map(x=>x.client).join(', '));
+ notify('Habitación '+room.label+': '+todos.map(x=>x.client).join(', '));return true}
+/* Inscribir */
+{const o=window.openGroupBooking;window.openGroupBooking=(...a)=>{o(...a);if($('almaRoomType'))$('almaRoomType').value='';almaHabMates('alma',$('bookingExistingPassenger')?.value||'');almaRoomSync()}}
+$('bookingExistingPassenger')?.addEventListener('change',()=>{const tit=$('bookingExistingPassenger').value,v=[1,2,3].map(k=>$('almaMate'+k)?.value);almaHabMates('alma',tit,v.map(x=>x===tit?'':x))});
 {let antes=null;
  $('groupBookingForm').addEventListener('submit',()=>{antes=new Set(state.bookings.map(b=>b.id))},true);
- $('groupBookingForm').addEventListener('submit',()=>{
-  if(!antes)return;const nueva=state.bookings.find(b=>!antes.has(b.id)&&b.kind==='grupal');antes=null;if(!nueva)return;
-  const type=nueva.roomType||'';if(!type)return;const g=findGroup(nueva.groupId);if(!g)return;g.rooms||=[];
-  const cap=ALMA_CAP[type]||1,activa=b=>accountStatus(b)!=='Baja';
-  const mates=cap>1?[...new Set([$('almaMate1')?.value,$('almaMate2')?.value].slice(0,cap-1).filter(v=>v&&v!==nueva.passengerId))]:[];
-  const mb=[],faltan=[];
-  for(const pid of mates){const b=state.bookings.find(x=>x.kind==='grupal'&&x.groupId===g.id&&x.passengerId===pid&&activa(x));if(b)mb.push(b);else faltan.push(state.passengers.find(p=>p.id===pid))}
-  if(faltan.length){const libres=g.capacity>0?g.capacity-state.bookings.filter(b=>b.kind==='grupal'&&b.groupId===g.id&&activa(b)).length:99;
-   if(libres<faltan.length)alert(faltan.map(p=>p.name).join(' y ')+' no se pudo/pudieron inscribir: no quedan cupos en la salida.');
-   else if(confirm(faltan.map(p=>p.name).join(' y ')+(faltan.length>1?' no están inscriptos':' no está inscripto/a')+' en '+g.name+'.\n\n¿Inscribir también, con el mismo precio ('+money(nueva.basePrice,g.currency)+') y en la misma habitación?\nCada pasajero tiene su propia cuenta.'))
-    for(const p of faltan){const b={id:uid(),kind:'grupal',groupId:g.id,client:p.name,phone:p.phone||'',passengerId:p.id,basePrice:Number(nueva.basePrice),owner:nueva.owner,notes:'',roomType:type,status:'Abierta',extensions:[]};captureSeller(b);state.bookings.unshift(b);mb.push(b);audit('Pasajero inscripto','Reserva grupal',b.client+' · '+g.name+' (comparte habitación con '+nueva.client+')')}}
-  // si un compañero ya está en una habitación con lugar, se suma ahí; si no, habitación nueva
-  const todos=[nueva,...mb];let room=null;
-  for(const b of mb){const r=g.rooms.find(r=>r.id===b.roomId);if(r){const occ=state.bookings.filter(x=>x.groupId===g.id&&x.roomId===r.id&&activa(x)&&!todos.includes(x)).length;if(occ+todos.length<=Number(r.capacity)){room=r;break}}}
-  if(!room){room={id:uid(),label:almaRoomLabel(g,type),type,capacity:cap,notes:''};g.rooms.push(room);audit('Habitación creada','Rooming',g.name+' · '+room.label)}
-  for(const b of todos){b.roomId=room.id;b.roomType=room.type}
-  audit('Habitación asignada','Rooming',g.name+' · '+room.label+' · '+todos.map(b=>b.client).join(', '));
-  save();if(window.currentGroupDetail===g.id)renderGroupDetail();notify('Habitación '+room.label+': '+todos.map(b=>b.client).join(', '))})}
+ $('groupBookingForm').addEventListener('submit',()=>{if(!antes)return;const nueva=state.bookings.find(b=>!antes.has(b.id)&&b.kind==='grupal');antes=null;if(!nueva)return;
+  const {type,mates}=almaHabLeer('alma',nueva.passengerId);if(!type)return;
+  if(almaAsignarHab(nueva,type,mates)){save();if(window.currentGroupDetail===nueva.groupId)renderGroupDetail()}})}
+/* Editar reserva (grupal): muestra la habitación actual y deja cambiarla */
+{const o=window.editBooking;window.editBooking=(id,...a)=>{o(id,...a);const b=findBooking(id),box=$('almaERoomBox');if(!box)return;
+ if(!b||b.kind!=='grupal'){box.style.display='none';return}box.style.display='';
+ const g=findGroup(b.groupId),r=(g?.rooms||[]).find(x=>x.id===b.roomId);
+ const occ=r?state.bookings.filter(x=>x.id!==b.id&&x.kind==='grupal'&&x.groupId===b.groupId&&x.roomId===r.id&&accountStatus(x)!=='Baja'):[];
+ const t=r?(ALMA_TIPO_VIEJO[r.type]||r.type):'';const sel=$('almaERoomType');if(t&&![...sel.options].some(o=>o.value===t))sel.add(new Option(t,t));sel.value=t;
+ almaHabMates('almaE',b.passengerId,occ.map(x=>x.passengerId));almaERoomSync();
+ $('almaERoomNow').innerHTML=r?'Hoy: <b>'+esc(r.label)+'</b> ('+esc(r.type)+')'+(occ.length?' con <b>'+occ.map(x=>esc(x.client)).join(', ')+'</b>':' · sin compañeros asignados'):'Hoy: sin habitación asignada.';
+ window.__almaEditRoom={id,type:sel.value,mates:occ.map(x=>x.passengerId).sort().join(',')}}}
+$('editBookingForm').addEventListener('submit',()=>{const st=window.__almaEditRoom;if(!st||$('editBookingDialog').open)return;window.__almaEditRoom=null;
+ const b=findBooking(st.id);if(!b||b.kind!=='grupal')return;const {type,mates}=almaHabLeer('almaE',b.passengerId);
+ if(type===st.type&&mates.slice().sort().join(',')===st.mates)return;
+ if(almaAsignarHab(b,type,mates)){save();if(window.currentGroupDetail===b.groupId)renderGroupDetail()}});
 /* Ficha del pasajero: con quién comparte habitación / viaja */
 function almaHabInfo(b,pid){
  if(b.kind==='grupal'){const g=findGroup(b.groupId),r=(g?.rooms||[]).find(x=>x.id===b.roomId);if(!r)return '';
@@ -168,4 +190,4 @@ function almaHabInfo(b,pid){
   return '<span class="sub alma-hab">🛏 '+esc(r.type)+' · '+esc(r.label)+(m.length?' · comparte con '+m.map(x=>'<button type="button" class="textlink" onclick="openPassengerProfile(&quot;'+x.passengerId+'&quot;)">'+esc(x.client)+'</button>').join(', '):'')+'</span>'}
  const ids=[b.passengerId,...(b.companions||[])].filter(x=>x&&x!==pid),ps=ids.map(x=>state.passengers.find(p=>p.id===x)).filter(Boolean);
  return ps.length?'<span class="sub alma-hab">👥 Viaja con '+ps.map(p=>'<button type="button" class="textlink" onclick="openPassengerProfile(&quot;'+p.id+'&quot;)">'+esc(p.name)+'</button>').join(', ')+'</span>':''}
-for(const id of ['almaMate1','almaMate2'])almaBuscadorInit(id);
+for(const id of ['almaMate1','almaMate2','almaMate3','almaEMate1','almaEMate2','almaEMate3'])almaBuscadorInit(id);

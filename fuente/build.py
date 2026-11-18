@@ -294,12 +294,23 @@ fsub('<label class="field">Contacto / teléfono<input name="phone" id="individua
      '<label class="field">Teléfono de contacto<input name="phone" id="individualPhone" type="tel" placeholder="Ej.: 11 4992-4267">')
 # Inscribir: tipo de habitación y compañeros de habitación (src/mejoras.js, punto 7)
 fsub('<label class="field">Responsable<select name="owner" id="bookingOwner"></select></label>',
-     '<label class="field">Tipo de habitación<select name="roomType" id="almaRoomType" onchange="almaRoomSync()"><option value="">Sin definir (asignar después)</option><option>Single</option><option>Doble matrimonial</option><option>Doble twin</option><option>Triple</option></select></label>'
+     '<label class="field">Tipo de habitación<select name="roomType" id="almaRoomType" onchange="almaRoomSync()"><option value="">Sin definir (asignar después)</option><option>Single</option><option>Doble matrimonial</option><option>Doble twin</option><option>Triple</option><option>Cuádruple</option></select></label>'
      '<div class="field full alma-mates" id="almaRoomMates" style="display:none"><span>Comparte la habitación con</span>'
      '<label class="field" id="almaMate1Wrap">Pasajero 2<select id="almaMate1"></select></label>'
      '<label class="field" id="almaMate2Wrap">Pasajero 3<select id="almaMate2"></select></label>'
+     '<label class="field" id="almaMate3Wrap">Pasajero 4<select id="almaMate3"></select></label>'
      '<small class="hint">Si todavía no está inscripto en la salida, el sistema ofrece inscribirlo con su propia cuenta. Si no está en la base, dalo de alta primero.</small></div>'
      '<label class="field">Responsable<select name="owner" id="bookingOwner"></select></label>')
+fsub('<label class="field" data-edit-kind="grupal individual aereo">Precio del paquete / viaje<input type="number" name="price"',
+     '<div class="field full" id="almaERoomBox" style="display:none"><div class="formgrid">'
+     '<label class="field">Tipo de habitación<select id="almaERoomType" onchange="almaERoomSync()"><option value="">Sin definir (asignar después)</option><option>Single</option><option>Doble matrimonial</option><option>Doble twin</option><option>Triple</option><option>Cuádruple</option></select></label>'
+     '<div class="field full alma-mates" id="almaERoomMates" style="display:none"><span>Comparte la habitación con</span>'
+     '<label class="field" id="almaEMate1Wrap">Pasajero 2<select id="almaEMate1"></select></label>'
+     '<label class="field" id="almaEMate2Wrap">Pasajero 3<select id="almaEMate2"></select></label>'
+     '<label class="field" id="almaEMate3Wrap">Pasajero 4<select id="almaEMate3"></select></label>'
+     '<small class="hint">Si todavía no está inscripto en la salida, el sistema ofrece inscribirlo con su propia cuenta. Si no está en la base, dalo de alta primero.</small></div>'
+     '</div><small class="hint" id="almaERoomNow"></small></div>'
+     '<label class="field" data-edit-kind="grupal individual aereo">Precio del paquete / viaje<input type="number" name="price"')
 fsub("(b.passengerId!==id?' · acompañante de '+esc(b.client):'')+'</span></td>",
      "(b.passengerId!==id?' · acompañante de '+esc(b.client):'')+'</span>'+almaHabInfo(b,id)+'</td>")
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
