@@ -392,3 +392,16 @@ function almaResOpciones(){const s=$('almaResTipo');if(!s)return;const v=s.value
  s.innerHTML='<option value="">Todos los tipos</option><option value="individual">Viajes individuales</option><option value="aereo">Aéreos</option><option value="grupal">Todas las salidas grupales</option>'+state.groups.slice().sort((a,b)=>String(a.departure).localeCompare(String(b.departure))).map(g=>'<option value="'+esc(g.id)+'">'+esc((g.fileNumber?g.fileNumber+' · ':'')+g.name)+'</option>').join('');s.value=[...s.options].some(o=>o.value===v)?v:''}
 window.almaResFiltrar=()=>renderBookings();
 {const o=renderBookings;renderBookings=(...a)=>{almaResOpciones();const r=o(...a);const n=almaReservasFiltradas().length,t=state.bookings.length,el=$('almaResInfo');if(el)el.textContent=n===t?t+' reservas':n+' de '+t+' reservas';return r}}
+
+// ── Teléfono repetido en la ficha del pasajero: avisa al cargarlo y al guardar ──
+function almaTelClave(v){const d=String(v||'').replace(/\D/g,'');return d.length>=8?d.slice(-8):''}
+function almaTelRepetidos(tel,exceptId){const k=almaTelClave(tel);if(!k)return [];return state.passengers.filter(q=>q.id!==exceptId&&almaTelClave(q.phone)===k)}
+window.almaTelAviso=()=>{const f=$('passengerForm');if(!f||!f.elements.phone)return;let el=$('almaTelDup');
+ if(!el){el=document.createElement('div');el.id='almaTelDup';el.className='sub';el.style.cssText='color:#b45309;font-weight:600;margin-top:4px';f.elements.phone.insertAdjacentElement('afterend',el)}
+ const r=almaTelRepetidos(f.elements.phone.value,f.elements.editId?.value||'');el.textContent=r.length?'⚠ Este teléfono ya está en la ficha de: '+r.map(q=>q.name).join(', '):'';el.style.display=r.length?'':'none'};
+{const f=$('passengerForm');if(f&&f.elements.phone){f.elements.phone.addEventListener('input',almaTelAviso);f.elements.phone.addEventListener('blur',almaTelAviso);
+ f.addEventListener('submit',e=>{const id=f.elements.editId?.value||'',tel=f.elements.phone.value,p=state.passengers.find(q=>q.id===id);
+  if(p&&almaTelClave(p.phone)===almaTelClave(tel))return; // no cambió el teléfono
+  const r=almaTelRepetidos(tel,id);if(!r.length)return;
+  if(!confirm('El teléfono '+tel+' ya está cargado en la ficha de:\n• '+r.map(q=>q.name).join('\n• ')+'\n\nSi es la misma persona, cancelá y usá esa ficha.\n¿Guardar igual con este teléfono?')){e.preventDefault();e.stopImmediatePropagation()}},true)}}
+{const o=window.openPassengerForm;window.openPassengerForm=(...a)=>{o(...a);almaTelAviso()}}
