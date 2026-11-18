@@ -342,14 +342,15 @@ function almaRecSalidas(){const s=$('almaRecSal');if(!s)return;const v=s.value;
 {const o=renderPayments;renderPayments=(...a)=>{almaRecSalidas();const r=o(...a);almaRecInfoUpd();return r}}
 
 /* ---------- 13) Cobros sin efectivo: a dónde fue el dinero y cuándo se acreditó ---------- */
-const ALMA_DESTINOS=['BBVA pesos (agencia)','BBVA dólares (agencia)','Otro'];
+const ALMA_MP='Mercado Pago Grupostur (antigua SRL) · cuenta de socio';
+const ALMA_DESTINOS=['BBVA pesos (agencia)','BBVA dólares (agencia)',ALMA_MP,'Otro'];
 function almaDestTxt(p){if(!p||p.method==='Efectivo')return '';return p.destination?' · Destino: '+p.destination+(p.destinationDetail?' ('+p.destinationDetail+')':'')+(p.creditedDate?' · acreditado '+fmt(p.creditedDate):''):' · Destino sin indicar'}
 function almaDestFields(x){if(x.method==='Efectivo'||!x.almaDest)return {};return {destination:x.almaDest,destinationDetail:String(x.almaDestDet||'').trim(),creditedDate:x.almaDestFecha||x.date||today()}}
 {const o=window.almaPayFxSync;window.almaPayFxSync=(...a)=>{o(...a);const f=$('paymentForm'),w=$('almaDestWrap');if(!f||!w)return;const no=f.elements.method.value!=='Efectivo';
  w.style.display=no?'':'none';f.elements.almaDest.required=no;const otro=no&&f.elements.almaDest.value==='Otro';f.elements.almaDestDet.required=otro;$('almaDestDetLbl').textContent=otro?'¿A qué cuenta fue? (obligatorio)':'Detalle (opcional)';if(no&&!f.elements.almaDestFecha.value)f.elements.almaDestFecha.value=f.elements.date?.value||today()}}
 $('paymentForm')?.elements.date?.addEventListener('change',e=>{const f=$('paymentForm');if(f.elements.almaDestFecha&&!f.elements.almaDestFecha.dataset.tocado)f.elements.almaDestFecha.value=e.target.value});
 $('paymentForm')?.elements.almaDestFecha?.addEventListener('change',e=>{e.target.dataset.tocado='1'});
-{const o=window.openPayment;window.openPayment=(...a)=>{o(...a);const f=$('paymentForm');if(f?.elements.almaDest){f.elements.almaDest.value='';f.elements.almaDestDet.value='';f.elements.almaDestFecha.value=f.elements.date?.value||today();f.elements.almaDestFecha.dataset.tocado='';almaPayFxSync()}}}
+{const o=window.openPayment;window.openPayment=(...a)=>{o(...a);const f=$('paymentForm');if(f?.elements.almaDest){f.elements.almaDest.value=ALMA_MP;f.elements.almaDestDet.value='';f.elements.almaDestFecha.value=f.elements.date?.value||today();f.elements.almaDestFecha.dataset.tocado='';almaPayFxSync()}}}
 /* Caja del día: cobros que no son efectivo (no entran en el arqueo) */
 function almaNoEfectivoHoy(box){const ps=state.payments.filter(p=>p.cashbox===box&&p.date===today()&&p.method!=='Efectivo'&&!p.voidedAt);if(!ps.length)return '';
  return '<div class="alma-noef"><b>Cobros de hoy sin efectivo</b> <span class="sub">(no entran en el arqueo)</span>'+ps.map(p=>{const b=findBooking(p.bookingId),c=p.payCurrency||p.snapshot?.currency||(b?cur(b):'USD');

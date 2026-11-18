@@ -263,7 +263,7 @@ const AYUDA = [
     pasos: [
       'Andá a <b>Cobros y recibos → + Registrar cobro</b> (o tocá <b>Cobrar</b> en la reserva del pasajero).',
       'Arriba, en <b>Pasajero</b>, buscalo por nombre, DNI o pasaporte: aparecen sus viajes con saldo y elegís a cuál le cobrás. Los datos de la cuenta se completan solos. Si no tiene viaje, elegí «➕ Cuenta nueva».',
-      'Si no es en efectivo, en <b>¿A dónde fue el dinero?</b> elegí <b>BBVA pesos</b>, <b>BBVA dólares</b> u <b>Otro</b> (en Otro escribí a qué cuenta fue) y la fecha de acreditación. Queda en la caja del día y en el libro de movimientos.',
+      'Si no es en efectivo, en <b>¿A dónde fue el dinero?</b> elegí <b>BBVA pesos</b>, <b>BBVA dólares</b>, <b>Mercado Pago Grupostur</b> (cuenta de socio; viene elegida por ahora) u <b>Otro</b> (en Otro escribí a qué cuenta fue) y la fecha de acreditación. Queda en la caja del día y en el libro de movimientos.',
       'Si la reserva tiene varios pasajeros y paga uno solo, en <b>¿Por quién paga?</b> elegí «Solo …». Se propone su parte (total dividido en partes iguales, se puede cambiar) y el recibo muestra el saldo de ese pasajero.',
       'Elegí la oficina (Centro o Gaona), el importe, la fecha, el medio de pago y la moneda. Si es transferencia, podés adjuntar el comprobante.',
       'Tocá <b>Guardar y ver recibo</b>. El número y el concepto (Seña, A cuenta o Saldo) se ponen solos.',
