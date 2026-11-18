@@ -123,5 +123,10 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 }
 
 .alma-rc-dir { font-size: 11px; margin-bottom: 6px; }
+.alma-recfiltros { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+.alma-recfiltros input { flex: 1 1 260px; border: 2px solid #b9a8dc; border-radius: 10px; padding: 10px 12px; font-size: 15px; }
+.alma-recfiltros select { flex: 0 1 240px; border: 1px solid #d8d2e6; border-radius: 10px; padding: 9px 10px; font-size: 14px; background: #fff; }
+.alma-recfiltros .hint { flex: 1 1 100%; }
+@media print { .alma-recfiltros { display: none !important; } }
 </style>
 

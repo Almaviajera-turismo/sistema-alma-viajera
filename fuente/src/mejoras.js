@@ -321,3 +321,22 @@ $('almaPorShare')?.addEventListener('input',()=>{$('almaPorShare').dataset.tocad
 
 /* ---------- 11) Recibo de media hoja: el diseño compacto de impresión está en login.css ---------- */
 window.addEventListener('afterprint',()=>{const r=$('receiptPaper');if(r)r.style.zoom=''});
+
+/* ---------- 12) Buscador de recibos (por pasajero, salida / viaje y estado) ---------- */
+function almaReciboViaje(p){const b=findBooking(p.bookingId);return {b,kind:p.snapshot?.kind||b?.kind||'',gid:b?.groupId||p.snapshot?.groupId||''}}
+function almaRecibosFiltrados(){
+ const q=almaNorm($('almaRecQ')?.value||'').trim(),sal=$('almaRecSal')?.value||'',est=$('almaRecEst')?.value||'';
+ const words=q?q.split(/\s+/):[];
+ return state.payments.filter(p=>{const {b,kind,gid}=almaReciboViaje(p);
+  if(sal==='individual'||sal==='aereo'){if(kind!==sal)return false}else if(sal&&gid!==sal)return false;
+  if(est==='vigentes'&&p.voidedAt)return false;if(est==='anulados'&&!p.voidedAt)return false;
+  if(!words.length)return true;
+  const nombres=[p.snapshot?.client,b?.client,p.forPassengerName,...(b?almaViajeros(b).map(i=>almaPax(i)?.name):[])].join(' ');
+  const hay=almaNorm(nombres+' '+p.number+' '+(p.snapshot?.fileNumber||(b?bookingFile(b):''))+' '+(p.snapshot?.trip||(b?trip(b):'')));
+  return words.every(w=>hay.includes(w))})}
+window.almaRecFiltrar=()=>renderPayments();
+function almaRecInfoUpd(){const n=almaRecibosFiltrados(),tot={};for(const p of n)if(!p.voidedAt){const c=p.snapshot?.currency||(findBooking(p.bookingId)?cur(findBooking(p.bookingId)):'USD');tot[c]=(tot[c]||0)+Number(p.amount)}
+ const el=$('almaRecInfo');if(el)el.textContent=n.length+(n.length===1?' recibo':' recibos')+(Object.keys(tot).length?' · cobrado (sin anulados): '+Object.entries(tot).map(([c,v])=>money(v,c)).join(' + '):'')};
+function almaRecSalidas(){const s=$('almaRecSal');if(!s)return;const v=s.value;
+ s.innerHTML='<option value="">Todos los viajes</option><option value="individual">Viajes individuales</option><option value="aereo">Aéreos</option>'+state.groups.slice().sort((a,b)=>String(a.departure).localeCompare(String(b.departure))).map(g=>'<option value="'+esc(g.id)+'">'+esc((g.fileNumber?g.fileNumber+' · ':'')+g.name)+'</option>').join('');s.value=[...s.options].some(o=>o.value===v)?v:''}
+{const o=renderPayments;renderPayments=(...a)=>{almaRecSalidas();const r=o(...a);almaRecInfoUpd();return r}}

@@ -364,6 +364,14 @@ fsub('<div class="receipt-line"><b>EXTENSIÓN/ES:</b><br>${money(extended,snap.c
 fsub("<b>CONCEPTO:</b> <strong>${esc(p.concept||'No informado')}</strong></div></div><div><div class=\"receipt-line\"><b>PRECIO BASE:</b>",
      "<b>CONCEPTO:</b> <strong>${esc(p.concept||'No informado')}</strong></div>${notes?`<div class=\"receipt-line\"><b>OBSERVACIONES:</b> ${esc(notes)}</div>`:''}</div><div><div class=\"receipt-line\"><b>PRECIO BASE:</b>")
 fsub('<div class="receipt-notes"><b>OBSERVACIONES:</b> ${esc(notes||\'—\')}</div>', '')
+# Cobros: buscador de recibos (src/mejoras.js, punto 12)
+fsub('<div id="paymentsTable"></div>',
+     '<div class="alma-recfiltros"><input type="search" id="almaRecQ" placeholder="🔍 Buscar por pasajero, recibo o file" oninput="almaRecFiltrar()" autocomplete="off">'
+     '<select id="almaRecSal" onchange="almaRecFiltrar()"><option value="">Todos los viajes</option></select>'
+     '<select id="almaRecEst" onchange="almaRecFiltrar()"><option value="">Vigentes y anulados</option><option value="vigentes">Solo vigentes</option><option value="anulados">Solo anulados</option></select>'
+     '<small class="hint" id="almaRecInfo"></small></div><div id="paymentsTable"></div>')
+fsub("function renderPayments(){table('paymentsTable',['Recibo','Pasajero / viaje','Fecha','Cobrado','Acción'],state.payments.map(",
+     "function renderPayments(){table('paymentsTable',['Recibo','Pasajero / viaje','Fecha','Cobrado','Acción'],almaRecibosFiltrados().map(")
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización')]:

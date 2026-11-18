@@ -208,6 +208,11 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 }
 
 .alma-rc-dir { font-size: 11px; margin-bottom: 6px; }
+.alma-recfiltros { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+.alma-recfiltros input { flex: 1 1 260px; border: 2px solid #b9a8dc; border-radius: 10px; padding: 10px 12px; font-size: 15px; }
+.alma-recfiltros select { flex: 0 1 240px; border: 1px solid #d8d2e6; border-radius: 10px; padding: 9px 10px; font-size: 14px; background: #fff; }
+.alma-recfiltros .hint { flex: 1 1 100%; }
+@media print { .alma-recfiltros { display: none !important; } }
 </style>
 
 <style>
@@ -454,7 +459,7 @@ input[type=checkbox],input[type=radio]{accent-color:var(--purple)}
 
 </section>
 <section class="page" id="reservas"><p class="description">Tocá «Editar reserva» para corregir datos operativos sin afectar pagos ya emitidos. Cada pasajero conserva una cuenta diferente para cada salida grupal, viaje individual o venta de aéreos. Cuando termina el viaje (incluida una extensión) y el saldo está en cero, la cuenta aparece cerrada automáticamente. Si queda deuda, sigue abierta. Cada extensión se suma solamente a la reserva de ese pasajero.</p><div class="panel"><div class="panelhead"><h2>Reservas de pasajeros</h2><div class="actionset"><button class="btn ghost" onclick="openGroupBooking()">+ Inscribir al grupo</button><button class="btn" onclick="openOrder('individual')">+ Pedido individual</button></div></div><div id="bookingsTable"></div></div></section>
-<section class="page" id="cobros"><p class="description">Cada pago se registra en la misma cuenta del viaje del pasajero. El recibo incluye el paquete, las extensiones contratadas, los pagos anteriores y el saldo restante. Podés imprimirlo, guardarlo como PDF y preparar un correo para enviarlo al pasajero.</p><div class="panel"><div class="panelhead"><h2>Recibos registrados</h2><button class="btn" onclick="openPayment()">+ Registrar cobro</button></div><div id="paymentsTable"></div></div><div class="panel"><b>Impresión</b><p class="hint">En la oficina, elegí la impresora Samsung SCX-4833FD en el diálogo de impresión. Desde el teléfono podés guardar el recibo como PDF cuando el navegador lo permita. Para mandar por email, primero guardá el PDF y después adjuntalo desde tu correo.</p></div></section>
+<section class="page" id="cobros"><p class="description">Cada pago se registra en la misma cuenta del viaje del pasajero. El recibo incluye el paquete, las extensiones contratadas, los pagos anteriores y el saldo restante. Podés imprimirlo, guardarlo como PDF y preparar un correo para enviarlo al pasajero.</p><div class="panel"><div class="panelhead"><h2>Recibos registrados</h2><button class="btn" onclick="openPayment()">+ Registrar cobro</button></div><div class="alma-recfiltros"><input type="search" id="almaRecQ" placeholder="🔍 Buscar por pasajero, recibo o file" oninput="almaRecFiltrar()" autocomplete="off"><select id="almaRecSal" onchange="almaRecFiltrar()"><option value="">Todos los viajes</option></select><select id="almaRecEst" onchange="almaRecFiltrar()"><option value="">Vigentes y anulados</option><option value="vigentes">Solo vigentes</option><option value="anulados">Solo anulados</option></select><small class="hint" id="almaRecInfo"></small></div><div id="paymentsTable"></div></div><div class="panel"><b>Impresión</b><p class="hint">En la oficina, elegí la impresora Samsung SCX-4833FD en el diálogo de impresión. Desde el teléfono podés guardar el recibo como PDF cuando el navegador lo permita. Para mandar por email, primero guardá el PDF y después adjuntalo desde tu correo.</p></div></section>
 
 <section class="page" id="tesoreria">
 <p class="description">Tablero de la empresa: cuánta plata hay y dónde, cuánto nos deben, cuánto debemos y cuánto ganamos. Dólares y pesos siempre por separado.</p>
@@ -1928,6 +1933,13 @@ const AYUDA = [
       'Tocá <b>Guardar y ver recibo</b>. El número y el concepto (Seña, A cuenta o Saldo) se ponen solos.',
     ],
     nota: 'Los cobros en efectivo necesitan la caja de esa oficina abierta hoy.' },
+  { tema: 'Cobros', titulo: 'Buscar un recibo', pantallas: ['cobros'],
+    claves: 'buscar recibo filtrar salida pasajero numero file anulados encontrar',
+    pasos: [
+      'En <b>Cobros y recibos</b>, arriba de la lista, escribí el nombre del pasajero, el número de recibo o el file. También encuentra a los acompañantes de una reserva.',
+      'Para ver solo los de una salida, elegila en la lista de viajes (o «Viajes individuales» / «Aéreos»). Podés ver solo los vigentes o solo los anulados.',
+      'Debajo ves cuántos recibos hay y el total cobrado de esos recibos (sin contar los anulados).',
+    ] },
   { tema: 'Cobros', titulo: 'Imprimir o mandar un recibo por email', pantallas: ['cobros', 'reservas'],
     claves: 'imprimir pdf mail email enviar recibo comprobante',
     pasos: [
@@ -3205,7 +3217,7 @@ window.tripPaxAddExisting=()=>{const id=$('tripPaxExisting').value;if(!id)return
 window.tripPaxRemove=id=>{const t=tripPaxTarget;if(!confirm('¿Quitar a '+paxName(id)+' de este '+(t.kind==='order'?'pedido':'viaje')+'? Su ficha sigue en la Base de pasajeros.'))return;setTripPaxIds(t,tripPaxIds(t).filter(x=>x!==id));audit('Pasajero quitado del viaje','Pasajero',paxName(id));renderTripPax()};
 window.tripPaxNew=()=>{const t=tripPaxTarget;openPassengerForm('');window.__paxTarget=t};
 function renderBookings(){table('bookingsTable',['Pasajero / viaje','Tipo / cuenta','Total','Abonado / saldo','Acciones'],state.bookings.map(b=>'<tr><td><b>'+esc(b.client)+'</b>'+companionLine(b)+'<div><button class="btn ghost tiny" style="margin:6px 0" onclick="editBooking(&quot;'+b.id+'&quot;)">✎ Editar reserva</button>'+(b.kind!=='grupal'?' <button class="btn ghost tiny" style="margin:6px 0" onclick="openTripPassengers(&quot;booking&quot;,&quot;'+b.id+'&quot;)">👥 Pasajeros ('+paxCount(b)+')</button>':'')+'</div><span class="sub">'+esc(trip(b))+' · File '+esc(bookingFile(b))+'</span>'+sellerDetail(b)+'<button class="btn ghost tiny" style="margin-top:6px" onclick="takeFollowUp(&quot;'+b.id+'&quot;)">Tomar seguimiento</button></td><td>'+badge(b.kind)+'<span class="sub">'+accountChip(b)+'</span></td><td><b>'+money(total(b),cur(b))+'</b>'+(discountOf(b)?'<span class="sub" style="color:#1f8a4c">Descuento −'+money(discountOf(b),cur(b))+(b.discountReason?' · '+esc(b.discountReason):'')+'</span>':'')+(b.kind==='grupal'?'<span class="sub">Incluye '+(b.extensions||[]).length+' extensión/es</span>':'')+'</td><td>'+money(paid(b),cur(b))+' abonado<span class="sub"><b>Saldo: '+money(balance(b),cur(b))+'</b></span>'+bookingDueCell(b)+'</td><td><div class="account-buttons">'+(b.kind==='grupal'&&accountStatus(b)==='Abierta'?'<button class="btn ghost tiny" onclick="openExtension(&quot;'+b.id+'&quot;)">+ Extensión</button>':'')+'<button class="btn tiny" onclick="openPayment(&quot;'+b.id+'&quot;)" '+(payable(b)?'':'disabled')+'>Cobrar</button>'+(accountStatus(b)==='Abierta'?'<button class="btn ghost tiny" data-action="cerrar-grupo" onclick="setAccountStatus(&quot;'+b.id+'&quot;,&quot;cerrar&quot;)" '+(Math.abs(balance(b))<0.009?'':'disabled title="Requiere saldo cero"')+'>Cerrar</button>':'<button class="btn ghost tiny" data-action="reabrir-grupo" onclick="setAccountStatus(&quot;'+b.id+'&quot;,&quot;reabrir&quot;)">Reabrir</button>')+'</div></td></tr>'),'No hay reservas todavía')}
-function renderPayments(){table('paymentsTable',['Recibo','Pasajero / viaje','Fecha','Cobrado','Acción'],state.payments.map(p=>{let b=findBooking(p.bookingId);return '<tr><td><b>'+esc(p.number)+'</b><span class="sub">'+esc(p.concept||'Sin concepto')+'</span>'+(p.voidedAt?'<span class="sub"><span class="tag orange">ANULADO</span></span>':'')+'</td><td>'+esc(p.snapshot?.client||b?.client||'No encontrada')+'<span class="sub">'+esc(p.snapshot?.trip||(b?trip(b):''))+' · File '+esc(p.snapshot?.fileNumber||(b?bookingFile(b):'—'))+'</span></td><td>'+fmt(p.date)+'<span class="sub">'+formatCaptureStamp(p.recordedAt)+' · '+esc(p.recordedBy||'Sin usuario registrado')+'</span>'+'</td><td><b>'+money(p.amount,p.snapshot?.currency||(b?cur(b):'USD'))+'</b><span class="sub">'+esc(p.method)+' · '+esc(cashboxName(p.cashbox))+'</span>'+(p.voidedAt?'<span class="sub">Motivo: '+esc(p.voidReason||'—')+'</span>':'')+'</td><td><div class="account-buttons"><button class="btn ghost tiny" onclick="showReceipt(&quot;'+p.id+'&quot;)">Ver / imprimir</button>'+(!p.voidedAt&&window.demoRole==='socio'?'<button class="btn danger tiny" onclick="voidReceipt(&quot;'+p.id+'&quot;)">Anular recibo</button>':'')+'</div></td></tr>'}),'Todavía no hay pagos')}
+function renderPayments(){table('paymentsTable',['Recibo','Pasajero / viaje','Fecha','Cobrado','Acción'],almaRecibosFiltrados().map(p=>{let b=findBooking(p.bookingId);return '<tr><td><b>'+esc(p.number)+'</b><span class="sub">'+esc(p.concept||'Sin concepto')+'</span>'+(p.voidedAt?'<span class="sub"><span class="tag orange">ANULADO</span></span>':'')+'</td><td>'+esc(p.snapshot?.client||b?.client||'No encontrada')+'<span class="sub">'+esc(p.snapshot?.trip||(b?trip(b):''))+' · File '+esc(p.snapshot?.fileNumber||(b?bookingFile(b):'—'))+'</span></td><td>'+fmt(p.date)+'<span class="sub">'+formatCaptureStamp(p.recordedAt)+' · '+esc(p.recordedBy||'Sin usuario registrado')+'</span>'+'</td><td><b>'+money(p.amount,p.snapshot?.currency||(b?cur(b):'USD'))+'</b><span class="sub">'+esc(p.method)+' · '+esc(cashboxName(p.cashbox))+'</span>'+(p.voidedAt?'<span class="sub">Motivo: '+esc(p.voidReason||'—')+'</span>':'')+'</td><td><div class="account-buttons"><button class="btn ghost tiny" onclick="showReceipt(&quot;'+p.id+'&quot;)">Ver / imprimir</button>'+(!p.voidedAt&&window.demoRole==='socio'?'<button class="btn danger tiny" onclick="voidReceipt(&quot;'+p.id+'&quot;)">Anular recibo</button>':'')+'</div></td></tr>'}),'Todavía no hay pagos')}
 
 function renderFlights(){const isAdmin=window.demoRole==='socio';const heads=isAdmin?['Pasajero / ruta','Fecha / operador','Neto / venta','Margen bruto','Acción']:['Pasajero / ruta','Fecha / operador','Precio vendido','Acción'];table('flightsTable',heads,state.flights.map(f=>'<tr><td><b>'+esc(f.client)+'</b><div><button class="btn ghost tiny" style="margin:6px 0" onclick="editBooking(&quot;'+f.bookingId+'&quot;)">✎ Editar reserva</button> '+almaDelBtn('almaEliminarViaje',f.bookingId)+'</div><span class="sub">'+esc(f.destination)+'</span></td><td>'+fmt(f.departure)+'<span class="sub">Operador: '+esc(f.operator)+' · '+esc(f.stage||'Solicitado')+'</span>'+sellerDetail(findBooking(f.bookingId))+'</td><td>'+(isAdmin?'Costó '+money(f.net,f.currency)+'<span class="sub"><b>Vendido '+money(f.sell,f.currency)+'</b></span>':'<b>'+money(f.sell,f.currency)+'</b>')+'</td>'+(isAdmin?'<td><b>'+money(Number(f.sell)-Number(f.net),f.currency)+'</b></td>':'')+'<td><button class="btn tiny" onclick="openPayment(&quot;'+f.bookingId+'&quot;)" '+(payable(findBooking(f.bookingId))?'':'disabled')+'>Cobrar</button></td></tr>'),'Todavía no hay aéreos. Agregá una venta para registrar neto, precio vendido y operador')}
 
@@ -4273,6 +4285,25 @@ $('almaPorShare')?.addEventListener('input',()=>{$('almaPorShare').dataset.tocad
 
 /* ---------- 11) Recibo de media hoja: el diseño compacto de impresión está en login.css ---------- */
 window.addEventListener('afterprint',()=>{const r=$('receiptPaper');if(r)r.style.zoom=''});
+
+/* ---------- 12) Buscador de recibos (por pasajero, salida / viaje y estado) ---------- */
+function almaReciboViaje(p){const b=findBooking(p.bookingId);return {b,kind:p.snapshot?.kind||b?.kind||'',gid:b?.groupId||p.snapshot?.groupId||''}}
+function almaRecibosFiltrados(){
+ const q=almaNorm($('almaRecQ')?.value||'').trim(),sal=$('almaRecSal')?.value||'',est=$('almaRecEst')?.value||'';
+ const words=q?q.split(/\s+/):[];
+ return state.payments.filter(p=>{const {b,kind,gid}=almaReciboViaje(p);
+  if(sal==='individual'||sal==='aereo'){if(kind!==sal)return false}else if(sal&&gid!==sal)return false;
+  if(est==='vigentes'&&p.voidedAt)return false;if(est==='anulados'&&!p.voidedAt)return false;
+  if(!words.length)return true;
+  const nombres=[p.snapshot?.client,b?.client,p.forPassengerName,...(b?almaViajeros(b).map(i=>almaPax(i)?.name):[])].join(' ');
+  const hay=almaNorm(nombres+' '+p.number+' '+(p.snapshot?.fileNumber||(b?bookingFile(b):''))+' '+(p.snapshot?.trip||(b?trip(b):'')));
+  return words.every(w=>hay.includes(w))})}
+window.almaRecFiltrar=()=>renderPayments();
+function almaRecInfoUpd(){const n=almaRecibosFiltrados(),tot={};for(const p of n)if(!p.voidedAt){const c=p.snapshot?.currency||(findBooking(p.bookingId)?cur(findBooking(p.bookingId)):'USD');tot[c]=(tot[c]||0)+Number(p.amount)}
+ const el=$('almaRecInfo');if(el)el.textContent=n.length+(n.length===1?' recibo':' recibos')+(Object.keys(tot).length?' · cobrado (sin anulados): '+Object.entries(tot).map(([c,v])=>money(v,c)).join(' + '):'')};
+function almaRecSalidas(){const s=$('almaRecSal');if(!s)return;const v=s.value;
+ s.innerHTML='<option value="">Todos los viajes</option><option value="individual">Viajes individuales</option><option value="aereo">Aéreos</option>'+state.groups.slice().sort((a,b)=>String(a.departure).localeCompare(String(b.departure))).map(g=>'<option value="'+esc(g.id)+'">'+esc((g.fileNumber?g.fileNumber+' · ':'')+g.name)+'</option>').join('');s.value=[...s.options].some(o=>o.value===v)?v:''}
+{const o=renderPayments;renderPayments=(...a)=>{almaRecSalidas();const r=o(...a);almaRecInfoUpd();return r}}
 
 render();
 updateBackButton();

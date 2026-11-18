@@ -268,6 +268,13 @@ const AYUDA = [
       'Tocá <b>Guardar y ver recibo</b>. El número y el concepto (Seña, A cuenta o Saldo) se ponen solos.',
     ],
     nota: 'Los cobros en efectivo necesitan la caja de esa oficina abierta hoy.' },
+  { tema: 'Cobros', titulo: 'Buscar un recibo', pantallas: ['cobros'],
+    claves: 'buscar recibo filtrar salida pasajero numero file anulados encontrar',
+    pasos: [
+      'En <b>Cobros y recibos</b>, arriba de la lista, escribí el nombre del pasajero, el número de recibo o el file. También encuentra a los acompañantes de una reserva.',
+      'Para ver solo los de una salida, elegila en la lista de viajes (o «Viajes individuales» / «Aéreos»). Podés ver solo los vigentes o solo los anulados.',
+      'Debajo ves cuántos recibos hay y el total cobrado de esos recibos (sin contar los anulados).',
+    ] },
   { tema: 'Cobros', titulo: 'Imprimir o mandar un recibo por email', pantallas: ['cobros', 'reservas'],
     claves: 'imprimir pdf mail email enviar recibo comprobante',
     pasos: [
