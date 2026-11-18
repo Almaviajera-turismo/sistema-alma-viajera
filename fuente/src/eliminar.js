@@ -30,14 +30,13 @@ window.almaEliminarPasajero=id=>{
 window.almaEliminarViaje=id=>{
  if(!adminOnly())return;
  const b=findBooking(id);if(!b)return;
- const que=b.kind==='aereo'?'el aéreo de '+b.client:'el viaje de '+b.client,m=[];
- if(b.kind==='grupal')return alert('Para sacar a un pasajero de una salida grupal usá «Dar de baja» dentro de la salida.');
+ const g=b.kind==='grupal'?findGroup(b.groupId):null,que=b.kind==='aereo'?'el aéreo de '+b.client:g?'la inscripción de '+b.client+' en '+g.name:'el viaje de '+b.client,m=[];
  const rec=almaRecibos(id),comp=almaCompromisosDe('B:'+id);
- if(rec.length)m.push('Tiene '+rec.length+' recibo/s ('+rec.map(p=>p.number+(p.voidedAt?' anulado':'')).join(', ')+'). Los recibos numerados no se borran: dejá la reserva y anulá los recibos que estén mal.');
+ if(rec.length)m.push('Tiene '+rec.length+' recibo/s ('+rec.map(p=>p.number+(p.voidedAt?' anulado':'')).join(', ')+'). Los recibos numerados no se borran: dejá la reserva y anulá los recibos que estén mal'+(g?' (o dala de baja dentro de la salida).':'.'));
  if(comp.length)m.push('Tiene '+comp.length+' compromiso/s con proveedores. Eliminalos primero en Proveedores.');
  if(m.length)return almaNoSe(que,m);
- if(!almaConfirmar(b.kind==='aereo'?'Eliminar aéreo':'Eliminar viaje individual','Pasajero: '+b.client+'\nFile: '+(b.fileNumber||bookingFile(b)||'—')+'\nViaje: '+(b.tour||'—')+'\nTotal: '+money(total(b),cur(b))))return;
- almaBorrarReserva(b);save();render();notify(b.kind==='aereo'?'Aéreo eliminado':'Viaje eliminado')};
+ if(!almaConfirmar(b.kind==='aereo'?'Eliminar aéreo':g?'Eliminar inscripción a la salida':'Eliminar viaje individual','Pasajero: '+b.client+'\nFile: '+(b.fileNumber||bookingFile(b)||'—')+'\nViaje: '+(g?g.name:(b.tour||'—'))+((b.companions||[]).length?'\nCon: '+(b.companions||[]).map(i=>state.passengers.find(p=>p.id===i)?.name||'').join(', '):'')+'\nTotal: '+money(total(b),cur(b))))return;
+ almaBorrarReserva(b);if(g&&g.rooms)g.rooms=g.rooms.filter(r=>state.bookings.some(x=>x.roomId===r.id));save();render();if(g&&window.currentGroupDetail===g.id)renderGroupDetail();notify(b.kind==='aereo'?'Aéreo eliminado':g?'Inscripción eliminada':'Reserva eliminada')};
 
 window.almaEliminarSalida=id=>{
  if(!adminOnly())return;

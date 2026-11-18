@@ -386,6 +386,9 @@ fsub("if(BANK_METHODS.includes(m.method))out.push", "if(BANK_METHODS.includes(m.
 fsub("Para movimientos en efectivo, abrí la caja primero.</p>')+'</div>'}", "Para movimientos en efectivo, abrí la caja primero.</p>')+almaNoEfectivoHoy(box)+'</div>'}")
 fsub("+'</b><span class=\"sub\">'+esc(p.method)+' · '+esc(cashboxName(p.cashbox))+'</span>'+(p.voidedAt?",
      "+'</b><span class=\"sub\">'+esc(p.method)+' · '+esc(cashboxName(p.cashbox))+'</span>'+(p.method!=='Efectivo'?'<span class=\"sub\">'+(p.destination?'→ '+esc(p.destination)+(p.destinationDetail?' ('+esc(p.destinationDetail)+')':'')+(p.creditedDate?' · acreditado '+fmt(p.creditedDate):''):'<span class=\"alma-auto\">Destino sin indicar</span>'+(window.demoRole==='socio'&&!p.voidedAt?' <button type=\"button\" class=\"btn ghost tiny\" onclick=\"almaDestEditar(&quot;'+p.id+'&quot;)\">Indicar destino</button>':''))+'</span>':'')+(p.voidedAt?")
+# Reservas: botón Eliminar (socios) en cada reserva
+fsub("onclick=\"setAccountStatus(&quot;'+b.id+'&quot;,&quot;reabrir&quot;)\">Reabrir</button>')+'</div></td></tr>'),'No hay reservas todavía')",
+     "onclick=\"setAccountStatus(&quot;'+b.id+'&quot;,&quot;reabrir&quot;)\">Reabrir</button>')+almaDelBtn('almaEliminarViaje',b.id)+'</div></td></tr>'),'No hay reservas todavía')")
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización'),
