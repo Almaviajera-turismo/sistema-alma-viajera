@@ -286,3 +286,35 @@ $('paymentForm')?.addEventListener('submit',e=>{const f=e.target;if($('payMode')
  if(n&&state.passengers.some(p=>String(p.name||'').trim().toLocaleLowerCase('es-AR')===n))return;
  e.preventDefault();e.stopImmediatePropagation();
  if(confirm('El pasajero tiene que estar en la Base de pasajeros.\n\nBuscalo arriba en «Pasajero» o tocá Aceptar para darlo de alta ahora.'))almaPayAlta()},true);
+
+/* ---------- 10) Cobro por un solo pasajero de una reserva con varios ---------- */
+function almaPagadoPor(b,pid,excl){return state.payments.filter(p=>p.bookingId===b.id&&!p.voidedAt&&p.forPassengerId===pid&&p.id!==excl).reduce((n,p)=>n+Number(p.amount),0)}
+function almaPorBooking(){if($('payMode')?.value==='nuevo')return null;return findBooking($('payBooking')?.value)}
+window.almaPorSync=()=>{const box=$('almaPorBox');if(!box)return;const b=almaPorBooking(),ids=b?almaViajeros(b):[];
+ if(!b||ids.length<2){box.style.display='none';$('almaPor').innerHTML='<option value="">Toda la reserva</option>';$('almaPorShareWrap').style.display='none';updatePaymentPreview();return}
+ box.style.display='';const sel=$('almaPor'),v=sel.value;
+ sel.innerHTML='<option value="">Toda la reserva ('+ids.length+' pasajeros)</option>'+ids.map(i=>'<option value="'+esc(i)+'">Solo '+esc(almaPax(i)?.name||'pasajero')+'</option>').join('');
+ sel.value=ids.includes(v)?v:'';const uno=!!sel.value;$('almaPorShareWrap').style.display=uno?'':'none';
+ if(uno&&!$('almaPorShare').dataset.tocado)$('almaPorShare').value=Math.round(total(b)/ids.length*100)/100;
+ $('almaPorShareLbl').textContent='Parte de este pasajero ('+cur(b)+')';updatePaymentPreview()};
+function almaPorNote(amount,c){const b=almaPorBooking(),pid=$('almaPor')?.value;if(!b||!pid)return '';const p=almaPax(pid),share=Number($('almaPorShare').value||0),antes=almaPagadoPor(b,pid);
+ if(!(share>0))return '<div class="alma-fx alma-fx-warn">Ingresá la parte que le corresponde a '+esc(p?.name||'este pasajero')+'.</div>';
+ const desp=Math.max(0,share-antes-(Number.isFinite(amount)?amount:0));
+ const extra=(Number.isFinite(amount)?amount:0)-(share-antes);
+ return '<div class="alma-fx'+(extra>0.009?' alma-fx-warn':'')+'">Pago de <b>'+esc(p?.name||'')+'</b> · su parte: '+money(share,c)+' · pagó antes: '+money(antes,c)+' · <b>su saldo luego del pago: '+money(desp,c)+'</b>'+(extra>0.009?'<br>Ojo: paga '+money(extra,c)+' más que lo que le falta a este pasajero.':'')+'</div>'}
+function almaPorPaxFields(b,amount){const pid=$('almaPor')?.value;if(!pid||!b||!almaViajeros(b).includes(pid))return {};
+ const share=Number($('almaPorShare').value||0),antes=almaPagadoPor(b,pid);
+ return {forPassengerId:pid,forPassengerName:almaPax(pid)?.name||'',forPaxCount:almaViajeros(b).length,forShare:share,forPaidBefore:antes,forBalanceAfter:Math.max(0,Math.round((share-antes-amount)*100)/100)}}
+function almaReciboPasajero(p,snap){return p.forPassengerId?esc(p.forPassengerName)+(p.forPassengerName!==snap.client?' <small>(reserva a nombre de '+esc(snap.client)+')</small>':''):esc(snap.client)}
+function almaReciboMontos(p,snap,extended,orig){if(!p.forPassengerId)return orig;const c=snap.currency;
+ return '<div class="receipt-line"><b>PAGO A CUENTA DE:</b><br><b>'+esc(p.forPassengerName)+'</b> (1 de '+p.forPaxCount+' pasajeros)</div>'
+  +'<div class="receipt-line"><b>PARTE DEL PASAJERO:</b><br>'+money(p.forShare,c)+'</div>'
+  +'<div class="receipt-line"><b>PAGOS ANTERIORES DEL PASAJERO:</b><br>'+money(p.forPaidBefore,c)+'</div>'
+  +'<div class="receipt-line"><b>RECIBIDO AHORA:</b><br><b>'+money(p.amount,c)+'</b>'+almaFxRecibo(p,c)+'</div>'
+  +'<div class="receipt-line"><b>SALDO DEL PASAJERO TRAS ESTE PAGO:</b><br><b>'+money(p.forBalanceAfter,c)+'</b></div>'
+  +'<div class="receipt-line"><small>Total de la reserva: '+money(snap.total,c)+' · saldo total de la reserva: '+money(snap.balanceAfter,c)+'</small></div>'}
+for(const id of ['payBooking','payMode','payKind','payExistingGroup'])$(id)?.addEventListener('change',()=>almaPorSync());
+$('almaPor')?.addEventListener('change',()=>almaPorSync());
+$('almaPorShare')?.addEventListener('input',()=>{$('almaPorShare').dataset.tocado='1';updatePaymentPreview()});
+{const o=window.syncPaymentInfo;window.syncPaymentInfo=(...a)=>{const r=o(...a);if($('almaPorShare'))$('almaPorShare').dataset.tocado='';almaPorSync();return r}}
+{const o=window.openPayment;window.openPayment=(...a)=>{if($('almaPor'))$('almaPor').value='';if($('almaPorShare'))$('almaPorShare').dataset.tocado='';o(...a);almaPorSync()}}

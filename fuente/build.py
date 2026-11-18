@@ -255,9 +255,9 @@ fsub('<label class="field">Medio de pago<select name="method"><option>Transferen
      '<label class="field full" id="almaPayFileWrap">Comprobante de la transferencia (opcional)<input type="file" id="almaPayFile" accept="image/*,application/pdf"></label>'
      '<div class="field"><label for="paymentAutoConcept">')
 fsub("const raw=form.elements.amount.value;\n const amount=Number(raw);", "const raw=form.elements.amount.value;\n const amount=almaFxApplied(Number(raw),currency);")
-fsub("$('paymentBalancePreview').innerHTML=msg;", "$('paymentBalancePreview').innerHTML=almaFxNote(Number(raw),currency)+msg;")
+fsub("$('paymentBalancePreview').innerHTML=msg;", "$('paymentBalancePreview').innerHTML=almaFxNote(Number(raw),currency)+almaPorNote(amount,currency)+msg;")
 fsub("const amount=Number(x.amount);if(!(amount>0)||amount>balance(b)+0.001)", "const fx=almaFx(x,cur(b));if(!fx)return;const amount=fx.applied;if(!(amount>0)||amount>balance(b)+0.001)")
-fsub("recordedBy:x.recordedBy,recordedAt:new Date().toISOString()};", "recordedBy:x.recordedBy,recordedAt:new Date().toISOString(),...fx.fields};")
+fsub("recordedBy:x.recordedBy,recordedAt:new Date().toISOString()};", "recordedBy:x.recordedBy,recordedAt:new Date().toISOString(),...fx.fields,...almaPorPaxFields(b,amount)};")
 fsub('<b>RECIBIDO AHORA:</b><br><b>${money(p.amount,snap.currency)}</b>', '<b>RECIBIDO AHORA:</b><br><b>${money(p.amount,snap.currency)}</b>${almaFxRecibo(p,snap.currency)}')
 fsub('<div id="receiptPaper" class="receipt"></div>', '<div id="receiptPaper" class="receipt"></div><div id="almaComprob" class="alma-comp"></div>')
 # caja y banco: el efectivo/transferencia entra en la moneda en que se pagó
@@ -348,6 +348,13 @@ fsub('<form id="paymentForm"><div class="modalbody"><div class="formgrid">',
      '<div class="field full alma-mates alma-paybox"><label class="field full">Pasajero (de la Base de pasajeros)<select id="almaPayPax"></select></label>'
      '<div class="alma-alta"><button type="button" class="btn ghost tiny" onclick="almaPayAlta()">➕ Dar de alta pasajero nuevo</button></div>'
      '<label class="field full" id="almaPayTripWrap" style="display:none">Viaje al que le cobrás<select id="almaPayTrip" onchange="almaPayTripSync()"></select><small class="hint" id="almaPayTripInfo"></small></label></div>')
+# Cobro por un solo pasajero de la reserva (src/mejoras.js, punto 10)
+fsub('<div class="field full"><div class="infobox" id="payInfo"></div></div>', '<div class="field full"><div class="infobox" id="payInfo"></div></div><div class="field full alma-mates" id="almaPorBox" style="display:none"><label class="field full">¿Por quién paga?<select id="almaPor"><option value="">Toda la reserva</option></select></label>'
+     '<label class="field" id="almaPorShareWrap" style="display:none"><span id="almaPorShareLbl">Parte de este pasajero</span><input type="number" id="almaPorShare" min="0" step="0.01" inputmode="decimal"></label>'
+     '<small class="hint">El recibo muestra el saldo de ese pasajero. La parte se propone dividiendo el total en partes iguales; podés cambiarla.</small></div>')
+fsub('<b>PASAJERO:</b> ${esc(snap.client)}</div>', '<b>PASAJERO:</b> ${almaReciboPasajero(p,snap)}</div>')
+fsub('<div class="receipt-line"><b>TOTAL DEL VIAJE:</b><br><b>${money(snap.total,snap.currency)}</b></div><div class="receipt-line"><b>PAGOS ANTERIORES:</b><br>${money(snap.paidBefore,snap.currency)}</div><div class="receipt-line"><b>RECIBIDO AHORA:</b><br><b>${money(p.amount,snap.currency)}</b>${almaFxRecibo(p,snap.currency)}</div><div class="receipt-line"><b>SALDO PENDIENTE TRAS ESTE PAGO:</b><br><b>${money(snap.balanceAfter,snap.currency)}</b></div>',
+     '${almaReciboMontos(p,snap,extended,`<div class="receipt-line"><b>TOTAL DEL VIAJE:</b><br><b>${money(snap.total,snap.currency)}</b></div><div class="receipt-line"><b>PAGOS ANTERIORES:</b><br>${money(snap.paidBefore,snap.currency)}</div><div class="receipt-line"><b>RECIBIDO AHORA:</b><br><b>${money(p.amount,snap.currency)}</b>${almaFxRecibo(p,snap.currency)}</div><div class="receipt-line"><b>SALDO PENDIENTE TRAS ESTE PAGO:</b><br><b>${money(snap.balanceAfter,snap.currency)}</b></div>`)}')
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización')]:
