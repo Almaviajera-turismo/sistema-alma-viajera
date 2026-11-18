@@ -340,3 +340,34 @@ function almaRecInfoUpd(){const n=almaRecibosFiltrados(),tot={};for(const p of n
 function almaRecSalidas(){const s=$('almaRecSal');if(!s)return;const v=s.value;
  s.innerHTML='<option value="">Todos los viajes</option><option value="individual">Viajes individuales</option><option value="aereo">Aéreos</option>'+state.groups.slice().sort((a,b)=>String(a.departure).localeCompare(String(b.departure))).map(g=>'<option value="'+esc(g.id)+'">'+esc((g.fileNumber?g.fileNumber+' · ':'')+g.name)+'</option>').join('');s.value=[...s.options].some(o=>o.value===v)?v:''}
 {const o=renderPayments;renderPayments=(...a)=>{almaRecSalidas();const r=o(...a);almaRecInfoUpd();return r}}
+
+/* ---------- 13) Cobros sin efectivo: a dónde fue el dinero y cuándo se acreditó ---------- */
+const ALMA_DESTINOS=['BBVA pesos (agencia)','BBVA dólares (agencia)','Otro'];
+function almaDestTxt(p){if(!p||p.method==='Efectivo')return '';return p.destination?' · Destino: '+p.destination+(p.destinationDetail?' ('+p.destinationDetail+')':'')+(p.creditedDate?' · acreditado '+fmt(p.creditedDate):''):' · Destino sin indicar'}
+function almaDestFields(x){if(x.method==='Efectivo'||!x.almaDest)return {};return {destination:x.almaDest,destinationDetail:String(x.almaDestDet||'').trim(),creditedDate:x.almaDestFecha||x.date||today()}}
+{const o=window.almaPayFxSync;window.almaPayFxSync=(...a)=>{o(...a);const f=$('paymentForm'),w=$('almaDestWrap');if(!f||!w)return;const no=f.elements.method.value!=='Efectivo';
+ w.style.display=no?'':'none';f.elements.almaDest.required=no;const otro=no&&f.elements.almaDest.value==='Otro';f.elements.almaDestDet.required=otro;$('almaDestDetLbl').textContent=otro?'¿A qué cuenta fue? (obligatorio)':'Detalle (opcional)';if(no&&!f.elements.almaDestFecha.value)f.elements.almaDestFecha.value=f.elements.date?.value||today()}}
+$('paymentForm')?.elements.date?.addEventListener('change',e=>{const f=$('paymentForm');if(f.elements.almaDestFecha&&!f.elements.almaDestFecha.dataset.tocado)f.elements.almaDestFecha.value=e.target.value});
+$('paymentForm')?.elements.almaDestFecha?.addEventListener('change',e=>{e.target.dataset.tocado='1'});
+{const o=window.openPayment;window.openPayment=(...a)=>{o(...a);const f=$('paymentForm');if(f?.elements.almaDest){f.elements.almaDest.value='';f.elements.almaDestDet.value='';f.elements.almaDestFecha.value=f.elements.date?.value||today();f.elements.almaDestFecha.dataset.tocado='';almaPayFxSync()}}}
+/* Caja del día: cobros que no son efectivo (no entran en el arqueo) */
+function almaNoEfectivoHoy(box){const ps=state.payments.filter(p=>p.cashbox===box&&p.date===today()&&p.method!=='Efectivo'&&!p.voidedAt);if(!ps.length)return '';
+ return '<div class="alma-noef"><b>Cobros de hoy sin efectivo</b> <span class="sub">(no entran en el arqueo)</span>'+ps.map(p=>{const b=findBooking(p.bookingId),c=p.payCurrency||p.snapshot?.currency||(b?cur(b):'USD');
+  return '<div class="alma-noef-row"><span>'+esc(p.number)+' · '+esc(p.forPassengerName||p.snapshot?.client||b?.client||'')+' · <b>'+money(p.payCurrency?p.payAmount:p.amount,c)+'</b> · '+esc(p.method)+'</span><span class="sub">'+(p.destination?'→ '+esc(p.destination)+(p.destinationDetail?' ('+esc(p.destinationDetail)+')':'')+(p.creditedDate?' · acreditado '+fmt(p.creditedDate):''):'<span class="alma-auto">Destino sin indicar</span>')+'</span>'
+   +(!p.destination&&window.demoRole==='socio'?'<button type="button" class="btn ghost tiny" onclick="almaDestEditar(&quot;'+p.id+'&quot;)">Indicar destino</button>':'')+'</div>'}).join('')+'</div>'}
+/* Indicar el destino de un cobro ya registrado (socios) */
+window.almaDestEditar=id=>{const p=state.payments.find(x=>x.id===id);if(!p)return;let d=$('almaDestDialog');
+ if(!d){d=document.createElement('dialog');d.id='almaDestDialog';d.className='dialog';
+  d.innerHTML='<form method="dialog" id="almaDestForm"><div class="modalhead"><h2>¿A dónde fue el dinero?</h2></div><div class="modalbody"><p class="hint" id="almaDestInfo"></p><div class="formgrid">'
+   +'<label class="field">Destino<select name="dest" required><option value="">— Elegí —</option>'+ALMA_DESTINOS.map(x=>'<option>'+x+'</option>').join('')+'</select></label>'
+   +'<label class="field">Fecha de acreditación<input type="date" name="fecha" required></label>'
+   +'<label class="field full">Detalle (si es «Otro», a qué cuenta fue)<input name="det" placeholder="Ej.: cuenta personal de Hernan, Galicia"></label></div></div>'
+   +'<div class="modalfoot"><button type="button" class="btn ghost" onclick="closeDialog(\'almaDestDialog\')">Cancelar</button><button class="btn" type="submit">Guardar</button></div></form>';
+  document.body.appendChild(d);
+  d.querySelector('form').addEventListener('submit',e=>{e.preventDefault();const f=e.target,q=state.payments.find(x=>x.id===d.dataset.pid);if(!q)return;if(f.elements.dest.value==='Otro'&&!f.elements.det.value.trim())return alert('Escribí a qué cuenta fue el dinero.');
+   q.destination=f.elements.dest.value;q.destinationDetail=f.elements.det.value.trim();q.creditedDate=f.elements.fecha.value;
+   audit('Destino del cobro','Cobros',q.number+' → '+q.destination);save();closeDialog('almaDestDialog');render();notify('Destino guardado')})}
+ d.dataset.pid=id;const f=d.querySelector('form');f.reset();f.elements.fecha.value=p.date||today();
+ $('almaDestInfo').textContent=p.number+' · '+(p.snapshot?.client||'')+' · '+p.method;openDlg('almaDestDialog')};
+
+$('paymentForm')?.elements.almaDest?.addEventListener('change',()=>almaPayFxSync());

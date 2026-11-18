@@ -257,7 +257,7 @@ fsub('<label class="field">Medio de pago<select name="method"><option>Transferen
 fsub("const raw=form.elements.amount.value;\n const amount=Number(raw);", "const raw=form.elements.amount.value;\n const amount=almaFxApplied(Number(raw),currency);")
 fsub("$('paymentBalancePreview').innerHTML=msg;", "$('paymentBalancePreview').innerHTML=almaFxNote(Number(raw),currency)+almaPorNote(amount,currency)+msg;")
 fsub("const amount=Number(x.amount);if(!(amount>0)||amount>balance(b)+0.001)", "const fx=almaFx(x,cur(b));if(!fx)return;const amount=fx.applied;if(!(amount>0)||amount>balance(b)+0.001)")
-fsub("recordedBy:x.recordedBy,recordedAt:new Date().toISOString()};", "recordedBy:x.recordedBy,recordedAt:new Date().toISOString(),...fx.fields,...almaPorPaxFields(b,amount)};")
+fsub("recordedBy:x.recordedBy,recordedAt:new Date().toISOString()};", "recordedBy:x.recordedBy,recordedAt:new Date().toISOString(),...fx.fields,...almaPorPaxFields(b,amount),...almaDestFields(x)};")
 fsub('<b>RECIBIDO AHORA:</b><br><b>${money(p.amount,snap.currency)}</b>', '<b>RECIBIDO AHORA:</b><br><b>${money(p.amount,snap.currency)}</b>${almaFxRecibo(p,snap.currency)}')
 fsub('<div id="receiptPaper" class="receipt"></div>', '<div id="receiptPaper" class="receipt"></div><div id="almaComprob" class="alma-comp"></div>')
 # caja y banco: el efectivo/transferencia entra en la moneda en que se pagó
@@ -372,6 +372,20 @@ fsub('<div id="paymentsTable"></div>',
      '<small class="hint" id="almaRecInfo"></small></div><div id="paymentsTable"></div>')
 fsub("function renderPayments(){table('paymentsTable',['Recibo','Pasajero / viaje','Fecha','Cobrado','Acción'],state.payments.map(",
      "function renderPayments(){table('paymentsTable',['Recibo','Pasajero / viaje','Fecha','Cobrado','Acción'],almaRecibosFiltrados().map(")
+# Cobros sin efectivo: destino del dinero y fecha de acreditación (src/mejoras.js, punto 13)
+fsub('<label class="field full" id="almaPayFileWrap">',
+     '<div class="field full alma-mates" id="almaDestWrap" style="display:none"><span>¿A dónde fue el dinero?</span>'
+     '<label class="field">Destino<select name="almaDest"><option value="">— Elegí —</option><option>BBVA pesos (agencia)</option><option>BBVA dólares (agencia)</option><option>Otro</option></select></label>'
+     '<label class="field">Fecha de acreditación<input type="date" name="almaDestFecha"></label>'
+     '<label class="field full"><span id="almaDestDetLbl">Detalle (opcional)</span><input name="almaDestDet" placeholder="Ej.: cuenta personal de Hernan, Galicia"></label></div>'
+     '<label class="field full" id="almaPayFileWrap">')
+fsub("+' · File '+(p.snapshot?.fileNumber||bookingFile(b)),method:p.method,currency,amount:recv});",
+     "+' · File '+(p.snapshot?.fileNumber||bookingFile(b))+almaDestTxt(p),method:p.method,currency,amount:recv,dest:p.destination||''});")
+fsub("method:p.method,currency,amount:-recv})", "method:p.method,currency,amount:-recv,dest:p.destination||''})")
+fsub("if(BANK_METHODS.includes(m.method))out.push", "if(BANK_METHODS.includes(m.method)&&(!m.dest||String(m.dest).startsWith('BBVA')))out.push")
+fsub("Para movimientos en efectivo, abrí la caja primero.</p>')+'</div>'}", "Para movimientos en efectivo, abrí la caja primero.</p>')+almaNoEfectivoHoy(box)+'</div>'}")
+fsub("+'</b><span class=\"sub\">'+esc(p.method)+' · '+esc(cashboxName(p.cashbox))+'</span>'+(p.voidedAt?",
+     "+'</b><span class=\"sub\">'+esc(p.method)+' · '+esc(cashboxName(p.cashbox))+'</span>'+(p.method!=='Efectivo'?'<span class=\"sub\">'+(p.destination?'→ '+esc(p.destination)+(p.destinationDetail?' ('+esc(p.destinationDetail)+')':'')+(p.creditedDate?' · acreditado '+fmt(p.creditedDate):''):'<span class=\"alma-auto\">Destino sin indicar</span>'+(window.demoRole==='socio'&&!p.voidedAt?' <button type=\"button\" class=\"btn ghost tiny\" onclick=\"almaDestEditar(&quot;'+p.id+'&quot;)\">Indicar destino</button>':''))+'</span>':'')+(p.voidedAt?")
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización'),
