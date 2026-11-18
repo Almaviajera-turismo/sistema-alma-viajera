@@ -9,7 +9,7 @@ function almaYo(){return window.demoOperator||''}
 function almaFijar(id,solo){const s=typeof id==='string'?$(id):id,y=almaYo();if(!s||!y)return;
  if(solo){s.innerHTML='<option>'+esc(y)+'</option>';s.value=y;return}
  if(![...s.options].some(o=>o.value===y))s.add(new Option(y,y));s.value=y}
-{const o=window.openOrder;window.openOrder=(...a)=>{o(...a);almaFijar('orderOwner')}}
+{const o=window.openOrder;window.openOrder=(...a)=>{o(...a);almaFijar('orderOwner',true)}}
 {const o=window.openGroup;window.openGroup=(...a)=>{o(...a);almaFijar('groupOwner')}}
 {const o=window.openGroupBooking;window.openGroupBooking=(...a)=>{o(...a);almaFijar('bookingOwner');almaBuscadorReset('bookingExistingPassenger')}}
 {const o=window.openIndividual;window.openIndividual=(orderId,...a)=>{o(orderId,...a);if(!orderId)almaFijar($('individualForm').elements.owner);almaBuscadorReset('individualExistingPassenger')}}

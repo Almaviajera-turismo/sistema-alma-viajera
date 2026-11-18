@@ -280,6 +280,9 @@ fsub('<button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</butt
 fsub("👥 Pasajeros ('+(o.travelers||[]).length+')</button></div>'+optionTag(o)",
      "👥 Pasajeros ('+(o.travelers||[]).length+')</button> '+almaDelBtn('almaEliminarPedido',o.id,'Eliminar pedido')+'</div>'+optionTag(o)")
 
+
+# Pedidos de cotización: la columna muestra el responsable (quien lo cargó)
+fsub("table('ordersTable',['Cliente / destino','Tipo','Pedido','Socio'", "table('ordersTable',['Cliente / destino','Tipo','Pedido','Responsable'")
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización')]:
