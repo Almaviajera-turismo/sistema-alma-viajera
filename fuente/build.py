@@ -267,5 +267,13 @@ fsub("method:p.method,currency,amount:Number(p.amount)});", "method:p.method,cur
 fsub("method:p.method,currency,amount:-Number(p.amount)})", "method:p.method,currency,amount:-recv})")
 fsub("cur(findBooking(p.bookingId)||{kind:'individual',currency:c})===c).reduce((sum,p)=>sum+Number(p.amount),0)",
      "(p.payCurrency||cur(findBooking(p.bookingId)||{kind:'individual',currency:c}))===c).reduce((sum,p)=>sum+Number(p.payCurrency?p.payAmount:p.amount),0)")
+
+# Menú: «Caja» para todos (vendedor → Caja operativa; socio → Caja · Centro y Gaona)
+CAJA_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5M18 9.5v5"/></svg>'
+fsub('<span>Cobros y recibos</span></button>',
+     '<span>Cobros y recibos</span></button><button data-page="cajaoperativa" class="alma-nav-vend">' + CAJA_SVG + '<span>Caja</span></button>'
+     '<button data-page="caja" class="alma-nav-socio">' + CAJA_SVG + '<span>Caja</span></button>')
+fsub('<button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</button>',
+     '<button data-page="cajaoperativa" class="alma-nav-vend">' + CAJA_SVG + 'Caja</button><button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</button>')
 OUT.write_text(out, encoding='utf-8')
 print('OK', OUT, len(out) // 1024, 'KB')
