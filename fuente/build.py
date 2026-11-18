@@ -389,6 +389,14 @@ fsub("+'</b><span class=\"sub\">'+esc(p.method)+' · '+esc(cashboxName(p.cashbox
 # Reservas: botón Eliminar (socios) en cada reserva
 fsub("onclick=\"setAccountStatus(&quot;'+b.id+'&quot;,&quot;reabrir&quot;)\">Reabrir</button>')+'</div></td></tr>'),'No hay reservas todavía')",
      "onclick=\"setAccountStatus(&quot;'+b.id+'&quot;,&quot;reabrir&quot;)\">Reabrir</button>')+almaDelBtn('almaEliminarViaje',b.id)+'</div></td></tr>'),'No hay reservas todavía')")
+# Reservas: buscador y filtros (src/mejoras.js, punto 15)
+fsub('<div id="bookingsTable"></div>',
+     '<div class="alma-recfiltros"><input type="search" id="almaResQ" placeholder="🔍 Buscar por file, pasajero o viaje" oninput="almaResFiltrar()" autocomplete="off">'
+     '<select id="almaResTipo" onchange="almaResFiltrar()"><option value="">Todos los tipos</option></select>'
+     '<select id="almaResEst" onchange="almaResFiltrar()"><option value="">Todos los estados</option><option value="abiertas">Abiertas</option><option value="saldo">Con saldo pendiente</option><option value="cerradas">Cerradas</option><option value="baja">Dadas de baja</option></select>'
+     '<small class="hint" id="almaResInfo"></small></div><div id="bookingsTable"></div>')
+fsub("function renderBookings(){table('bookingsTable',['Pasajero / viaje','Tipo / cuenta','Total','Abonado / saldo','Acciones'],state.bookings.map(",
+     "function renderBookings(){table('bookingsTable',['Pasajero / viaje','Tipo / cuenta','Total','Abonado / saldo','Acciones'],almaReservasFiltradas().map(")
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización'),

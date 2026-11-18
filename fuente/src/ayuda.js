@@ -232,6 +232,13 @@ const AYUDA = [
       'Para ver el detalle con todos los recibos: en la ficha del pasajero tocá <b>Abrir cuenta</b> en ese viaje, o dentro de la salida grupal tocá <b>Ver cuenta individual</b>.',
       'Con <b>Tomar seguimiento</b> quedás vos como responsable de esa reserva.',
     ] },
+  { tema: 'Reservas', titulo: 'Buscar una reserva', pantallas: ['reservas'],
+    claves: 'buscar reserva file filtrar pasajero salida saldo abiertas cerradas encontrar',
+    pasos: [
+      'En <b>Reservas</b>, arriba de la lista, escribí el número de file, el nombre del pasajero (también acompañantes), la salida o el destino.',
+      'Podés filtrar por tipo (individuales, aéreos, todas las salidas o una salida en particular) y por estado (abiertas, con saldo pendiente, cerradas o dadas de baja).',
+      'Debajo ves cuántas reservas coinciden.',
+    ] },
   { tema: 'Reservas', titulo: 'Corregir una reserva', pantallas: ['reservas', 'grupales'],
     claves: 'editar reserva cambiar fecha hotel operador localizador',
     pasos: [

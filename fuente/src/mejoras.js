@@ -377,3 +377,18 @@ $('paymentForm')?.elements.almaDest?.addEventListener('change',()=>almaPayFxSync
 almaBuscadorInit('expenseOperation');
 {const i=$('expenseOperationBuscar');if(i)i.placeholder='🔍 Buscar file por número, pasajero, salida o destino'}
 {const o=window.refreshExpenseFiles;if(o)window.refreshExpenseFiles=(...a)=>{const r=o(...a);const s=$('expenseOperation'),v=s?.value;almaBuscadorReset('expenseOperation');if(s&&v)s.value=v;return r}}
+
+/* ---------- 15) Reservas: buscador (file, pasajero, viaje) y filtros ---------- */
+function almaReservasFiltradas(){
+ const q=almaNorm($('almaResQ')?.value||'').trim(),tipo=$('almaResTipo')?.value||'',est=$('almaResEst')?.value||'';const words=q?q.split(/\s+/):[];
+ return state.bookings.filter(b=>{
+  if(tipo==='individual'||tipo==='aereo'||tipo==='grupal'){if(b.kind!==tipo)return false}else if(tipo&&b.groupId!==tipo)return false;
+  const st=accountStatus(b);if(est==='abiertas'&&!(st==='Abierta'||st==='Reabierta'))return false;if(est==='saldo'&&!(balance(b)>0.009))return false;if(est==='cerradas'&&st!=='Cerrada')return false;if(est==='baja'&&st!=='Baja')return false;
+  if(!words.length)return true;
+  const g=b.kind==='grupal'?findGroup(b.groupId):null;
+  const hay=almaNorm([b.client,...almaViajeros(b).map(i=>almaPax(i)?.name),b.fileNumber,bookingFile(b),g?.fileNumber,g?.name,trip(b),b.owner].join(' '));
+  return words.every(w=>hay.includes(w))})}
+function almaResOpciones(){const s=$('almaResTipo');if(!s)return;const v=s.value;
+ s.innerHTML='<option value="">Todos los tipos</option><option value="individual">Viajes individuales</option><option value="aereo">Aéreos</option><option value="grupal">Todas las salidas grupales</option>'+state.groups.slice().sort((a,b)=>String(a.departure).localeCompare(String(b.departure))).map(g=>'<option value="'+esc(g.id)+'">'+esc((g.fileNumber?g.fileNumber+' · ':'')+g.name)+'</option>').join('');s.value=[...s.options].some(o=>o.value===v)?v:''}
+window.almaResFiltrar=()=>renderBookings();
+{const o=renderBookings;renderBookings=(...a)=>{almaResOpciones();const r=o(...a);const n=almaReservasFiltradas().length,t=state.bookings.length,el=$('almaResInfo');if(el)el.textContent=n===t?t+' reservas':n+' de '+t+' reservas';return r}}
