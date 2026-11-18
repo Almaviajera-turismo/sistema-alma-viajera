@@ -379,14 +379,14 @@ const AYUDA = [
       'Con Pasaporte se cargan número, emisión y vencimiento del pasaporte. Con DNI, el número y el <b>vencimiento del DNI</b>.',
       'En la lista de pasajeros el vencimiento aparece en rojo si ya venció.',
     ] },
-  { tema: 'General', titulo: 'Eliminar algo cargado por error', pantallas: ['pasajeros', 'individuales', 'aereos', 'grupales', 'proveedores'], socios: true,
+  { tema: 'General', titulo: 'Eliminar algo cargado por error', pantallas: ['pedidos', 'pasajeros', 'individuales', 'aereos', 'grupales', 'proveedores'], socios: true,
     claves: 'eliminar borrar error duplicado mal cargado quitar sacar suprimir',
     pasos: [
-      'Tocá <b>🗑 Eliminar</b>: está en la ficha del pasajero, en cada viaje individual y aéreo, en cada salida grupal, y en Proveedores en cada compromiso y cada pago.',
-      'Si tiene algo asociado, el sistema te dice qué es y no lo borra: un pasajero con viajes, un viaje con recibos o compromisos, una salida con inscriptos o pedidos, un compromiso con pagos.',
+      'Tocá <b>🗑 Eliminar</b>: está en cada pedido, en la ficha del pasajero, en cada viaje individual y aéreo, en cada salida grupal, y en Proveedores en cada compromiso y cada pago.',
+      'Si tiene algo asociado, el sistema te dice qué es y no lo borra: un pedido que ya es reserva, un pasajero con viajes, un viaje con recibos o compromisos, una salida con inscriptos o pedidos, un compromiso con pagos.',
       'Escribí <b>ELIMINAR</b> para confirmar. No se puede deshacer y queda registrado en la Bitácora con tu usuario.',
     ],
-    nota: 'Los recibos nunca se borran (ni anulados), así que un viaje que ya tuvo recibos no se puede eliminar: anulá los recibos que estén mal y dejá la reserva. Un pago en efectivo a un proveedor solo se elimina con la caja abierta y si ese día no está cerrado. Un pedido mal cargado se pasa a «Cancelado».' },
+    nota: 'Los recibos nunca se borran (ni anulados), así que un viaje que ya tuvo recibos no se puede eliminar: anulá los recibos que estén mal y dejá la reserva. Un pago en efectivo a un proveedor solo se elimina con la caja abierta y si ese día no está cerrado.' },
   { tema: 'General', titulo: 'Agregar un usuario nuevo o restablecer una contraseña', pantallas: ['inicio'], socios: true,
     claves: 'usuario nuevo vendedor alta acceso contraseña olvido restablecer',
     pasos: [

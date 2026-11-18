@@ -275,5 +275,9 @@ fsub('<span>Cobros y recibos</span></button>',
      '<button data-page="caja" class="alma-nav-socio">' + CAJA_SVG + '<span>Caja</span></button>')
 fsub('<button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</button>',
      '<button data-page="cajaoperativa" class="alma-nav-vend">' + CAJA_SVG + 'Caja</button><button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</button>')
+
+# Pedidos: botón «Eliminar pedido» (socios)
+fsub("👥 Pasajeros ('+(o.travelers||[]).length+')</button></div>'+optionTag(o)",
+     "👥 Pasajeros ('+(o.travelers||[]).length+')</button> '+almaDelBtn('almaEliminarPedido',o.id,'Eliminar pedido')+'</div>'+optionTag(o)")
 OUT.write_text(out, encoding='utf-8')
 print('OK', OUT, len(out) // 1024, 'KB')

@@ -72,3 +72,12 @@ window.almaEliminarPagoProveedor=id=>{
  }
  if(!almaConfirmar('Eliminar pago a proveedor','Proveedor: '+(e?.provider||'—')+'\nConcepto: '+(e?.concept||'—')+'\nFecha: '+fmt(p.date)+'\nImporte: '+money(p.amount,mon)+'\nMedio: '+p.method+' · '+cashboxName(p.cashbox)+'\nEl importe vuelve a quedar pendiente en el compromiso'+(p.method==='Efectivo'?' y se devuelve al efectivo esperado de la caja.':' y se recalcula el saldo del banco.')))return;
  almaQuitar(state.supplierPayments,id);save();render();notify('Pago eliminado')};
+
+window.almaEliminarPedido=id=>{
+ if(!adminOnly())return;
+ const o=findOrder(id);if(!o)return;
+ const res=state.bookings.filter(b=>b.sourceOrderId===id);
+ if(res.length)return almaNoSe('este pedido',['Ya se convirtió en '+res.length+' reserva/s ('+res.map(b=>b.fileNumber||bookingFile(b)||b.tour).join(', ')+'). Eliminá primero la reserva, o dejá el pedido como «Cancelado».']);
+ const sib=state.orders.filter(x=>x.optionGroup&&x.optionGroup===o.optionGroup&&x.id!==id);
+ if(!almaConfirmar('Eliminar pedido de cotización','Cliente: '+o.client+'\nDestino: '+(o.destination||'—')+'\nFecha del pedido: '+fmt(o.date)+(o.quote?'\nTiene una cotización armada: también se borra.':'')+(sib.length?'\nEs una de '+(sib.length+1)+' opciones: las otras quedan.':'')))return;
+ almaQuitar(state.orders,id);save();render();notify('Pedido eliminado')};
