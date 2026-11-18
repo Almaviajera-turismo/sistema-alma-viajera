@@ -279,5 +279,10 @@ fsub('<button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</butt
 # Pedidos: botón «Eliminar pedido» (socios)
 fsub("👥 Pasajeros ('+(o.travelers||[]).length+')</button></div>'+optionTag(o)",
      "👥 Pasajeros ('+(o.travelers||[]).length+')</button> '+almaDelBtn('almaEliminarPedido',o.id,'Eliminar pedido')+'</div>'+optionTag(o)")
+
+# Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
+for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
+             ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización')]:
+    out = out.replace(a, b)
 OUT.write_text(out, encoding='utf-8')
 print('OK', OUT, len(out) // 1024, 'KB')
