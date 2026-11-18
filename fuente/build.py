@@ -287,6 +287,11 @@ fsub("table('ordersTable',['Cliente / destino','Tipo','Pedido','Socio'", "table(
 # Pasajero obligatorio de la base (src/mejoras.js, punto 5)
 fsub('Pasajero ya registrado (opcional)<select id="bookingExistingPassenger"', 'Pasajero (de la Base de pasajeros)<select id="bookingExistingPassenger"')
 fsub('Pasajero ya cargado (opcional)<select id="individualExistingPassenger"', 'Titular (de la Base de pasajeros)<select id="individualExistingPassenger"')
+# Inscribir en grupo: «Teléfono de contacto», se completa con la ficha y si falta se guarda en la ficha
+fsub('placeholder="Un pasajero por ficha" required></label><label class="field">Contacto<input name="phone" placeholder="Opcional"></label>',
+     'placeholder="Un pasajero por ficha" required></label><label class="field">Teléfono de contacto<input name="phone" id="almaGroupPhone" type="tel" placeholder="Ej.: 11 4992-4267"></label>')
+fsub('<label class="field">Contacto / teléfono<input name="phone" id="individualPhone" placeholder="Opcional">',
+     '<label class="field">Teléfono de contacto<input name="phone" id="individualPhone" type="tel" placeholder="Ej.: 11 4992-4267">')
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización')]:
