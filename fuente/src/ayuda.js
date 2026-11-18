@@ -380,6 +380,15 @@ const AYUDA = [
       'Con Pasaporte se cargan número, emisión y vencimiento del pasaporte. Con DNI, el número y el <b>vencimiento del DNI</b>.',
       'En la lista de pasajeros el vencimiento aparece en rojo si ya venció.',
     ] },
+  { tema: 'Pasajeros', titulo: 'Familias con menores: padres, cuenta familiar y autorización de viaje', pantallas: ['pasajeros', 'grupales'],
+    claves: 'familia menor hijo hija padres madre padre tutor cuenta familiar autorizacion permiso viaje menores',
+    pasos: [
+      'Cargá a cada integrante en la Base de pasajeros (el menor con su fecha de nacimiento).',
+      'En la ficha del menor, en <b>Familia · padres o tutores</b>, elegí a la madre, al padre o al tutor. Las fichas quedan vinculadas: en la del menor dice «Hijo/a de…» y en la de los padres «Hijos/as…».',
+      'Al inscribir, elegí al padre o madre como pasajero, el tipo de habitación y a los hijos en «Comparte la habitación con». Marcá <b>Cuenta familiar a nombre del titular</b> (se sugiere sola si hay menores).',
+      'Queda una sola cuenta a nombre del titular, con el precio por la cantidad de pasajeros. Si hay tarifa de menor, un socio la ajusta con un descuento.',
+      'Si un menor viaja sin uno de sus padres (o sin ninguno), el sistema avisa al inscribir y lo muestra en la salida y en su ficha, para recordarle al pasajero la autorización de viaje.',
+    ] },
   { tema: 'General', titulo: 'Eliminar algo cargado por error', pantallas: ['pedidos', 'pasajeros', 'individuales', 'aereos', 'grupales', 'proveedores'], socios: true,
     claves: 'eliminar borrar error duplicado mal cargado quitar sacar suprimir',
     pasos: [

@@ -100,5 +100,10 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 .alma-mates > span { font-weight: 700; }
 .alma-hab { color: #51407a !important; font-weight: 600; }
 .alma-hab .textlink { font-weight: 600; }
+.alma-fam-info { margin: 10px 0; padding: 10px 12px; background: #fff7ec; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.alma-menor { background: #ffe1c2 !important; color: #8a3b12 !important; }
+.alma-auto { color: #a3460f !important; font-weight: 600; }
+.alma-radio { display: flex; align-items: center; gap: 6px; font-weight: 500; margin: 4px 0; }
+#almaFamBox { border-top: 1px solid #e3dcf0; padding-top: 8px; margin-top: 4px; }
 </style>
 

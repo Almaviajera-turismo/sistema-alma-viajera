@@ -142,13 +142,13 @@ function almaRoomLabel(g,type){const pre=type.startsWith('Doble')?'Doble':type;l
 /* Ubica a la reserva b (y a sus compañeros) en una habitación del tipo pedido. Devuelve true si cambió algo. */
 function almaAsignarHab(b,type,mates){
  const g=findGroup(b.groupId);if(!g)return false;g.rooms||=[];const activa=x=>accountStatus(x)!=='Baja';
- const old=g.rooms.find(r=>r.id===b.roomId),ocup=r=>state.bookings.filter(x=>x.kind==='grupal'&&x.groupId===g.id&&x.roomId===r.id&&activa(x));
+ const old=g.rooms.find(r=>r.id===b.roomId),ocup=r=>state.bookings.filter(x=>x.kind==='grupal'&&x.groupId===g.id&&x.roomId===r.id&&activa(x)),pl=a=>a.reduce((n,x)=>n+almaPlaza(x),0);
  const limpiar=()=>{g.rooms=g.rooms.filter(r=>ocup(r).length>0)};
  if(!type){if(!old)return false;b.roomId='';b.roomType='';limpiar();audit('Habitación quitada','Rooming',b.client+' · '+g.name);return true}
- const cap=ALMA_CAP[type]||1;mates=cap>1?mates.slice(0,cap-1):[];
+ const cap=ALMA_CAP[type]||1;mates=cap>1?mates.slice(0,Math.max(0,cap-almaPlaza(b))):[];
  const mb=[],faltan=[];
  for(const pid of mates){const x=state.bookings.find(y=>y.kind==='grupal'&&y.groupId===g.id&&y.passengerId===pid&&activa(y));if(x)mb.push(x);else{const p=state.passengers.find(z=>z.id===pid);if(p)faltan.push(p)}}
- if(faltan.length){const libres=g.capacity>0?g.capacity-state.bookings.filter(x=>x.kind==='grupal'&&x.groupId===g.id&&activa(x)).length:99;
+ if(faltan.length){const libres=g.capacity>0?g.capacity-almaPlazas(g.id):99;
   if(libres<faltan.length)alert(faltan.map(p=>p.name).join(' y ')+': no quedan cupos en la salida, no se pudo/pudieron inscribir.');
   else if(confirm(faltan.map(p=>p.name).join(' y ')+(faltan.length>1?' no están inscriptos':' no está inscripto/a')+' en '+g.name+'.\n\n¿Inscribir también, con el mismo precio ('+money(b.basePrice,g.currency)+') y en la misma habitación?\nCada pasajero tiene su propia cuenta.'))
    for(const p of faltan){const x={id:uid(),kind:'grupal',groupId:g.id,client:p.name,phone:p.phone||'',passengerId:p.id,basePrice:Number(b.basePrice),owner:almaYo()||b.owner,notes:'',status:'Abierta',extensions:[]};captureSeller(x);state.bookings.unshift(x);mb.push(x);audit('Pasajero inscripto','Reserva grupal',x.client+' · '+g.name+' (comparte habitación con '+b.client+')')}}
@@ -156,7 +156,7 @@ function almaAsignarHab(b,type,mates){
  if(old&&old.type===type&&todos.every(x=>x.roomId===old.id)&&ocup(old).every(x=>todos.includes(x)))return false; // sin cambios
  let room=null;
  if(old&&ocup(old).every(x=>todos.includes(x))){room=old}            // la misma habitación, se reacomoda
- else for(const x of mb){const r=g.rooms.find(r=>r.id===x.roomId);if(r&&r.type===type&&ocup(r).filter(y=>!todos.includes(y)).length+todos.length<=cap){room=r;break}}
+ else for(const x of mb){const r=g.rooms.find(r=>r.id===x.roomId);if(r&&r.type===type&&pl(ocup(r).filter(y=>!todos.includes(y)))+pl(todos)<=cap){room=r;break}}
  if(!room){room={id:uid(),label:almaRoomLabel(g,type),type,capacity:cap,notes:''};g.rooms.push(room);audit('Habitación creada','Rooming',g.name+' · '+room.label)}
  if(room.type!==type){room.type=type;room.capacity=cap;room.label=almaRoomLabel(g,type)}
  for(const x of todos){x.roomId=room.id;x.roomType=type}
@@ -168,13 +168,17 @@ $('bookingExistingPassenger')?.addEventListener('change',()=>{const tit=$('booki
 {let antes=null;
  $('groupBookingForm').addEventListener('submit',()=>{antes=new Set(state.bookings.map(b=>b.id))},true);
  $('groupBookingForm').addEventListener('submit',()=>{if(!antes)return;const nueva=state.bookings.find(b=>!antes.has(b.id)&&b.kind==='grupal');antes=null;if(!nueva)return;
-  const {type,mates}=almaHabLeer('alma',nueva.passengerId);if(!type)return;
-  if(almaAsignarHab(nueva,type,mates)){save();if(window.currentGroupDetail===nueva.groupId)renderGroupDetail()}})}
+  let {type,mates}=almaHabLeer('alma',nueva.passengerId);const fam=window.__almaFam;window.__almaFam=null;
+  if(fam&&fam.mates.length){nueva.companions=fam.mates.slice();nueva.familyAccount=true;nueva.basePrice=Math.round(Number(nueva.basePrice)*(1+fam.mates.length)*100)/100;
+   audit('Cuenta familiar','Reserva grupal',nueva.client+' + '+fam.mates.map(i=>almaPax(i)?.name).join(', '));mates=[]}
+  if(type)almaAsignarHab(nueva,type,mates);
+  save();if(window.currentGroupDetail===nueva.groupId)renderGroupDetail();
+  const av=almaAutorizacion(nueva);if(av.length)setTimeout(()=>alert('Recordale al pasajero:\n\n• '+av.join('\n• ')+'\n\nPara viajes al exterior la autorización se hace ante escribano, en el Registro Civil o en Migraciones.'),300)})}
 /* Editar reserva (grupal): muestra la habitación actual y deja cambiarla */
 {const o=window.editBooking;window.editBooking=(id,...a)=>{o(id,...a);const b=findBooking(id),box=$('almaERoomBox');if(!box)return;
  if(!b||b.kind!=='grupal'){box.style.display='none';return}box.style.display='';
  const g=findGroup(b.groupId),r=(g?.rooms||[]).find(x=>x.id===b.roomId);
- const occ=r?state.bookings.filter(x=>x.id!==b.id&&x.kind==='grupal'&&x.groupId===b.groupId&&x.roomId===r.id&&accountStatus(x)!=='Baja'):[];
+ const occ=r?state.bookings.filter(x=>x.id!==b.id&&x.kind==='grupal'&&x.groupId===b.groupId&&x.roomId===r.id&&accountStatus(x)!=='Baja'):[];const fam=(b.companions||[]).map(i=>({passengerId:i,client:almaPax(i)?.name||''}));occ.unshift(...fam);
  const t=r?(ALMA_TIPO_VIEJO[r.type]||r.type):'';const sel=$('almaERoomType');if(t&&![...sel.options].some(o=>o.value===t))sel.add(new Option(t,t));sel.value=t;
  almaHabMates('almaE',b.passengerId,occ.map(x=>x.passengerId));almaERoomSync();
  $('almaERoomNow').innerHTML=r?'Hoy: <b>'+esc(r.label)+'</b> ('+esc(r.type)+')'+(occ.length?' con <b>'+occ.map(x=>esc(x.client)).join(', ')+'</b>':' · sin compañeros asignados'):'Hoy: sin habitación asignada.';
@@ -182,12 +186,71 @@ $('bookingExistingPassenger')?.addEventListener('change',()=>{const tit=$('booki
 $('editBookingForm').addEventListener('submit',()=>{const st=window.__almaEditRoom;if(!st||$('editBookingDialog').open)return;window.__almaEditRoom=null;
  const b=findBooking(st.id);if(!b||b.kind!=='grupal')return;const {type,mates}=almaHabLeer('almaE',b.passengerId);
  if(type===st.type&&mates.slice().sort().join(',')===st.mates)return;
- if(almaAsignarHab(b,type,mates)){save();if(window.currentGroupDetail===b.groupId)renderGroupDetail()}});
+ if(b.familyAccount){const antes=(b.companions||[]).join(',');b.companions=mates.slice(0,Math.max(0,(ALMA_CAP[type]||1)-1));if(b.companions.join(',')!==antes){audit('Cuenta familiar modificada','Reserva grupal',b.client+' + '+b.companions.map(i=>almaPax(i)?.name).join(', '));alert('Cambiaron los integrantes de la cuenta familiar. Revisá el precio de la reserva si corresponde.')}mates=[]}
+ almaAsignarHab(b,type,mates);save();if(window.currentGroupDetail===b.groupId)renderGroupDetail();
+ const av=almaAutorizacion(b);if(av.length)alert('Recordale al pasajero:\n\n• '+av.join('\n• '))});
 /* Ficha del pasajero: con quién comparte habitación / viaja */
 function almaHabInfo(b,pid){
  if(b.kind==='grupal'){const g=findGroup(b.groupId),r=(g?.rooms||[]).find(x=>x.id===b.roomId);if(!r)return '';
-  const m=state.bookings.filter(x=>x.id!==b.id&&x.kind==='grupal'&&x.groupId===b.groupId&&x.roomId===r.id&&accountStatus(x)!=='Baja');
-  return '<span class="sub alma-hab">🛏 '+esc(r.type)+' · '+esc(r.label)+(m.length?' · comparte con '+m.map(x=>'<button type="button" class="textlink" onclick="openPassengerProfile(&quot;'+x.passengerId+'&quot;)">'+esc(x.client)+'</button>').join(', '):'')+'</span>'}
+  const ids=[];for(const x of state.bookings)if(x.kind==='grupal'&&x.groupId===b.groupId&&x.roomId===r.id&&accountStatus(x)!=='Baja')almaViajeros(x).forEach(i=>i!==pid&&ids.push(i));
+  const m=ids.map(almaPax).filter(Boolean);
+  return '<span class="sub alma-hab">🛏 '+esc(r.type)+' · '+esc(r.label)+(m.length?' · comparte con '+m.map(almaLink).join(', '):'')+'</span>'+(b.familyAccount?'<span class="sub alma-hab">👪 Cuenta familiar a nombre de '+esc(b.client)+'</span>':'')+almaAutoHtml(b)}
  const ids=[b.passengerId,...(b.companions||[])].filter(x=>x&&x!==pid),ps=ids.map(x=>state.passengers.find(p=>p.id===x)).filter(Boolean);
- return ps.length?'<span class="sub alma-hab">👥 Viaja con '+ps.map(p=>'<button type="button" class="textlink" onclick="openPassengerProfile(&quot;'+p.id+'&quot;)">'+esc(p.name)+'</button>').join(', ')+'</span>':''}
+ return (ps.length?'<span class="sub alma-hab">👥 Viaja con '+ps.map(almaLink).join(', ')+'</span>':'')+almaAutoHtml(b)}
 for(const id of ['almaMate1','almaMate2','almaMate3','almaEMate1','almaEMate2','almaEMate3'])almaBuscadorInit(id);
+
+/* ---------- 8) Familias: menores con sus padres, cuenta familiar y aviso de autorización ---------- */
+function almaPlaza(b){return 1+(b.companions||[]).length}
+function almaPlazas(gid){return state.bookings.filter(b=>b.kind==='grupal'&&b.groupId===gid&&accountStatus(b)!=='Baja').reduce((n,b)=>n+almaPlaza(b),0)}
+function almaEdad(nac,al){if(!nac)return null;const a=new Date((al||today())+'T12:00:00'),n=new Date(nac+'T12:00:00');if(isNaN(a)||isNaN(n))return null;let e=a.getFullYear()-n.getFullYear();const m=a.getMonth()-n.getMonth();if(m<0||(m===0&&a.getDate()<n.getDate()))e--;return e}
+function almaPax(id){return state.passengers.find(p=>p.id===id)}
+function almaLink(p){return '<button type="button" class="textlink" onclick="openPassengerProfile(&quot;'+p.id+'&quot;)">'+esc(p.name)+'</button>'}
+function almaPadres(p){return [p.guardian1,p.guardian2].filter(Boolean).map(almaPax).filter(Boolean)}
+function almaHijos(p){return state.passengers.filter(x=>x.guardian1===p.id||x.guardian2===p.id)}
+function almaFamInfo(p){const e=almaEdad(p.birthDate),pa=almaPadres(p),hi=almaHijos(p),out=[];
+ if(e!=null&&e<18)out.push('<span class="tag alma-menor">Menor · '+e+' años</span>');
+ if(pa.length)out.push('<span>Hijo/a de '+pa.map(almaLink).join(' y ')+'</span>');
+ if(hi.length)out.push('<span>Hijos/as: '+hi.map(h=>almaLink(h)+(almaEdad(h.birthDate)<18?' ('+almaEdad(h.birthDate)+')':'')).join(', ')+'</span>');
+ return out.length?'<div class="alma-fam-info">👪 '+out.join(' · ')+'</div>':''}
+/* Quiénes viajan en una cuenta (titular + acompañantes) y fecha del viaje */
+function almaViajeros(b){return [b.passengerId,...(b.companions||[])].filter(Boolean)}
+function almaFechaViaje(b){return b.kind==='grupal'?findGroup(b.groupId)?.departure:b.departure}
+/* Aviso de autorización de viaje para menores */
+function almaAutorizacion(b){const msgs=[],fecha=almaFechaViaje(b);
+ let juntos=new Set(almaViajeros(b));
+ if(b.kind==='grupal')for(const x of state.bookings)if(x.kind==='grupal'&&x.groupId===b.groupId&&accountStatus(x)!=='Baja')almaViajeros(x).forEach(i=>juntos.add(i));
+ for(const id of almaViajeros(b)){const p=almaPax(id);if(!p)continue;const e=almaEdad(p.birthDate,fecha);if(e==null||e>=18)continue;
+  const pa=almaPadres(p);if(!pa.length){msgs.push(p.name+' es menor ('+e+'): cargá a sus padres en la ficha para saber qué autorización necesita.');continue}
+  const van=pa.filter(x=>juntos.has(x.id)),no=pa.filter(x=>!juntos.has(x.id));
+  if(!van.length)msgs.push(p.name+' ('+e+') viaja sin sus padres: necesita autorización de viaje de '+pa.map(x=>x.name).join(' y ')+'.');
+  else if(no.length)msgs.push(p.name+' ('+e+') viaja con '+van.map(x=>x.name).join(' y ')+' pero sin '+no.map(x=>x.name).join(' y ')+': necesita su autorización de viaje.')}
+ return msgs}
+function almaAutoHtml(b){const m=almaAutorizacion(b);return m.length?'<span class="sub alma-auto">⚠ Autorización de viaje: '+m.map(esc).join(' ')+' (para viajes al exterior: ante escribano, Registro Civil o Migraciones).</span>':''}
+/* Ficha del pasajero: padres / tutores */
+window.almaMenorInfo=()=>{const f=$('passengerForm'),el=$('almaMinorInfo');if(!f||!el)return;const e=almaEdad(f.elements.birthDate.value);
+ el.innerHTML=e!=null&&e<18?'<b>Menor de edad ('+e+' años).</b> Elegí a sus padres o tutores: quedan vinculados en las dos fichas.':'Si es menor, elegí a sus padres o tutores (deben estar cargados en la base).'};
+{const o=window.openPassengerForm;window.openPassengerForm=(id='',...a)=>{o(id,...a);const p=almaPax(id)||{};
+ for(const [k,s] of [['guardian1','almaG1'],['guardian2','almaG2']]){const el=$(s);if(!el)continue;el.innerHTML=almaPaxOpts(id).replace('— Elegí un pasajero de la base —','— Ninguno —');almaBuscadorReset(s);el.value=p[k]||''}
+ almaMenorInfo()}}
+$('passengerForm')?.elements.birthDate?.addEventListener('change',()=>almaMenorInfo());
+$('passengerForm')?.addEventListener('submit',e=>{const f=e.target;if(f.elements.guardian1&&f.elements.guardian1.value&&f.elements.guardian1.value===f.elements.guardian2?.value)f.elements.guardian2.value=''},true);
+for(const id of ['almaG1','almaG2'])almaBuscadorInit(id);
+/* Inscribir: cuenta familiar */
+window.almaFamSync=()=>{const n=(ALMA_CAP[$('almaRoomType')?.value]||1)-1,box=$('almaFamBox');if(!box)return;
+ const hay=[1,2,3].slice(0,n).some(k=>$('almaMate'+k)?.value);box.style.display=n>0&&hay?'':'none';
+ const tit=almaPax($('bookingExistingPassenger')?.value),menores=[1,2,3].slice(0,n).map(k=>almaPax($('almaMate'+k)?.value)).filter(p=>p&&almaEdad(p.birthDate)<18);
+ $('almaFamHint').textContent=menores.length&&!box.dataset.tocado?'Hay menores: se sugiere cuenta familiar.':'';
+ if(menores.length&&!box.dataset.tocado)$('almaFamSi').checked=true;
+ const g=findGroup($('bookingGroup')?.value),pr=Number($('bookingBasePrice')?.value||0),cant=1+[1,2,3].slice(0,n).filter(k=>$('almaMate'+k)?.value).length;
+ $('almaFamTotal').textContent=$('almaFamSi').checked&&g?'Cuenta a nombre de '+(tit?.name||'el titular')+' por '+cant+' pasajeros: '+money(pr*cant,g.currency)+' ('+cant+' × '+money(pr,g.currency)+'). Si hay tarifa de menor, un socio la ajusta con descuento.':''};
+for(const id of ['almaRoomType','almaMate1','almaMate2','almaMate3','bookingExistingPassenger','bookingBasePrice'])$(id)?.addEventListener(id==='bookingBasePrice'?'input':'change',()=>almaFamSync());
+for(const id of ['almaFamSi','almaFamNo'])$(id)?.addEventListener('change',()=>{$('almaFamBox').dataset.tocado='1';almaFamSync()});
+{const o=window.openGroupBooking;window.openGroupBooking=(...a)=>{o(...a);const b=$('almaFamBox');if(b){b.dataset.tocado='';$('almaFamNo').checked=true}almaFamSync()}}
+/* Antes de inscribir con cuenta familiar: cupos y que nadie esté ya inscripto */
+$('groupBookingForm')?.addEventListener('submit',e=>{window.__almaFam=null;if(!$('almaFamSi')?.checked||$('almaFamBox').style.display==='none')return;
+ const g=findGroup($('bookingGroup').value),tit=$('bookingExistingPassenger').value;if(!g||!tit)return;
+ const {mates}=almaHabLeer('alma',tit);if(!mates.length)return;
+ const ya=mates.filter(pid=>state.bookings.some(b=>b.kind==='grupal'&&b.groupId===g.id&&accountStatus(b)!=='Baja'&&almaViajeros(b).includes(pid)));
+ if(ya.length){e.preventDefault();e.stopImmediatePropagation();alert('Ya están inscriptos en esta salida: '+ya.map(i=>almaPax(i)?.name).join(', ')+'. Sacalos de la lista o usá una cuenta por pasajero.');return}
+ if(g.capacity>0&&almaPlazas(g.id)+1+mates.length>g.capacity){e.preventDefault();e.stopImmediatePropagation();alert('No hay cupos para '+(1+mates.length)+' pasajeros en esta salida.');return}
+ window.__almaFam={mates}},true);

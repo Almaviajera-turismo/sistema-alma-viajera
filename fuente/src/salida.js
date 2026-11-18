@@ -17,12 +17,12 @@ window.almaRenderGroupFicha=()=>{
   +almaFila('Regreso',fmt(g.returnDate)||'—')
   +almaFila('Duración',n==null?'—':(n+1)+' días · '+n+' noches')
   +almaFila('Precio por pasajero',money(g.price,c))
-  +almaFila('Cupos',cap?ins.length+' de '+cap+' · '+Math.max(cap-ins.length,0)+' libres':ins.length+' inscriptos · sin límite')
+  +almaFila('Cupos',(()=>{const pl=almaPlazas(id);return cap?pl+' de '+cap+' · '+Math.max(cap-pl,0)+' libres':pl+' pasajeros · sin límite'})())
   +almaFila('Vencimiento del saldo (pasajeros)',g.balanceDueDate?fmt(g.balanceDueDate)+(g.balanceDueDate<today()?' · vencido':''):'Sin fecha')
   +almaFila('Responsable',esc(g.owner||'—'))
   +'</div>';
  h+='<h4>Programa y servicios incluidos</h4><div class="alma-ficha-prog">'+(g.description?esc(g.description):'<span class="sub">Sin programa cargado.</span>')+'</div>';
- h+='<h4>Pasajeros</h4><div class="alma-ficha-grid">'+almaFila('Inscriptos',String(ins.length))+almaFila('Total vendido',money(vendido,c))+almaFila('Cobrado',money(cobrado,c))+almaFila('Saldo a cobrar',money(vendido-cobrado,c))+'</div>';
+ h+='<h4>Pasajeros</h4><div class="alma-ficha-grid">'+almaFila('Pasajeros',String(almaPlazas(id)))+almaFila('Total vendido',money(vendido,c))+almaFila('Cobrado',money(cobrado,c))+almaFila('Saldo a cobrar',money(vendido-cobrado,c))+'</div>';
  if(socio){
   const es=state.expenses.filter(e=>e.operationKey==='G:'+id);
   h+='<div class="alma-ficha-head"><h4>Pagos al operador y vencimientos</h4><button type="button" class="btn tiny" onclick="openGroupExpense(&quot;'+id+'&quot;)">+ Agregar compromiso y vencimientos</button></div>';
@@ -57,7 +57,7 @@ $('groupForm').addEventListener('submit',e=>{
  if(!adminOnly())return;const g=findGroup(id);if(!g)return alert('No se encontró la salida.');
  const x=formData(e.target);
  if(x.returnDate<x.departure)return alert('La fecha de regreso no puede ser anterior a la salida');
- const ins=state.bookings.filter(b=>b.kind==='grupal'&&b.groupId===id&&accountStatus(b)!=='Baja').length,cap=Number(x.capacity||0);
+ const ins=almaPlazas(id),cap=Number(x.capacity||0);
  if(cap&&cap<ins)return alert('Hay '+ins+' pasajeros inscriptos: los cupos no pueden ser menos que eso.');
  const price=Number(x.price);
  if(ins&&Math.abs(price-Number(g.price))>.009&&!confirm('Cambiaste el precio de '+money(g.price,g.currency)+' a '+money(price,x.currency)+'.\n\nEl precio nuevo se usa para los próximos inscriptos. Los '+ins+' ya inscriptos conservan su precio (si hay que cambiarlo, se edita en cada reserva).\n\n¿Guardar?'))return;

@@ -234,7 +234,7 @@ def fsub(a, b, count=1):
     if a not in out:
         raise SystemExit(f'No encontrado (mejoras): {a[:80]!r}')
     out = out.replace(a, b) if count == 0 else out.replace(a, b, count)
-fsub("'birthPlace','documentSex','notes']", "'birthPlace','documentSex','notes','docType','dniExpiry']", 0)
+fsub("'birthPlace','documentSex','notes']", "'birthPlace','documentSex','notes','docType','dniExpiry','guardian1','guardian2']", 0)
 fsub('<label class="field">DNI <input name="doc" placeholder="Ej.: 30123456"></label>',
      '<label class="field">Documento de viaje<select name="docType" onchange="almaDocTypeSync()"><option value="Pasaporte">Pasaporte</option><option value="DNI">DNI</option></select></label>'
      '<label class="field">Número de DNI<input name="doc" placeholder="Ej.: 30123456"></label>'
@@ -313,6 +313,35 @@ fsub('<label class="field" data-edit-kind="grupal individual aereo">Precio del p
      '<label class="field" data-edit-kind="grupal individual aereo">Precio del paquete / viaje<input type="number" name="price"')
 fsub("(b.passengerId!==id?' · acompañante de '+esc(b.client):'')+'</span></td>",
      "(b.passengerId!==id?' · acompañante de '+esc(b.client):'')+'</span>'+almaHabInfo(b,id)+'</td>")
+# Familias: padres/tutores en la ficha, cuenta familiar, plazas y aviso de autorización (src/mejoras.js, punto 8)
+fsub('<label class="field full">Observaciones<textarea name="notes" placeholder="Notas generales"></textarea></label>',
+     '<div class="field full alma-mates"><span>Familia · padres o tutores (si es menor)</span>'
+     '<label class="field">Padre / madre / tutor 1<select name="guardian1" id="almaG1"></select></label>'
+     '<label class="field">Padre / madre / tutor 2<select name="guardian2" id="almaG2"></select></label>'
+     '<small class="hint" id="almaMinorInfo"></small></div>'
+     '<label class="field full">Observaciones<textarea name="notes" placeholder="Notas generales"></textarea></label>')
+fsub('</div><div id="almaDocs" class="alma-docs"></div><p class="hint">Ficha general', "</div>'+almaFamInfo(p)+'<div id=\"almaDocs\" class=\"alma-docs\"></div><p class=\"hint\">Ficha general")
+fsub('<small class="hint">Si todavía no está inscripto en la salida, el sistema ofrece inscribirlo con su propia cuenta. Si no está en la base, dalo de alta primero.</small></div><label class="field">Responsable<select name="owner" id="bookingOwner">',
+     '<small class="hint">Si todavía no está inscripto en la salida, el sistema ofrece inscribirlo con su propia cuenta. Si no está en la base, dalo de alta primero.</small>'
+     '<div id="almaFamBox" style="display:none"><b>Cuenta</b> <label class="alma-radio"><input type="radio" name="almaFam" id="almaFamNo" checked> Una cuenta por pasajero</label>'
+     '<label class="alma-radio"><input type="radio" name="almaFam" id="almaFamSi"> Cuenta familiar a nombre del titular</label>'
+     '<small class="hint" id="almaFamHint"></small><small class="hint" id="almaFamTotal"></small></div></div>'
+     '<label class="field">Responsable<select name="owner" id="bookingOwner">')
+# cupos por plazas (una cuenta familiar ocupa una plaza por integrante)
+fsub("if(g.capacity>0&&state.bookings.filter(b=>b.kind==='grupal'&&b.groupId===g.id&&accountStatus(b)!=='Baja').length>=g.capacity)", "if(g.capacity>0&&almaPlazas(g.id)>=g.capacity)")
+fsub("let count=state.bookings.filter(b=>b.kind==='grupal'&&b.groupId===g.id&&accountStatus(b)!=='Baja').length;", "let count=almaPlazas(g.id);")
+fsub("<small>Pasajeros activos</small><strong>'+active.length+' / '", "<small>Pasajeros activos</small><strong>'+almaPlazas(g.id)+' / '")
+fsub("const occupants=bs.filter(b=>b.roomId===room.id);out+='<div class=\"room-card\"><b>'+'Habitación / grupo '+esc(room.label)+'</b><span class=\"sub\">'+esc(room.type)+' · '+occupants.length+' de '",
+     "const occupants=bs.filter(b=>b.roomId===room.id);out+='<div class=\"room-card\"><b>'+'Habitación / grupo '+esc(room.label)+'</b><span class=\"sub\">'+esc(room.type)+' · '+occupants.reduce((n,b)=>n+almaPlaza(b),0)+' de '")
+fsub("onclick=\"openPassengerProfile(&quot;'+b.passengerId+'&quot;)\">'+esc(b.client)+'</button> <button class=\"btn ghost tiny\" title=\"Quitar de esta habitación\"",
+     "onclick=\"openPassengerProfile(&quot;'+b.passengerId+'&quot;)\">'+esc(b.client)+'</button>'+((b.companions||[]).length?' + '+(b.companions||[]).map(i=>esc(state.passengers.find(p=>p.id===i)?.name||'')).join(', '):'')+' <button class=\"btn ghost tiny\" title=\"Quitar de esta habitación\"")
+fsub("&&x.id!==bookingId&&accountStatus(x)!=='Baja').length;if(occ>=Number(room.capacity))", "&&x.id!==bookingId&&accountStatus(x)!=='Baja').reduce((n,x)=>n+almaPlaza(x),0);if(occ+almaPlaza(b)>Number(room.capacity))")
+# detalle de la salida: integrantes de la cuenta familiar y aviso
+fsub("'+esc(b.client)+'</button><span class=\"sub\">ID cuenta: '+esc(b.id.slice(0,8))+'</span>'",
+     "'+esc(b.client)+'</button>'+((b.companions||[]).length?'<span class=\"sub alma-hab\">👪 Cuenta familiar: + '+(b.companions||[]).map(i=>esc(state.passengers.find(p=>p.id===i)?.name||'')).join(', ')+'</span>':'')+almaAutoHtml(b)+'<span class=\"sub\">ID cuenta: '+esc(b.id.slice(0,8))+'</span>'")
+# Excel: una fila por integrante de la cuenta familiar
+fsub("if(mode==='pasajeros')sorted.sort(", "{const ex=[];for(const e of sorted){ex.push(e);for(const c of (e.b.companions||[]))ex.push({b:{...e.b,__pid:c,client:state.passengers.find(x=>x.id===c)?.name||''},room:e.room})}sorted.length=0;sorted.push(...ex)}if(mode==='pasajeros')sorted.sort(")
+fsub("const p=state.passengers.find(x=>x.id===b.passengerId)||{},style=room?excelRowColor", "const p=state.passengers.find(x=>x.id===(b.__pid||b.passengerId))||{},style=room?excelRowColor")
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización')]:
