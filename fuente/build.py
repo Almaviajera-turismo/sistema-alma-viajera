@@ -276,6 +276,10 @@ fsub('<span>Cobros y recibos</span></button>',
 fsub('<button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</button>',
      '<button data-page="cajaoperativa" class="alma-nav-vend">' + CAJA_SVG + 'Caja</button><button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</button>')
 
+# Caja: «Abrir caja nueva» para que no se confunda con abrir la caja existente
+fsub(">+ Abrir caja</button>", ">+ Abrir caja nueva</button>", 0)
+fsub("usar «Abrir caja» para", "usar «Abrir caja nueva» para")
+
 # Pedidos: botón «Eliminar pedido» (socios)
 # (abajo de «Confirmar pedido», separado de «+ Otra opción»)
 fsub("orderNextStep(o)+'</td></tr>'",

@@ -304,7 +304,7 @@ const AYUDA = [
     claves: 'abrir caja apertura efectivo inicial mañana',
     pasos: [
       'Tocá <b>Caja</b> en el menú (vendedores: su caja operativa; socios: la caja de Centro y Gaona).',
-      'Tocá <b>+ Abrir caja</b> y elegí la oficina.',
+      'Tocá <b>+ Abrir caja nueva</b> y elegí la oficina.',
       'Contá el efectivo y confirmá los importes en pesos y en dólares (te propone lo que quedó en el último cierre).',
       'Tocá <b>Confirmar apertura</b>.',
     ] },
