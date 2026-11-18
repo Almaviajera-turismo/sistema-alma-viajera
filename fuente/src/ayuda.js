@@ -362,6 +362,23 @@ const AYUDA = [
       'Ves cada alta, cambio y baja con la fecha, la hora y el usuario que lo hizo.',
       'Nadie puede editar ni borrar estos registros.',
     ] },
+  { tema: 'Cobros', titulo: 'Cobrar en otra moneda (pesos, dólares o euros) y adjuntar el comprobante', pantallas: ['cobros', 'reservas'],
+    claves: 'moneda pesos dolares euros cotizacion tipo de cambio conversion comprobante transferencia adjuntar captura',
+    pasos: [
+      'En <b>Registrar cobro</b> elegí la cuenta. La <b>Moneda del pago</b> se pone sola en la moneda del viaje.',
+      'Si el pasajero paga en otra moneda, cambiala (por ejemplo, Pesos) y cargá la <b>Cotización</b> (ej.: 1 USD = 1200 ARS). El sistema muestra cuánto se acredita en la cuenta.',
+      'En <b>Importe recibido</b> poné lo que pagó, en la moneda que pagó.',
+      'Si es transferencia, depósito o tarjeta, adjuntá la captura o el PDF en <b>Comprobante de la transferencia</b>.',
+      'En el recibo queda el importe pagado y la cotización. El comprobante se ve (o se agrega después) abajo del recibo, con <b>📎 Adjuntar comprobante</b>.',
+    ],
+    nota: 'La caja lleva pesos y dólares: un pago en euros no se puede registrar en efectivo.' },
+  { tema: 'Pasajeros', titulo: 'Pasajero con DNI o con pasaporte', pantallas: ['pasajeros'],
+    claves: 'dni pasaporte documento vencimiento vence tipo de documento',
+    pasos: [
+      'En la ficha del pasajero elegí <b>Documento de viaje</b>: Pasaporte o DNI.',
+      'Con Pasaporte se cargan número, emisión y vencimiento del pasaporte. Con DNI, el número y el <b>vencimiento del DNI</b>.',
+      'En la lista de pasajeros el vencimiento aparece en rojo si ya venció.',
+    ] },
   { tema: 'General', titulo: 'Eliminar algo cargado por error', pantallas: ['pasajeros', 'individuales', 'aereos', 'grupales', 'proveedores'], socios: true,
     claves: 'eliminar borrar error duplicado mal cargado quitar sacar suprimir',
     pasos: [

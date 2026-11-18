@@ -661,6 +661,29 @@ window.almaDeleteDoc = async (pid, name) => {
   } catch (e) { alert('No se pudo borrar: ' + e.message); }
   window.almaLoadDocs(pid); APP?.render();
 };
+/* Comprobantes de cobros (transferencias): espacio privado "comprobantes", carpeta = id del recibo */
+const CBUCKET = 'comprobantes';
+window.almaComprobantes = {
+  async listar(rid) {
+    const r = await storage('POST', 'object/list/' + CBUCKET,
+      JSON.stringify({ prefix: rid + '/', limit: 20, offset: 0, sortBy: { column: 'created_at', order: 'asc' } }), JSONH);
+    return (await r.json()).filter(x => x.id);
+  },
+  async subir(rid, file) {
+    const p = await prepareFile(file);
+    const name = 'comprobante-' + stamp() + '.' + p.ext;
+    await storage('POST', 'object/' + CBUCKET + '/' + rid + '/' + name, p.blob, { 'Content-Type': p.type, 'x-upsert': 'true' });
+    return name;
+  },
+  async abrir(rid, name) {
+    const w = window.open('', '_blank');
+    try {
+      const blob = await (await storage('GET', 'object/authenticated/' + CBUCKET + '/' + rid + '/' + encodeURIComponent(name))).blob();
+      const url = URL.createObjectURL(blob);
+      if (w) w.location.href = url; else location.href = url;
+    } catch (e) { if (w) w.close(); alert('No se pudo abrir el comprobante: ' + e.message); }
+  }
+};
 /* Al eliminar un pasajero (botón de socios): borra todas las fotos de su pasaporte */
 window.almaBorrarDocsPasajero = async pid => {
   try {

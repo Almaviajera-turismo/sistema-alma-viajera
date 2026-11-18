@@ -48,11 +48,12 @@ app = sub("table('passengersDirectory',['Pasajero','Contacto','DNI','Viajes','Ac
 app = sub("</td><td>'+esc(p.doc||'—')+'<span class=\"sub\">Vence: '+fmt(p.passportExpiry)+'</span></td>",
           "</td><td>'+docCell(p)+'</td>", app)
 app = sub("// Semana de lunes a domingo y mes calendario",
-          "function docCell(p){const parts=[];"
-          "if(p.passportNumber){const venc=p.passportExpiry&&p.passportExpiry<new Date().toISOString().slice(0,10);"
-          "parts.push('Pasaporte '+esc(p.passportNumber)+(p.passportExpiry?'<span class=\"sub\"'+(venc?' style=\"color:#b42318;font-weight:600\"':'')+'>Vence: '+fmt(p.passportExpiry)+(venc?' · vencido':'')+'</span>':''))}"
-          "if(p.doc)parts.push((p.passportNumber?'<span class=\"sub\">':'')+'DNI '+esc(p.doc)+(p.passportNumber?'</span>':''));"
-          "if(window.__almaDocIds&&window.__almaDocIds.has(p.id))parts.push('<span class=\"sub alma-clip\">📎 Foto del pasaporte</span>');"
+          "function docCell(p){const parts=[],hoy=new Date().toISOString().slice(0,10);"
+          "const vence=d=>{const v=d&&d<hoy;return d?'<span class=\"sub\"'+(v?' style=\"color:#b42318;font-weight:600\"':'')+'>Vence: '+fmt(d)+(v?' · vencido':'')+'</span>':''};"
+          "if(p.docType==='DNI'){if(p.doc)parts.push('DNI '+esc(p.doc)+vence(p.dniExpiry));if(p.passportNumber)parts.push('<span class=\"sub\">Pasaporte '+esc(p.passportNumber)+'</span>')}"
+          "else{if(p.passportNumber)parts.push('Pasaporte '+esc(p.passportNumber)+vence(p.passportExpiry));"
+          "if(p.doc)parts.push((p.passportNumber?'<span class=\"sub\">':'')+'DNI '+esc(p.doc)+(p.passportNumber?'</span>':''))}"
+          "if(window.__almaDocIds&&window.__almaDocIds.has(p.id))parts.push('<span class=\"sub alma-clip\">📎 Foto del documento</span>');"
           "return parts.join('')||'—'}\n// Semana de lunes a domingo y mes calendario", app)
 # Ficha del pasajero: fotos del pasaporte (las maneja online.js)
 app = sub("<span>Copia de pasaporte: disponible solo en futura versión segura</span></div>",
@@ -89,6 +90,7 @@ app = sub("render();\nupdateBackButton();\n})();",
 # Botón «Eliminar» (solo socios, con reglas): lógica en src/eliminar.js, dentro del script principal
 app = sub("render();\nupdateBackButton();\n})();",
           (HERE / 'src' / 'eliminar.js').read_text(encoding='utf-8') + '\n' + (HERE / 'src' / 'salida.js').read_text(encoding='utf-8')
+          + '\n' + (HERE / 'src' / 'mejoras.js').read_text(encoding='utf-8')
           + "\nrender();\nupdateBackButton();\n})();", app)
 # Ficha de la salida grupal: pestaña nueva (se abre primero) y edición (src/salida.js)
 app = sub("$('groupDetailTitle').textContent=g.name+' · pasajeros';showGroupTab('pasajeros',true);",
@@ -225,5 +227,45 @@ for a, b in [
     if a not in out:
         raise SystemExit(f'Texto de prueba no encontrado: {a[:70]!r}')
     out = out.replace(a, b)
+
+# ---- Mejoras: responsable, buscador, DNI/pasaporte, moneda y comprobante de cobros (src/mejoras.js) ----
+def fsub(a, b, count=1):
+    global out
+    if a not in out:
+        raise SystemExit(f'No encontrado (mejoras): {a[:80]!r}')
+    out = out.replace(a, b) if count == 0 else out.replace(a, b, count)
+fsub("'birthPlace','documentSex','notes']", "'birthPlace','documentSex','notes','docType','dniExpiry']", 0)
+fsub('<label class="field">DNI <input name="doc" placeholder="Ej.: 30123456"></label>',
+     '<label class="field">Documento de viaje<select name="docType" onchange="almaDocTypeSync()"><option value="Pasaporte">Pasaporte</option><option value="DNI">DNI</option></select></label>'
+     '<label class="field">Número de DNI<input name="doc" placeholder="Ej.: 30123456"></label>'
+     '<label class="field" id="almaDniExpiryWrap" style="display:none">Vencimiento del DNI<input name="dniExpiry" type="date"></label>')
+fsub('<label class="field">Nº de pasaporte<input name="passportNumber"', '<label class="field alma-pp">Nº de pasaporte<input name="passportNumber"')
+fsub('<label class="field">Fecha de emisión del pasaporte<input name="passportIssued"', '<label class="field alma-pp">Fecha de emisión del pasaporte<input name="passportIssued"')
+fsub('<label class="field">Vencimiento del pasaporte<input name="passportExpiry"', '<label class="field alma-pp">Vencimiento del pasaporte<input name="passportExpiry"')
+fsub("<span>Vencimiento pasaporte: '+fmt(p.passportExpiry)+'</span>",
+     "<span>Documento de viaje: '+esc(p.docType||(p.passportNumber?'Pasaporte':p.doc?'DNI':'—'))+'</span><span>'+(p.docType==='DNI'?'Vencimiento DNI: '+fmt(p.dniExpiry):'Vencimiento pasaporte: '+fmt(p.passportExpiry))+'</span>")
+fsub("owner:owners[0],status:'Abierta'", "owner:almaYo()||owners[0],status:'Abierta'", 0)
+# cobros: moneda del pago + cotización + comprobante
+fsub('<label class="field">Importe recibido<input type="number" name="amount" id="paymentAmount"',
+     '<label class="field"><span id="almaPayAmountLbl">Importe recibido</span><input type="number" name="amount" id="paymentAmount"')
+fsub('<label class="field">Medio de pago<select name="method"><option>Transferencia</option><option>Efectivo</option><option>Tarjeta</option><option>Depósito</option><option>Otro</option></select></label><div class="field"><label for="paymentAutoConcept">',
+     '<label class="field">Medio de pago<select name="method" onchange="almaPayFxSync()"><option>Transferencia</option><option>Efectivo</option><option>Tarjeta</option><option>Depósito</option><option>Otro</option></select></label>'
+     '<label class="field">Moneda del pago<select name="payCurrency" id="almaPayCur"><option value="USD">Dólares (USD)</option><option value="ARS">Pesos (ARS)</option><option value="EUR">Euros (EUR)</option></select></label>'
+     '<label class="field" id="almaPayRateWrap" style="display:none"><span id="almaPayRateLbl">Cotización</span><input name="payRate" id="almaPayRate" type="number" min="0" step="0.0001" inputmode="decimal" oninput="updatePaymentPreview()" placeholder="Ej.: 1200"></label>'
+     '<label class="field full" id="almaPayFileWrap">Comprobante de la transferencia (opcional)<input type="file" id="almaPayFile" accept="image/*,application/pdf"></label>'
+     '<div class="field"><label for="paymentAutoConcept">')
+fsub("const raw=form.elements.amount.value;\n const amount=Number(raw);", "const raw=form.elements.amount.value;\n const amount=almaFxApplied(Number(raw),currency);")
+fsub("$('paymentBalancePreview').innerHTML=msg;", "$('paymentBalancePreview').innerHTML=almaFxNote(Number(raw),currency)+msg;")
+fsub("const amount=Number(x.amount);if(!(amount>0)||amount>balance(b)+0.001)", "const fx=almaFx(x,cur(b));if(!fx)return;const amount=fx.applied;if(!(amount>0)||amount>balance(b)+0.001)")
+fsub("recordedBy:x.recordedBy,recordedAt:new Date().toISOString()};", "recordedBy:x.recordedBy,recordedAt:new Date().toISOString(),...fx.fields};")
+fsub('<b>RECIBIDO AHORA:</b><br><b>${money(p.amount,snap.currency)}</b>', '<b>RECIBIDO AHORA:</b><br><b>${money(p.amount,snap.currency)}</b>${almaFxRecibo(p,snap.currency)}')
+fsub('<div id="receiptPaper" class="receipt"></div>', '<div id="receiptPaper" class="receipt"></div><div id="almaComprob" class="alma-comp"></div>')
+# caja y banco: el efectivo/transferencia entra en la moneda en que se pagó
+fsub("for(const p of state.payments){const b=findBooking(p.bookingId),currency=b?cur(b):(p.snapshot?.currency||'USD');",
+     "for(const p of state.payments){const b=findBooking(p.bookingId),currency=p.payCurrency||(b?cur(b):(p.snapshot?.currency||'USD')),recv=p.payCurrency?Number(p.payAmount):Number(p.amount);")
+fsub("method:p.method,currency,amount:Number(p.amount)});", "method:p.method,currency,amount:recv});")
+fsub("method:p.method,currency,amount:-Number(p.amount)})", "method:p.method,currency,amount:-recv})")
+fsub("cur(findBooking(p.bookingId)||{kind:'individual',currency:c})===c).reduce((sum,p)=>sum+Number(p.amount),0)",
+     "(p.payCurrency||cur(findBooking(p.bookingId)||{kind:'individual',currency:c}))===c).reduce((sum,p)=>sum+Number(p.payCurrency?p.payAmount:p.amount),0)")
 OUT.write_text(out, encoding='utf-8')
 print('OK', OUT, len(out) // 1024, 'KB')
