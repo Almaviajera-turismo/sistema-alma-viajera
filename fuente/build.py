@@ -355,9 +355,28 @@ fsub('<div class="field full"><div class="infobox" id="payInfo"></div></div>', '
 fsub('<b>PASAJERO:</b> ${esc(snap.client)}</div>', '<b>PASAJERO:</b> ${almaReciboPasajero(p,snap)}</div>')
 fsub('<div class="receipt-line"><b>TOTAL DEL VIAJE:</b><br><b>${money(snap.total,snap.currency)}</b></div><div class="receipt-line"><b>PAGOS ANTERIORES:</b><br>${money(snap.paidBefore,snap.currency)}</div><div class="receipt-line"><b>RECIBIDO AHORA:</b><br><b>${money(p.amount,snap.currency)}</b>${almaFxRecibo(p,snap.currency)}</div><div class="receipt-line"><b>SALDO PENDIENTE TRAS ESTE PAGO:</b><br><b>${money(snap.balanceAfter,snap.currency)}</b></div>',
      '${almaReciboMontos(p,snap,extended,`<div class="receipt-line"><b>TOTAL DEL VIAJE:</b><br><b>${money(snap.total,snap.currency)}</b></div><div class="receipt-line"><b>PAGOS ANTERIORES:</b><br>${money(snap.paidBefore,snap.currency)}</div><div class="receipt-line"><b>RECIBIDO AHORA:</b><br><b>${money(p.amount,snap.currency)}</b>${almaFxRecibo(p,snap.currency)}</div><div class="receipt-line"><b>SALDO PENDIENTE TRAS ESTE PAGO:</b><br><b>${money(snap.balanceAfter,snap.currency)}</b></div>`)}')
+# Recibo: sin espacio vacío bajo el logo, sin «Registrado el» y sin extensiones si no hay
+fsub('<div style="font-size:11px">Cerrito 228, piso 8 A · CABA<br>+54 9 11 2671-3436<br>info@almaviajeraturismo.com</div></div><div><div class="receipt-line"><b>RECIBO Nº:</b> ${esc(p.number)}</div><div class="receipt-line"><b>FECHA DEL PAGO:</b> ${fmt(p.date)}</div><div class="receipt-line"><b>REGISTRADO EL:</b> ${formatCaptureStamp(p.recordedAt)}</div><div class="receipt-line"><b>PUNTO DE VENTA:</b> ${esc(cashboxName(p.cashbox))}</div><div class="receipt-line"><b>PASAJERO:</b> ${almaReciboPasajero(p,snap)}</div><div class="receipt-line"><b>FILE:</b> ${esc(snap.fileNumber||bookingFile(b))}</div><div class="receipt-line"><b>REGISTRADO POR:</b> ${esc(p.recordedBy||"No registrado")}</div><div class="receipt-line"><b>MODALIDAD:</b> ${snap.kind===\'grupal\'?\'Salida grupal\':snap.kind===\'aereo\'?\'Solo aéreo\':\'Viaje individual a medida\'}</div></div></div>',
+     '<div class="alma-rc-dir">Cerrito 228, piso 8 A · CABA<br>+54 9 11 2671-3436<br>info@almaviajeraturismo.com</div><div class="receipt-line"><b>PUNTO DE VENTA:</b> ${esc(cashboxName(p.cashbox))}</div><div class="receipt-line"><b>REGISTRADO POR:</b> ${esc(p.recordedBy||"No registrado")}</div></div><div><div class="receipt-line"><b>RECIBO Nº:</b> ${esc(p.number)}</div><div class="receipt-line"><b>FECHA DEL PAGO:</b> ${fmt(p.date)}</div><div class="receipt-line"><b>PASAJERO:</b> ${almaReciboPasajero(p,snap)}</div><div class="receipt-line"><b>FILE:</b> ${esc(snap.fileNumber||bookingFile(b))}</div><div class="receipt-line"><b>MODALIDAD:</b> ${snap.kind===\'grupal\'?\'Salida grupal\':snap.kind===\'aereo\'?\'Solo aéreo\':\'Viaje individual a medida\'}</div></div></div>')
+fsub('<div class="receipt-line"><b>EXTENSIÓN INDIVIDUAL:</b> ${extensionsLabel}</div>', '${extended>0?`<div class="receipt-line"><b>EXTENSIÓN INDIVIDUAL:</b> ${extensionsLabel}</div>`:\'\'}')
+fsub('<div class="receipt-line"><b>EXTENSIÓN/ES:</b><br>${money(extended,snap.currency)}</div>', '${extended>0?`<div class="receipt-line"><b>EXTENSIÓN/ES:</b><br>${money(extended,snap.currency)}</div>`:\'\'}')
+# Recibo de media hoja: observaciones en la columna izquierda
+fsub("<b>CONCEPTO:</b> <strong>${esc(p.concept||'No informado')}</strong></div></div><div><div class=\"receipt-line\"><b>PRECIO BASE:</b>",
+     "<b>CONCEPTO:</b> <strong>${esc(p.concept||'No informado')}</strong></div>${notes?`<div class=\"receipt-line\"><b>OBSERVACIONES:</b> ${esc(notes)}</div>`:''}</div><div><div class=\"receipt-line\"><b>PRECIO BASE:</b>")
+fsub('<div class="receipt-notes"><b>OBSERVACIONES:</b> ${esc(notes||\'—\')}</div>', '')
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización')]:
     out = out.replace(a, b)
+
+# Control: el código de la app tiene que compilar (evita publicar una página rota)
+import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
+_m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)
+if _m and _sh.which('node'):
+    with _tf.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as _f:
+        _f.write(_m.group(1))
+    _r = _sp.run(['node', '--check', _f.name], capture_output=True, text=True)
+    if _r.returncode:
+        raise SystemExit('El código de la app no compila:\n' + _r.stderr[-800:])
 OUT.write_text(out, encoding='utf-8')
 print('OK', OUT, len(out) // 1024, 'KB')
