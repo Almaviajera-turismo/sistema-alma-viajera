@@ -283,6 +283,10 @@ fsub("👥 Pasajeros ('+(o.travelers||[]).length+')</button></div>'+optionTag(o)
 
 # Pedidos de cotización: la columna muestra el responsable (quien lo cargó)
 fsub("table('ordersTable',['Cliente / destino','Tipo','Pedido','Socio'", "table('ordersTable',['Cliente / destino','Tipo','Pedido','Responsable'")
+
+# Pasajero obligatorio de la base (src/mejoras.js, punto 5)
+fsub('Pasajero ya registrado (opcional)<select id="bookingExistingPassenger"', 'Pasajero (de la Base de pasajeros)<select id="bookingExistingPassenger"')
+fsub('Pasajero ya cargado (opcional)<select id="individualExistingPassenger"', 'Titular (de la Base de pasajeros)<select id="individualExistingPassenger"')
 # Nombre del módulo: «Pedidos recibidos» → «Pedidos de cotización» (solo textos; datos y funciones iguales)
 for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibidos', 'pedidos de cotización'),
              ('Pedido recibido', 'Pedido de cotización'), ('pedido recibido', 'pedido de cotización')]:

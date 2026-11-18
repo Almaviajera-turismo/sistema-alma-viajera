@@ -95,7 +95,7 @@ const AYUDA = [
     claves: 'inscribir agregar pasajero grupo salida reserva',
     pasos: [
       'En <b>Salidas grupales</b> tocá <b>Abrir salida</b> en la salida que corresponde, y después <b>+ Inscribir pasajero</b>. (También desde <b>Reservas → + Inscribir al grupo</b>.)',
-      'Si el pasajero ya está cargado, elegilo en <b>Pasajero ya registrado</b>; si no, escribí su nombre y se crea la ficha.',
+      'Buscalo por nombre, DNI o pasaporte y elegilo de la lista. Si no está, tocá <b>➕ Dar de alta pasajero nuevo</b>, completá su ficha y queda elegido solo (sin ficha en la base no se puede inscribir).',
       'Revisá el precio (es el del paquete) y tocá <b>Inscribir pasajero</b>. Se crea su cuenta para esa salida.',
     ],
     nota: 'Cada pasajero tiene una cuenta separada por cada viaje: los pagos de una salida no se mezclan con otra.' },

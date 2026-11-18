@@ -95,5 +95,6 @@ body:not(.alma-online) .app, body:not(.alma-online) .mobile-nav { visibility: hi
 .alma-comp { max-width: 850px; margin: 14px auto 0; padding: 12px 14px; background: #f7f5fb; border-radius: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 @media print { .alma-comp { display: none !important; } }
 body[data-role="socio"] .alma-nav-vend { display: none !important; }
+.alma-alta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 </style>
 
