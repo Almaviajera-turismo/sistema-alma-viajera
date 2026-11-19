@@ -439,6 +439,16 @@ fsub("${extended>0?`<div class=\"receipt-line\"><b>EXTENSIÓN/ES:</b>",
 fsub("(b.kind==='grupal'?'<span class=\"sub\">Incluye '+(b.extensions||[]).length+' extensión/es</span>':'')",
      "(b.kind==='grupal'?(almaCargos(b)?'<span class=\"sub\">Incluye impuestos y gastos adm. '+money(almaCargos(b),cur(b))+'</span>':'')+'<span class=\"sub\">Incluye '+(b.extensions||[]).length+' extensión/es</span>':'')")
 
+# Comisiones: % nacional / internacional y extra (bono) por vendedor y mes (src/mejoras.js)
+fsub("commissionRate(seller)+' %</h3>'", "almaRateTxt(seller)+'</h3>'")
+fsub("'<tr><td><b>'+esc(l.file)+'</b></td>", "'<tr><td><b>'+esc(l.file)+'</b><span class=\"sub\">'+esc(l.scope||'Sin indicar')+' · '+l.rate+' %</span></td>")
+fsub("const tot=ls.reduce((n,l)=>n+l.amount,0);", "const tot=ls.reduce((n,l)=>n+l.amount,0)+almaBono(seller,month,c).amount;")
+fsub("'<p style=\"margin:10px 0 0\"><b>Total a pagar", "almaBonoHtml(seller,month,c,!!paid)+'<p style=\"margin:10px 0 0\"><b>Total a pagar")
+fsub("const amount=Math.round(lines.reduce((n,l)=>n+l.amount,0)*100)/100;", "const amount=Math.round((lines.reduce((n,l)=>n+l.amount,0)+almaBono(seller,month,currency).amount)*100)/100;")
+fsub("detail:lines.map(l=>({file:l.file,client:l.client,gain:Math.round(l.gain*100)/100,rate:l.rate,amount:l.amount}))",
+     "detail:lines.map(l=>({file:l.file,client:l.client,gain:Math.round(l.gain*100)/100,rate:l.rate,amount:l.amount})).concat(almaBono(seller,month,currency).amount?[{file:'Extra',client:almaBono(seller,month,currency).reason||'Extra',gain:0,rate:0,amount:almaBono(seller,month,currency).amount}]:[])")
+fsub("for(const p of state.commissionPayouts.filter(p=>p.month===month))", "for(const k of almaBonoKeys(month))if(!keys.includes(k))keys.push(k);for(const p of state.commissionPayouts.filter(p=>p.month===month))")
+
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)
