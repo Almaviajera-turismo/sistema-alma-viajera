@@ -550,3 +550,15 @@ window.almaVendEditar=n=>{if(!adminOnly())return;let d=$('almaVendDialog');const
    const x={};for(const el of fm.elements)if(el.name)x[el.name]=String(el.value||'').trim();r.ficha=x;audit('Ficha de vendedor','Vendedores',s);save();closeDialog('almaVendDialog');window.__almaVendSel=s;render();notify('Ficha de '+s+' guardada')})}
  d.dataset.seller=n;$('almaVendTit').textContent='Ficha de '+n;const f=almaRateRec(n)?.ficha||{},fm=d.querySelector('form');fm.reset();for(const el of fm.elements)if(el.name)el.value=f[el.name]||'';openDlg('almaVendDialog')};
 {const o=renderCommissions;renderCommissions=(...a)=>{const r=o(...a);almaVendRender();return r};window.renderCommissions=renderCommissions}
+
+// ── Base de pasajeros: teléfono editable directo en la lista ──
+function almaTelCelda(p){const id=esc(p.id);
+ const inp='<span class="alma-telin" id="almaTelIn'+id+'"'+(p.phone?' style="display:none"':'')+'><input type="tel" value="'+esc(p.phone||'')+'" placeholder="+ Agregar teléfono" onkeydown="if(event.key===\'Enter\'){event.preventDefault();almaTelGuardar(&quot;'+id+'&quot;)}if(event.key===\'Escape\')almaTelCancelar(&quot;'+id+'&quot;)"><button type="button" class="btn tiny" onclick="almaTelGuardar(&quot;'+id+'&quot;)">Guardar</button></span>';
+ return p.phone?'<span id="almaTelTx'+id+'">'+esc(p.phone)+' <button type="button" class="btn ghost tiny" title="Corregir teléfono" onclick="almaTelEditar(&quot;'+id+'&quot;)">✎</button></span>'+inp:inp}
+window.almaTelEditar=id=>{const t=$('almaTelTx'+id),i=$('almaTelIn'+id);if(t)t.style.display='none';if(i){i.style.display='';i.querySelector('input').focus()}};
+window.almaTelCancelar=id=>{renderPassengersDirectory()};
+window.almaTelGuardar=id=>{const p=state.passengers.find(x=>x.id===id),inp=$('almaTelIn'+id)?.querySelector('input');if(!p||!inp)return;const v=inp.value.replace(/\s+/g,' ').trim();
+ if(v===(p.phone||''))return renderPassengersDirectory();
+ if(v){const r=almaTelRepetidos(v,id);if(r.length&&!confirm('El teléfono '+v+' ya está cargado en la ficha de:\n• '+r.map(q=>q.name).join('\n• ')+'\n\n¿Guardarlo igual en '+p.name+'?'))return}
+ const antes=p.phone||'';p.phone=v;for(const b of state.bookings.filter(b=>b.passengerId===p.id))b.phone=v;
+ audit(antes?'Teléfono modificado':'Teléfono agregado','Pasajero',p.name+' · '+(antes?antes+' → ':'')+(v||'(vacío)'));save();renderPassengersDirectory();notify('Teléfono de '+p.name+' guardado')};

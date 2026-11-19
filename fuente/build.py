@@ -451,6 +451,9 @@ fsub("detail:lines.map(l=>({file:l.file,client:l.client,gain:Math.round(l.gain*1
      "detail:lines.map(l=>({file:l.file,client:l.client,gain:Math.round(l.gain*100)/100,rate:l.rate,amount:l.amount})).concat(almaBono(seller,month,currency).amount?[{file:'Extra',client:almaBono(seller,month,currency).reason||'Extra',gain:0,rate:0,amount:almaBono(seller,month,currency).amount}]:[])")
 fsub("for(const p of state.commissionPayouts.filter(p=>p.month===month))", "for(const k of almaBonoKeys(month))if(!keys.includes(k))keys.push(k);for(const p of state.commissionPayouts.filter(p=>p.month===month))")
 
+# Base de pasajeros: agregar o corregir el teléfono desde la lista (src/mejoras.js)
+fsub("'</button></td><td>'+esc(p.phone||'—')+'<span class=\"sub\">'+esc(p.email||'')+'</span></td>", "'</button></td><td>'+almaTelCelda(p)+'<span class=\"sub\">'+esc(p.email||'')+'</span></td>")
+
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)

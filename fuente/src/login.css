@@ -139,5 +139,6 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 .alma-vcard:hover{border-color:#8b7fd0}.alma-vcard.sel{border-color:#4b3f8f;box-shadow:0 0 0 2px #e7e3fb}
 .alma-vcard b{font-size:16px;margin-bottom:2px}
 .alma-vh{margin:22px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line,#e6e3ef);font-size:16px}
+.alma-telin{display:inline-flex;gap:6px;align-items:center}.alma-telin input{max-width:170px;padding:6px 9px;border:1px solid var(--line,#ddd);border-radius:9px;font:inherit}
 </style>
 
