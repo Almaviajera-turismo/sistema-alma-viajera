@@ -405,3 +405,7 @@ window.almaTelAviso=()=>{const f=$('passengerForm');if(!f||!f.elements.phone)ret
   const r=almaTelRepetidos(tel,id);if(!r.length)return;
   if(!confirm('El teléfono '+tel+' ya está cargado en la ficha de:\n• '+r.map(q=>q.name).join('\n• ')+'\n\nSi es la misma persona, cancelá y usá esa ficha.\n¿Guardar igual con este teléfono?')){e.preventDefault();e.stopImmediatePropagation()}},true)}}
 {const o=window.openPassengerForm;window.openPassengerForm=(...a)=>{o(...a);almaTelAviso()}}
+
+// ── Caja (socios): Movimientos arriba, Historial de aperturas y cierres abajo ──
+{const hist=$('cashSessionsHistory')?.closest('.panel'),mov=$('cashCentroBalance')?.closest('.panel'),bank=$('bankPanel');
+ if(hist&&mov&&bank){bank.before(mov);bank.after(hist)}}
