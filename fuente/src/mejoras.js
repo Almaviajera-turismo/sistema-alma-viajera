@@ -573,3 +573,26 @@ $('cashMovementCategory')?.addEventListener('change',almaCashProvAviso);
 {const o=window.syncCashCategories;window.syncCashCategories=(...a)=>{const r=o(...a);almaCashProvAviso();return r}}
 {const o=window.openCashMovement;if(o)window.openCashMovement=(...a)=>{const r=o(...a);almaCashProvAviso();return r}}
 $('cashMovementForm')?.addEventListener('submit',e=>{if($('cashMovementCategory')?.value==='Pago a proveedores'&&!e.target.elements.editId?.value){e.preventDefault();e.stopImmediatePropagation();alert('Registrá el pago desde «Registrar pago a proveedor», así impacta en el proveedor y en el file.')}},true);
+
+// ── Cumpleaños de pasajeros: aviso arriba de todas las pantallas (hoy y próximos 7 días) ──
+function almaCumples(dias){const hoy=new Date();hoy.setHours(12,0,0,0);const out=[];
+ for(const p of state.passengers){const bd=String(p.birthDate||'');const m=bd.match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)continue;
+  for(let d=0;d<=dias;d++){const f=new Date(hoy);f.setDate(hoy.getDate()+d);let mm=+m[2],dd=+m[3];
+   if(mm===2&&dd===29&&!(new Date(f.getFullYear(),1,29).getMonth()===1))dd=28;
+   if(f.getMonth()+1===mm&&f.getDate()===dd){out.push({p,d,edad:f.getFullYear()-(+m[1]),fecha:f});break}}}
+ return out.sort((a,b)=>a.d-b.d||a.p.name.localeCompare(b.p.name,'es-AR'))}
+function almaWaNum(t){let d=String(t||'').replace(/\D/g,'');if(!d)return '';if(d.startsWith('00'))d=d.slice(2);if(d.startsWith('54'))return d.startsWith('549')?d:'549'+d.slice(2);if(d.startsWith('0'))d=d.slice(1);if(d.length===10)return '549'+d;return d}
+function almaCumpleBanner(){const head=document.querySelector('.main > .head')||document.querySelector('.head');if(!head)return;let el=$('almaCumple');
+ if(!el){el=document.createElement('div');el.id='almaCumple';el.className='alma-cumple';head.insertAdjacentElement('afterend',el)}
+ const key='almaCumpleOculto',hoyIso=today();let oculto='';try{oculto=localStorage.getItem(key)||''}catch(e){}
+ const ls=almaCumples(7),hoy=ls.filter(x=>x.d===0),prox=ls.filter(x=>x.d>0);
+ if(!ls.length||oculto===hoyIso){el.style.display='none';return}
+ const wa=x=>{const n=almaWaNum(x.p.phone);if(!n)return '';const txt=encodeURIComponent('¡Feliz cumpleaños, '+x.p.name.split(' ')[0]+'! 🎉 Te saludamos con mucho cariño desde Alma Viajera Turismo.');return ' <a class="alma-cumple-wa" href="https://wa.me/'+n+'?text='+txt+'" target="_blank" rel="noopener" title="Saludar por WhatsApp">💬 Saludar</a>'};
+ const nom=x=>'<button type="button" class="textlink" onclick="openPassengerProfile(&quot;'+esc(x.p.id)+'&quot;)">'+esc(x.p.name)+'</button> <span class="sub" style="display:inline">('+x.edad+')</span>';
+ const dia=x=>x.d===1?'mañana':x.fecha.toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'});
+ el.innerHTML='<span class="alma-cumple-ic">🎂</span><div class="alma-cumple-txt">'
+  +(hoy.length?'<b>Hoy cumple'+(hoy.length>1?'n':'')+' años:</b> '+hoy.map(x=>nom(x)+wa(x)).join(' · '):'<b>Hoy no hay cumpleaños.</b>')
+  +(prox.length?'<details><summary>Próximos 7 días ('+prox.length+')</summary>'+prox.map(x=>'<div>'+esc(dia(x))+' · '+nom(x)+wa(x)+'</div>').join('')+'</details>':'')
+  +'</div><button type="button" class="alma-cumple-x" title="Ocultar por hoy" onclick="try{localStorage.setItem(\'almaCumpleOculto\',\''+hoyIso+'\')}catch(e){};document.getElementById(\'almaCumple\').style.display=\'none\'">✕</button>';
+ el.style.display=''}
+{const o=render;render=(...a)=>{const r=o(...a);try{almaCumpleBanner()}catch(e){}return r}}
