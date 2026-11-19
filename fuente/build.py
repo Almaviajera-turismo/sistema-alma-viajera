@@ -280,6 +280,10 @@ fsub('<button data-page="caja" data-admin-only="true">' + CAJA_SVG + 'Caja</butt
 fsub(">+ Abrir caja</button>", ">+ Abrir caja nueva</button>", 0)
 fsub("usar «Abrir caja» para", "usar «Abrir caja nueva» para")
 
+# Ficha del pasajero: mostrar fecha de nacimiento y edad
+fsub("<span>Nacionalidad: '+esc(p.nationality||'—')+'</span>",
+     "<span>Fecha de nacimiento: '+(p.birthDate?fmt(p.birthDate)+(almaEdad(p.birthDate)!=null?' ('+almaEdad(p.birthDate)+' años)':''):'—')+'</span><span>Nacionalidad: '+esc(p.nationality||'—')+'</span>")
+
 # Pedidos: botón «Eliminar pedido» (socios)
 # (abajo de «Confirmar pedido», separado de «+ Otra opción»)
 fsub("orderNextStep(o)+'</td></tr>'",
