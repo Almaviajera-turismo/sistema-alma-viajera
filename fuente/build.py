@@ -430,6 +430,15 @@ fsub("<td>'+badge(b.kind)+'<span class=\"sub\">'+accountChip(b)+'</span></td><td
 fsub('<select id="almaResEst" onchange="almaResFiltrar()">', '<select id="almaResAmb" onchange="almaResFiltrar()"><option value="">Nacional e internacional</option><option>Nacional</option><option>Internacional</option><option value="-">Sin indicar</option></select><select id="almaResEst" onchange="almaResFiltrar()">')
 fsub('<div id="commissionTable"></div></div>', '<div id="almaVentasVend"></div><div id="commissionTable"></div></div>')
 
+# Salidas grupales: impuestos y gastos administrativos por pasajero (se suman al total de cada inscripto)
+fsub("function grossTotal(b){return (b.kind==='grupal'?Number(b.basePrice||0):Number(b.total||0))",
+     "function grossTotal(b){return (b.kind==='grupal'?Number(b.basePrice||0)+almaCargos(b):Number(b.total||0))")
+fsub("base:b.kind==='grupal'?Number(b.basePrice):Number(b.total),", "base:b.kind==='grupal'?Number(b.basePrice):Number(b.total),taxes:almaCargosDe(b).tax,adminFee:almaCargosDe(b).adm,")
+fsub("${extended>0?`<div class=\"receipt-line\"><b>EXTENSIÓN/ES:</b>",
+     "${Number(snap.taxes||0)>0?`<div class=\"receipt-line\"><b>IMPUESTOS:</b><br>${money(snap.taxes,snap.currency)}</div>`:''}${Number(snap.adminFee||0)>0?`<div class=\"receipt-line\"><b>GASTOS ADMINISTRATIVOS:</b><br>${money(snap.adminFee,snap.currency)}</div>`:''}${extended>0?`<div class=\"receipt-line\"><b>EXTENSIÓN/ES:</b>")
+fsub("(b.kind==='grupal'?'<span class=\"sub\">Incluye '+(b.extensions||[]).length+' extensión/es</span>':'')",
+     "(b.kind==='grupal'?(almaCargos(b)?'<span class=\"sub\">Incluye impuestos y gastos adm. '+money(almaCargos(b),cur(b))+'</span>':'')+'<span class=\"sub\">Incluye '+(b.extensions||[]).length+' extensión/es</span>':'')")
+
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)

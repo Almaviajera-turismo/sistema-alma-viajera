@@ -462,3 +462,12 @@ function almaVentasVend(){const el=$('almaVentasVend');if(!el)return;const month
  el.innerHTML=h;const s=$('almaVentasAmb');if(s)s.value=amb}
 window.almaVentasVend=almaVentasVend;
 {const o=renderCommissions;renderCommissions=(...a)=>{const r=o(...a);almaVentasVend();return r};window.renderCommissions=renderCommissions}
+
+// ── Salidas grupales: impuestos y gastos administrativos por pasajero ──
+function almaCargosDe(b){if(!b||b.kind!=='grupal')return {tax:0,adm:0};const g=findGroup(b.groupId);if(!g)return {tax:0,adm:0};
+ if(cur(b)!==(g.currency||'USD'))return {tax:0,adm:0};return {tax:Number(g.taxes||0)||0,adm:Number(g.adminFee||0)||0}}
+function almaCargos(b){const c=almaCargosDe(b);return c.tax+c.adm}
+{const f=$('groupForm'),cap=f?.elements.capacity?.closest('label');if(cap&&!f.elements.taxes)cap.insertAdjacentHTML('beforebegin',
+ '<label class="field">Impuestos por pasajero<input name="taxes" type="number" min="0" step="0.01" placeholder="0"><small class="hint">Misma moneda de la salida. Se suma al total de cada inscripto.</small></label><label class="field">Gastos administrativos por pasajero<input name="adminFee" type="number" min="0" step="0.01" placeholder="0"><small class="hint">Se suma al total de cada inscripto.</small></label>')}
+// Ganancia y comisiones: los impuestos no son venta de la agencia (los gastos administrativos sí)
+{const o=bookingProfit;bookingProfit=(b,...a)=>{const r=o(b,...a);const t=almaCargosDe(b).tax;if(t&&r){if('sale' in r)r.sale-=t;if('gain' in r)r.gain-=t}return r}}

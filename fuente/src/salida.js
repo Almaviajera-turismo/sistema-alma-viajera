@@ -18,6 +18,9 @@ window.almaRenderGroupFicha=()=>{
   +almaFila('Regreso',fmt(g.returnDate)||'—')
   +almaFila('Duración',n==null?'—':(n+1)+' días · '+n+' noches')
   +almaFila('Precio por pasajero',money(g.price,c))
+  +almaFila('Impuestos por pasajero',money(Number(g.taxes||0),c))
+  +almaFila('Gastos administrativos por pasajero',money(Number(g.adminFee||0),c))
+  +almaFila('Total por pasajero',money(Number(g.price||0)+Number(g.taxes||0)+Number(g.adminFee||0),c))
   +almaFila('Cupos',(()=>{const pl=almaPlazas(id);return cap?pl+' de '+cap+' · '+Math.max(cap-pl,0)+' libres':pl+' pasajeros · sin límite'})())
   +almaFila('Vencimiento del saldo (pasajeros)',g.balanceDueDate?fmt(g.balanceDueDate)+(g.balanceDueDate<today()?' · vencido':''):'Sin fecha')
   +almaFila('Responsable',esc(g.owner||'—'))
@@ -48,7 +51,7 @@ function almaGroupTitle(t){const h=document.querySelector('#groupDialog .modalhe
 window.almaEditarSalida=id=>{
  if(!adminOnly())return;const g=findGroup(id);if(!g)return;
  const f=$('groupForm');f.reset();window.__almaEditGroup=id;almaGroupTitle('Editar salida grupal');
- for(const k of ['name','destination','scope','departure','returnDate','price','currency','capacity','balanceDueDate','description']){const i=f.elements[k];if(i)i.value=g[k]==null?'':(k==='capacity'&&!Number(g[k])?'':g[k])}
+ for(const k of ['name','destination','scope','departure','returnDate','price','taxes','adminFee','currency','capacity','balanceDueDate','description']){const i=f.elements[k];if(i)i.value=g[k]==null?'':(k==='capacity'&&!Number(g[k])?'':g[k])}
  const ow=f.elements.owner;if(ow){if(g.owner&&![...ow.options].some(o=>o.value===g.owner))ow.add(new Option(g.owner,g.owner));ow.value=g.owner||ow.value}
  $('groupFilePreview').value=g.fileNumber||'';openDlg('groupDialog')};
 $('groupForm').elements.departure.addEventListener('change',()=>{const g=window.__almaEditGroup&&findGroup(window.__almaEditGroup);if(g)$('groupFilePreview').value=g.fileNumber||''});
@@ -62,7 +65,8 @@ $('groupForm').addEventListener('submit',e=>{
  if(cap&&cap<ins)return alert('Hay '+ins+' pasajeros inscriptos: los cupos no pueden ser menos que eso.');
  const price=Number(x.price);
  if(ins&&Math.abs(price-Number(g.price))>.009&&!confirm('Cambiaste el precio de '+money(g.price,g.currency)+' a '+money(price,x.currency)+'.\n\nEl precio nuevo se usa para los próximos inscriptos. Los '+ins+' ya inscriptos conservan su precio (si hay que cambiarlo, se edita en cada reserva).\n\n¿Guardar?'))return;
- Object.assign(g,{name:x.name.trim(),destination:x.destination,scope:x.scope||g.scope||'',departure:x.departure,returnDate:x.returnDate,price,currency:x.currency,capacity:cap,balanceDueDate:x.balanceDueDate||'',owner:x.owner||g.owner,description:x.description});
+ const tx=Number(x.taxes||0),af=Number(x.adminFee||0);if(ins&&(Math.abs(tx-Number(g.taxes||0))>.009||Math.abs(af-Number(g.adminFee||0))>.009)&&!confirm('Impuestos: '+money(tx,x.currency)+' · Gastos administrativos: '+money(af,x.currency)+' por pasajero.\n\nSe aplica a los '+ins+' pasajeros ya inscriptos: su total y su saldo cambian. Los recibos ya emitidos no se modifican.\n\n¿Guardar?'))return;
+ Object.assign(g,{taxes:tx,adminFee:af,name:x.name.trim(),destination:x.destination,scope:x.scope||g.scope||'',departure:x.departure,returnDate:x.returnDate,price,currency:x.currency,capacity:cap,balanceDueDate:x.balanceDueDate||'',owner:x.owner||g.owner,description:x.description});
  window.__almaEditGroup=null;save();closeDialog('groupDialog');
  $('groupDetailTitle')&&window.currentGroupDetail===id&&($('groupDetailTitle').textContent=g.name);
  render();renderGroupDetail();notify('Salida actualizada')},true);
