@@ -284,6 +284,10 @@ fsub("usar «Abrir caja» para", "usar «Abrir caja nueva» para")
 fsub("<span>Nacionalidad: '+esc(p.nationality||'—')+'</span>",
      "<span>Fecha de nacimiento: '+(p.birthDate?fmt(p.birthDate)+(almaEdad(p.birthDate)!=null?' ('+almaEdad(p.birthDate)+' años)':''):'—')+'</span><span>Nacionalidad: '+esc(p.nationality||'—')+'</span>")
 
+# Caja: categoría de gasto «Pago a proveedores»
+fsub("'Viáticos','Caja chica','Otros egresos'],retiro", "'Viáticos','Caja chica','Pago a proveedores','Otros egresos'],retiro")
+fsub("<option>Caja chica</option><option>Retiro de socios</option>", "<option>Caja chica</option><option>Pago a proveedores</option><option>Retiro de socios</option>")
+
 # Pedidos: botón «Eliminar pedido» (socios)
 # (abajo de «Confirmar pedido», separado de «+ Otra opción»)
 fsub("orderNextStep(o)+'</td></tr>'",
