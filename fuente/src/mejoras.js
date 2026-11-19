@@ -562,3 +562,14 @@ window.almaTelGuardar=id=>{const p=state.passengers.find(x=>x.id===id),inp=$('al
  if(v){const r=almaTelRepetidos(v,id);if(r.length&&!confirm('El teléfono '+v+' ya está cargado en la ficha de:\n• '+r.map(q=>q.name).join('\n• ')+'\n\n¿Guardarlo igual en '+p.name+'?'))return}
  const antes=p.phone||'';p.phone=v;for(const b of state.bookings.filter(b=>b.passengerId===p.id))b.phone=v;
  audit(antes?'Teléfono modificado':'Teléfono agregado','Pasajero',p.name+' · '+(antes?antes+' → ':'')+(v||'(vacío)'));save();renderPassengersDirectory();notify('Teléfono de '+p.name+' guardado')};
+
+// ── Caja: «Pago a proveedores» se registra desde el compromiso (así impacta en el proveedor y en el file) ──
+window.almaCashProvAviso=()=>{const sel=$('cashMovementCategory');if(!sel)return;let el=$('almaCashProv');
+ if(!el){el=document.createElement('div');el.id='almaCashProv';el.className='alma-aviso';sel.closest('label')?.insertAdjacentElement('afterend',el)}
+ const on=sel.value==='Pago a proveedores';el.style.display=on?'':'none';
+ el.innerHTML=on?'<b>Los pagos a proveedores se registran desde su compromiso.</b> Así se descuentan de lo que se le debe al proveedor y del file, y salen de esta caja igual (si es en efectivo).<div style="margin-top:8px"><button type="button" class="btn tiny" onclick="closeDialog(\'cashMovementDialog\');openSupplierPayment()">Registrar pago a proveedor</button></div>':'';
+ const sb=$('cashMovementSubmit');if(sb)sb.disabled=on};
+$('cashMovementCategory')?.addEventListener('change',almaCashProvAviso);
+{const o=window.syncCashCategories;window.syncCashCategories=(...a)=>{const r=o(...a);almaCashProvAviso();return r}}
+{const o=window.openCashMovement;if(o)window.openCashMovement=(...a)=>{const r=o(...a);almaCashProvAviso();return r}}
+$('cashMovementForm')?.addEventListener('submit',e=>{if($('cashMovementCategory')?.value==='Pago a proveedores'&&!e.target.elements.editId?.value){e.preventDefault();e.stopImmediatePropagation();alert('Registrá el pago desde «Registrar pago a proveedor», así impacta en el proveedor y en el file.')}},true);
