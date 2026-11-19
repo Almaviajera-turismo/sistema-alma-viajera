@@ -409,3 +409,29 @@ window.almaTelAviso=()=>{const f=$('passengerForm');if(!f||!f.elements.phone)ret
 // ── Caja (socios): Movimientos arriba, Historial de aperturas y cierres abajo ──
 {const hist=$('cashSessionsHistory')?.closest('.panel'),mov=$('cashCentroBalance')?.closest('.panel'),bank=$('bankPanel');
  if(hist&&mov&&bank){bank.before(mov);bank.after(hist)}}
+
+// ── Historial de caja: ver los movimientos del día de cada apertura ──
+window.almaCajaDia=id=>{const x=state.cashSessions.find(s=>s.id===id);if(!x)return;let d=$('almaCajaDiaDialog');
+ if(!d){d=document.createElement('dialog');d.id='almaCajaDiaDialog';d.className='dialog';d.style.maxWidth='980px';
+  d.innerHTML='<div class="modalhead"><h2 id="almaCajaDiaTit">Caja del día</h2><button class="btn ghost tiny" type="button" onclick="closeDialog(\'almaCajaDiaDialog\')">Cerrar</button></div><style>#almaCajaDiaBody table{width:100%;border-collapse:collapse}#almaCajaDiaBody th,#almaCajaDiaBody td{padding:7px 10px;border-bottom:1px solid var(--line,#eee);text-align:left;vertical-align:top}#almaCajaDiaBody th{font-size:12px;color:#666}</style><div class="modalbody" id="almaCajaDiaBody"></div>';document.body.appendChild(d)}
+ const box=x.cashbox,dia=x.date,ses=state.cashSessions.filter(s=>s.cashbox===box&&s.date===dia).sort((a,b)=>String(a.openedAt||'').localeCompare(String(b.openedAt||'')));
+ const rows=cashLedgerRows().filter(m=>m.cashbox===box&&m.date===dia).sort((a,b)=>String(a.recordedAt||'').localeCompare(String(b.recordedAt||'')));
+ const ef=m=>(m.method||'Efectivo')==='Efectivo',ing=rows.filter(m=>ef(m)&&m.amount>=0),egr=rows.filter(m=>ef(m)&&m.amount<0),otros=rows.filter(m=>!ef(m));
+ const monedas=[...new Set(['ARS','USD',...rows.map(m=>m.currency)])].filter(Boolean);
+ const sum=(l,c)=>l.filter(m=>m.currency===c).reduce((a,m)=>a+Number(m.amount||0),0);
+ const ap=ses[0]?.opening||{},ult=ses[ses.length-1],cerr=ult?.status==='cerrada';
+ const hora=m=>{if(!m.recordedAt)return '—';const t=new Date(m.recordedAt);return isNaN(t)?'—':t.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',hour12:false})};
+ const tabla=(tit,l,vacio)=>'<h3 style="margin:18px 0 6px">'+tit+' ('+l.length+')</h3>'+(l.length?'<div class="tablewrap"><table><thead><tr><th>Hora</th><th>Categoría</th><th>Detalle</th><th>Medio</th><th>Registró</th><th style="text-align:right">Importe</th></tr></thead><tbody>'
+   +l.map(m=>'<tr><td>'+esc(hora(m))+'</td><td>'+esc(m.category)+'</td><td>'+esc(m.detail||'—')+'</td><td>'+esc(m.method||'—')+'</td><td>'+esc(m.recordedBy||'—')+'</td><td style="text-align:right;white-space:nowrap"><b>'+(m.amount<0?'−':'+')+money(Math.abs(m.amount),m.currency)+'</b></td></tr>').join('')+'</tbody></table></div>':'<p class="empty">'+vacio+'</p>');
+ const resumen='<div class="tablewrap"><table><thead><tr><th>Efectivo</th>'+monedas.map(c=>'<th style="text-align:right">'+c+'</th>').join('')+'</tr></thead><tbody>'
+   +'<tr><td>Apertura</td>'+monedas.map(c=>'<td style="text-align:right">'+money(Number(ap[c]||0),c)+'</td>').join('')+'</tr>'
+   +'<tr><td>+ Ingresos en efectivo</td>'+monedas.map(c=>'<td style="text-align:right">'+money(sum(ing,c),c)+'</td>').join('')+'</tr>'
+   +'<tr><td>− Egresos en efectivo</td>'+monedas.map(c=>'<td style="text-align:right">'+money(Math.abs(sum(egr,c)),c)+'</td>').join('')+'</tr>'
+   +'<tr><td><b>= Debería haber</b></td>'+monedas.map(c=>'<td style="text-align:right"><b>'+money(Number(ap[c]||0)+sum(ing,c)+sum(egr,c),c)+'</b></td>').join('')+'</tr>'
+   +(cerr?'<tr><td>Contado al cierre</td>'+monedas.map(c=>'<td style="text-align:right">'+money(Number(ult.counted?.[c]||0),c)+'</td>').join('')+'</tr>':'')
+   +'<tr><td>Transferencias y otros medios (no es efectivo)</td>'+monedas.map(c=>'<td style="text-align:right">'+money(sum(otros,c),c)+'</td>').join('')+'</tr>'
+   +'</tbody></table></div>';
+ $('almaCajaDiaTit').textContent='Caja '+cashboxName(box)+' · '+fmt(dia);
+ $('almaCajaDiaBody').innerHTML='<p class="hint">'+ses.map((s,i)=>'Turno '+(i+1)+': abrió '+esc(s.openedBy||'—')+(s.status==='cerrada'?' · cerró '+esc(s.closedBy||'—'):' · sin cerrar')).join('<br>')+(ses.length>1?'<br>Se muestran los movimientos de todo el día (todos los turnos).':'')+'</p>'+resumen
+   +tabla('Ingresos en efectivo',ing,'Sin ingresos en efectivo.')+tabla('Egresos en efectivo',egr,'Sin egresos en efectivo.')+tabla('Transferencias y otros medios',otros,'Sin transferencias ni otros medios ese día.');
+ openDlg('almaCajaDiaDialog')};

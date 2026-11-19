@@ -288,6 +288,9 @@ fsub("<span>Nacionalidad: '+esc(p.nationality||'—')+'</span>",
 fsub("'Viáticos','Caja chica','Otros egresos'],retiro", "'Viáticos','Caja chica','Pago a proveedores','Otros egresos'],retiro")
 fsub("<option>Caja chica</option><option>Retiro de socios</option>", "<option>Caja chica</option><option>Pago a proveedores</option><option>Retiro de socios</option>")
 
+# Historial de caja: botón «Ver movimientos» por apertura
+fsub("' · Turno '+turn+'</span>'+(x.reopeningReason?", "' · Turno '+turn+'</span><button type=\"button\" class=\"btn ghost tiny\" style=\"margin-top:6px\" onclick=\"almaCajaDia(&quot;'+x.id+'&quot;)\">👁 Ver movimientos del día</button>'+(x.reopeningReason?")
+
 # Pedidos: botón «Eliminar pedido» (socios)
 # (abajo de «Confirmar pedido», separado de «+ Otra opción»)
 fsub("orderNextStep(o)+'</td></tr>'",
