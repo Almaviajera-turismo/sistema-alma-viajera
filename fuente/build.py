@@ -122,7 +122,9 @@ before = sub('<button type="button" class="nav-back" id="navBackButton" onclick=
              '<button type="button" class="nav-back" id="navHomeButton" onclick="goHome()" aria-label="Ir al inicio" style="display:none">⌂ Inicio</button></div>', before)
 before = re.sub(r'<title>.*?</title>', '<title>Alma Viajera Turismo · Gestión</title>', before, count=1)
 before = re.sub(r'<div class="notice">.*?</div>', '', before, count=1, flags=re.S)
-before = sub('Versión de prueba · datos solo en este navegador', 'Sistema online · datos compartidos', before)
+import datetime as _dt
+_ver = (_dt.datetime.utcnow() - _dt.timedelta(hours=3)).strftime('%d/%m %H:%M')
+before = sub('Versión de prueba · datos solo en este navegador', 'Sistema online · datos compartidos · versión ' + _ver, before)
 before = sub('<div class="pill">DEMO V32</div>',
              '<div id="almaUserBox" class="alma-user" hidden><span id="almaSync" class="alma-sync" data-s="ok">✓ Guardado</span>'
              '<div class="alma-who"><b id="almaUserName"></b><small id="almaUserRole"></small></div>'
