@@ -454,6 +454,10 @@ fsub("for(const p of state.commissionPayouts.filter(p=>p.month===month))", "for(
 # Base de pasajeros: agregar o corregir el teléfono desde la lista (src/mejoras.js)
 fsub("'</button></td><td>'+esc(p.phone||'—')+'<span class=\"sub\">'+esc(p.email||'')+'</span></td>", "'</button></td><td>'+almaTelCelda(p)+'<span class=\"sub\">'+esc(p.email||'')+'</span></td>")
 
+# Finanzas: acceso «Comisión vendedores» lleva a la página Vendedores
+fsub("<button class=\"quick\" onclick=\"document.getElementById('commissionPanel').scrollIntoView({behavior:'smooth'})\"><b>％ &nbsp; Comisiones</b><small>Liquidación mensual por vendedor.</small></button>",
+     "<button class=\"quick\" onclick=\"switchPage('vendedores')\"><b>％ &nbsp; Comisión vendedores</b><small>Ficha de cada vendedor, ventas y liquidación mensual de comisiones.</small></button>")
+
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)
