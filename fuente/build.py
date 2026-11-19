@@ -442,7 +442,7 @@ fsub("(b.kind==='grupal'?'<span class=\"sub\">Incluye '+(b.extensions||[]).lengt
      "(b.kind==='grupal'?(almaCargos(b)?'<span class=\"sub\">Incluye impuestos y gastos adm. '+money(almaCargos(b),cur(b))+'</span>':'')+'<span class=\"sub\">Incluye '+(b.extensions||[]).length+' extensión/es</span>':'')")
 
 # Comisiones: % nacional / internacional y extra (bono) por vendedor y mes (src/mejoras.js)
-fsub("commissionRate(seller)+' %</h3>'", "almaRateTxt(seller)+'</h3>'")
+fsub("<div class=\"room-card\" style=\"margin-top:12px\"><h3>'+esc(seller)+' · '+c+' · '+commissionRate(seller)+' %</h3>'", "<div class=\"room-card alma-comcard\" style=\"margin-top:16px\"><h3>'+esc(seller)+' · '+c+' '+almaRateTxt(seller,ls)+'</h3>'")
 fsub("'<tr><td><b>'+esc(l.file)+'</b></td>", "'<tr><td><b>'+esc(l.file)+'</b><span class=\"sub\">'+esc(l.scope||'Sin indicar')+' · '+l.rate+' %</span></td>")
 fsub("const tot=ls.reduce((n,l)=>n+l.amount,0);", "const tot=ls.reduce((n,l)=>n+l.amount,0)+almaBono(seller,month,c).amount;")
 fsub("'<p style=\"margin:10px 0 0\"><b>Total a pagar", "almaBonoHtml(seller,month,c,!!paid)+'<p style=\"margin:10px 0 0\"><b>Total a pagar")
