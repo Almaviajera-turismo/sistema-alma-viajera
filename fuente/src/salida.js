@@ -13,6 +13,7 @@ window.almaRenderGroupFicha=()=>{
  h+='<div class="alma-ficha-grid">'
   +almaFila('File',esc(g.fileNumber||'—'))
   +almaFila('Destino / circuito',esc(g.destination||'—'))
+  +almaFila('Nacional / internacional',esc(g.scope||'Sin indicar'))
   +almaFila('Salida',fmt(g.departure)||'—')
   +almaFila('Regreso',fmt(g.returnDate)||'—')
   +almaFila('Duración',n==null?'—':(n+1)+' días · '+n+' noches')
@@ -47,7 +48,7 @@ function almaGroupTitle(t){const h=document.querySelector('#groupDialog .modalhe
 window.almaEditarSalida=id=>{
  if(!adminOnly())return;const g=findGroup(id);if(!g)return;
  const f=$('groupForm');f.reset();window.__almaEditGroup=id;almaGroupTitle('Editar salida grupal');
- for(const k of ['name','destination','departure','returnDate','price','currency','capacity','balanceDueDate','description']){const i=f.elements[k];if(i)i.value=g[k]==null?'':(k==='capacity'&&!Number(g[k])?'':g[k])}
+ for(const k of ['name','destination','scope','departure','returnDate','price','currency','capacity','balanceDueDate','description']){const i=f.elements[k];if(i)i.value=g[k]==null?'':(k==='capacity'&&!Number(g[k])?'':g[k])}
  const ow=f.elements.owner;if(ow){if(g.owner&&![...ow.options].some(o=>o.value===g.owner))ow.add(new Option(g.owner,g.owner));ow.value=g.owner||ow.value}
  $('groupFilePreview').value=g.fileNumber||'';openDlg('groupDialog')};
 $('groupForm').elements.departure.addEventListener('change',()=>{const g=window.__almaEditGroup&&findGroup(window.__almaEditGroup);if(g)$('groupFilePreview').value=g.fileNumber||''});
@@ -61,7 +62,7 @@ $('groupForm').addEventListener('submit',e=>{
  if(cap&&cap<ins)return alert('Hay '+ins+' pasajeros inscriptos: los cupos no pueden ser menos que eso.');
  const price=Number(x.price);
  if(ins&&Math.abs(price-Number(g.price))>.009&&!confirm('Cambiaste el precio de '+money(g.price,g.currency)+' a '+money(price,x.currency)+'.\n\nEl precio nuevo se usa para los próximos inscriptos. Los '+ins+' ya inscriptos conservan su precio (si hay que cambiarlo, se edita en cada reserva).\n\n¿Guardar?'))return;
- Object.assign(g,{name:x.name.trim(),destination:x.destination,departure:x.departure,returnDate:x.returnDate,price,currency:x.currency,capacity:cap,balanceDueDate:x.balanceDueDate||'',owner:x.owner||g.owner,description:x.description});
+ Object.assign(g,{name:x.name.trim(),destination:x.destination,scope:x.scope||g.scope||'',departure:x.departure,returnDate:x.returnDate,price,currency:x.currency,capacity:cap,balanceDueDate:x.balanceDueDate||'',owner:x.owner||g.owner,description:x.description});
  window.__almaEditGroup=null;save();closeDialog('groupDialog');
  $('groupDetailTitle')&&window.currentGroupDetail===id&&($('groupDetailTitle').textContent=g.name);
  render();renderGroupDetail();notify('Salida actualizada')},true);

@@ -423,6 +423,13 @@ for a, b in [('Pedidos recibidos', 'Pedidos de cotización'), ('pedidos recibido
              ('Ingreso extraordinario', 'Ingreso')]:
     out = out.replace(a, b)
 
+# Nacional / internacional: aéreos guardan el ámbito; reservas muestran la etiqueta
+fsub("kind:'aereo',client:x.client", "kind:'aereo',scope:x.scope||'',client:x.client")
+fsub("<td>'+badge(b.kind)+'<span class=\"sub\">'+accountChip(b)+'</span></td><td><b>'+money(total(b)",
+     "<td>'+badge(b.kind)+almaAmbitoTag(b)+'<span class=\"sub\">'+accountChip(b)+'</span></td><td><b>'+money(total(b)")
+fsub('<select id="almaResEst" onchange="almaResFiltrar()">', '<select id="almaResAmb" onchange="almaResFiltrar()"><option value="">Nacional e internacional</option><option>Nacional</option><option>Internacional</option><option value="-">Sin indicar</option></select><select id="almaResEst" onchange="almaResFiltrar()">')
+fsub('<div id="commissionTable"></div></div>', '<div id="almaVentasVend"></div><div id="commissionTable"></div></div>')
+
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)

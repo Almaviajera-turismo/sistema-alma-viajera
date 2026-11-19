@@ -384,6 +384,7 @@ function almaReservasFiltradas(){
  return state.bookings.filter(b=>{
   if(tipo==='individual'||tipo==='aereo'||tipo==='grupal'){if(b.kind!==tipo)return false}else if(tipo&&b.groupId!==tipo)return false;
   const st=accountStatus(b);if(est==='abiertas'&&!(st==='Abierta'||st==='Reabierta'))return false;if(est==='saldo'&&!(balance(b)>0.009))return false;if(est==='cerradas'&&st!=='Cerrada')return false;if(est==='baja'&&st!=='Baja')return false;
+  const amb=$('almaResAmb')?.value||'';if(amb&&(amb==='-'?almaAmbito(b):almaAmbito(b)!==amb))return false;
   if(!words.length)return true;
   const g=b.kind==='grupal'?findGroup(b.groupId):null;
   const hay=almaNorm([b.client,...almaViajeros(b).map(i=>almaPax(i)?.name),b.fileNumber,bookingFile(b),g?.fileNumber,g?.name,trip(b),b.owner].join(' '));
@@ -435,3 +436,29 @@ window.almaCajaDia=id=>{const x=state.cashSessions.find(s=>s.id===id);if(!x)retu
  $('almaCajaDiaBody').innerHTML='<p class="hint">'+ses.map((s,i)=>'Turno '+(i+1)+': abrió '+esc(s.openedBy||'—')+(s.status==='cerrada'?' · cerró '+esc(s.closedBy||'—'):' · sin cerrar')).join('<br>')+(ses.length>1?'<br>Se muestran los movimientos de todo el día (todos los turnos).':'')+'</p>'+resumen
    +tabla('Ingresos en efectivo',ing,'Sin ingresos en efectivo.')+tabla('Egresos en efectivo',egr,'Sin egresos en efectivo.')+tabla('Transferencias y otros medios',otros,'Sin transferencias ni otros medios ese día.');
  openDlg('almaCajaDiaDialog')};
+
+// ── Nacional / internacional: salidas, viajes individuales y aéreos; reservas y ventas por vendedor ──
+function almaAmbito(b){if(!b)return '';if(b.kind==='grupal')return findGroup(b.groupId)?.scope||'';return b.scope||''}
+function almaAmbitoTag(b){const a=almaAmbito(b);return a?' <span class="tag '+(a==='Nacional'?'green':'')+'" style="margin-left:4px">'+a+'</span>':' <span class="sub" style="display:inline;color:#aa431d">Sin indicar nac./int.</span>'}
+function almaAmbitoCampo(req,kinds){return '<label class="field"'+(kinds?' data-edit-kind="'+kinds+'"':'')+'>Nacional / internacional<select name="scope"'+(req?' required':'')+'><option value="">— Elegí —</option><option>Nacional</option><option>Internacional</option></select></label>'}
+for(const [fid,campo,req,kinds] of [['groupForm','destination',1,''],['individualForm','tour',1,''],['flightForm','destination',1,''],['editBookingForm','tour',0,'individual aereo']]){
+ const f=$(fid),el=f?.elements[campo]?.closest('label');if(el&&!f.elements.scope)el.insertAdjacentHTML('afterend',almaAmbitoCampo(req,kinds))}
+{const o=window.editBooking;window.editBooking=(id,...a)=>{o(id,...a);const b=findBooking(id),f=$('editBookingForm');if(b&&f?.elements.scope)f.elements.scope.value=b.kind==='grupal'?'':(b.scope||'')}}
+$('editBookingForm')?.addEventListener('submit',e=>{const f=e.target,b=findBooking(f.elements.editId.value);if(b&&b.kind!=='grupal'&&f.elements.scope&&(b.scope||'')!==f.elements.scope.value){b.scope=f.elements.scope.value;audit('Nacional / internacional','Reserva',b.client+' → '+(b.scope||'sin indicar'))}},true);
+{const o=window.openIndividual;if(o)window.openIndividual=(...a)=>{const r=o(...a);const f=$('individualForm');if(f?.elements.scope&&!a[0])f.elements.scope.value='';return r}}
+
+/* Ventas por vendedor (en Comisiones): mes elegido, filtro nacional / internacional */
+function almaVentasVend(){const el=$('almaVentasVend');if(!el)return;const month=$('commissionMonth')?.value||today().slice(0,7),mode=$('commissionMode')?.value||'venta',amb=$('almaVentasAmb')?.value||'';
+ const bs=state.bookings.filter(b=>accountStatus(b)!=='Baja'&&commissionMonthOf(b,mode)===month&&(!amb||(amb==='-'?!almaAmbito(b):almaAmbito(b)===amb)));
+ const vend=[...new Set(bs.map(b=>b.owner||'Sin responsable'))].sort((a,b)=>a.localeCompare(b));
+ const mon=[...new Set(bs.map(b=>cur(b)))].sort().reverse();
+ const tot=(l,c)=>l.filter(b=>cur(b)===c).reduce((s,b)=>s+total(b),0);
+ let h='<h3 style="margin:18px 0 6px">Ventas por vendedor</h3><div class="formgrid"><label class="field">Mostrar<select id="almaVentasAmb" onchange="almaVentasVend()"><option value="">Nacional e internacional</option><option>Nacional</option><option>Internacional</option><option value="-">Sin indicar</option></select></label></div><p class="hint">Reservas del mes elegido arriba ('+(mode==='salida'?'por mes de salida':'por mes de venta')+'), sin las dadas de baja. Importes vendidos al pasajero, con descuentos.</p>';
+ if(!bs.length)h+='<div class="empty">No hay ventas en '+esc(month)+(amb?' con ese filtro':'')+'.</div>';
+ else h+='<div class="tablewrap"><table class="table"><thead><tr><th>Vendedor</th><th>Files</th><th>Nacional</th><th>Internacional</th>'+mon.map(c=>'<th style="text-align:right">Vendido '+c+'</th>').join('')+'</tr></thead><tbody>'
+  +vend.map(v=>{const l=bs.filter(b=>(b.owner||'Sin responsable')===v);return '<tr><td><details><summary style="cursor:pointer"><b>'+esc(v)+'</b></summary>'+l.map(b=>'<span class="sub">'+esc(bookingFile(b)||'—')+' · '+esc(b.client)+' · '+esc(trip(b))+' · '+(almaAmbito(b)||'sin indicar')+' · '+money(total(b),cur(b))+'</span>').join('')+'</details></td><td>'+l.length+'</td><td>'+l.filter(b=>almaAmbito(b)==='Nacional').length+'</td><td>'+l.filter(b=>almaAmbito(b)==='Internacional').length+'</td>'+mon.map(c=>'<td style="text-align:right">'+money(tot(l,c),c)+'</td>').join('')+'</tr>'}).join('')
+  +'<tr><td><b>Total</b></td><td><b>'+bs.length+'</b></td><td><b>'+bs.filter(b=>almaAmbito(b)==='Nacional').length+'</b></td><td><b>'+bs.filter(b=>almaAmbito(b)==='Internacional').length+'</b></td>'+mon.map(c=>'<td style="text-align:right"><b>'+money(tot(bs,c),c)+'</b></td>').join('')+'</tr></tbody></table></div>';
+ h+='<h3 style="margin:18px 0 6px">Comisiones a liquidar</h3>';
+ el.innerHTML=h;const s=$('almaVentasAmb');if(s)s.value=amb}
+window.almaVentasVend=almaVentasVend;
+{const o=renderCommissions;renderCommissions=(...a)=>{const r=o(...a);almaVentasVend();return r};window.renderCommissions=renderCommissions}
