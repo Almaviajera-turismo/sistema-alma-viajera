@@ -459,6 +459,10 @@ fsub("'</button></td><td>'+esc(p.phone||'—')+'<span class=\"sub\">'+esc(p.emai
 fsub("<button class=\"quick\" onclick=\"document.getElementById('commissionPanel').scrollIntoView({behavior:'smooth'})\"><b>％ &nbsp; Comisiones</b><small>Liquidación mensual por vendedor.</small></button>",
      "<button class=\"quick\" onclick=\"switchPage('vendedores')\"><b>％ &nbsp; Comisión vendedores</b><small>Ficha de cada vendedor, ventas y liquidación mensual de comisiones.</small></button>")
 
+# Pedidos: las cotizaciones enviadas se ven sombreadas en violeta
+fsub("records.map(o=>'<tr><td><b>'+esc(o.client)+'</b><div><button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"editOrder(",
+     "records.map(o=>'<tr'+(o.status==='Cotización enviada'?' class=\"alma-enviada\"':'')+'><td><b>'+esc(o.client)+'</b><div><button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"editOrder(")
+
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)
