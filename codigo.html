@@ -45,6 +45,7 @@ dialog{border:0;border-radius:20px;padding:0;width:min(760px,96vw);box-shadow:0 
 .calc{background:#f6f5fb;border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:4px;font-size:14px}.calc div{display:flex;justify-content:space-between;gap:10px}.calc .tot{font-weight:700;font-size:16px;border-top:1px solid var(--line);padding-top:6px;margin-top:2px}
 .tabs{display:flex;gap:6px;margin-bottom:14px}.tab{border:1px solid var(--line);background:#fff;color:var(--brand);border-radius:999px;padding:8px 16px;font-weight:600;cursor:pointer}.tab.on{background:var(--brand);color:#fff;border-color:var(--brand)}
 .estsel{padding:5px 8px;border-radius:9px;border:1px solid var(--line);font-size:13px;font-weight:600;background:#fff}.estsel.Confirmada{background:#e6f6ec;color:var(--ok)}.estsel.Enviada{background:#eef0ff;color:#3b4bb0}.estsel.Perdida{background:#fdecea;color:var(--bad)}
+.flyer{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:#f6f5fb;border:1px dashed #cfc8f3;border-radius:14px}.flyer .full{flex-basis:100%}.opc{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:11px;background:#fff;margin-top:6px;cursor:pointer}.opc:hover{border-color:#8b7fd0}
 .df{display:flex;justify-content:space-between;gap:8px;padding:14px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
 @media (max-width:640px){.grid{grid-template-columns:1fr}main{padding:14px}header{padding:12px 14px}}
 </style>
@@ -81,7 +82,10 @@ dialog{border:0;border-radius:20px;padding:0;width:min(760px,96vw);box-shadow:0 
 
 <dialog id="dlg"><form id="fCot" method="dialog">
   <div class="dh"><h2 id="dTit">Nueva cotización</h2><button type="button" class="btn ghost tiny" data-cerrar>✕</button></div>
-  <div class="db"><div class="grid">
+  <div class="db"><div class="flyer">
+    <label class="btn ghost tiny" style="cursor:pointer">📎 Subir flyer<input type="file" id="fFlyer" accept="image/*" multiple hidden></label>
+    <span id="flEstado" class="sub" style="display:inline"></span><span id="flVer"></span>
+    <div id="flOpc" class="full"></div></div><div class="grid">
     <label class="field">Cliente<input name="cliente" required></label>
     <label class="field">Contacto<input name="contacto" placeholder="Teléfono o email"></label>
     <label class="field full">Paquete<input name="paquete" placeholder="Ej.: Cancún 7 noches all inclusive con aéreo"></label>
@@ -92,7 +96,8 @@ dialog{border:0;border-radius:20px;padding:0;width:min(760px,96vw);box-shadow:0 
     <label class="field">Pasajeros<input name="pasajeros" type="number" min="0"></label>
     <label class="field">Moneda<select name="moneda"><option>USD</option><option>ARS</option><option>EUR</option></select></label>
     <label class="field">Neto del paquete<input name="neto" type="number" step="0.01" min="0" placeholder="0"></label>
-    <label class="field">Precio de venta<input name="venta" type="number" step="0.01" min="0" placeholder="0"></label>
+    <label class="field">Precio por persona<input name="precio_pp" type="number" step="0.01" min="0" placeholder="Del flyer"></label>
+    <label class="field">Precio de venta (total)<input name="venta" type="number" step="0.01" min="0" placeholder="0"></label>
     <label class="field">Comisión de Martín (%)<input name="comision_pct" type="number" step="0.01" min="0" max="100"></label>
     <label class="field">Calculada sobre<select name="comision_base"><option value="venta">Precio de venta</option><option value="neto">Neto del paquete</option><option value="margen">Diferencia venta − neto</option></select></label>
     <div class="calc full" id="calc"></div>
@@ -177,7 +182,7 @@ function pintar() {
   const ms = Object.entries(tot);
   $('kpis').innerHTML = ms.length ? ms.map(([c, t]) => '<div class="kpi"><span>Venta ' + c + ' (' + t.n + ' cot. · ' + t.conf + ' confirmadas)</span><b>' + money(t.v, c) + '</b></div><div class="kpi"><span>Comisión de Martín ' + c + '</span><b>' + money(t.m, c) + '</b></div><div class="kpi"><span>Ganancia del paquete ' + c + '</span><b class="' + (t.g < 0 ? 'neg' : 'pos') + '">' + money(t.g, c) + '</b></div>').join('') : '<div class="kpi"><span>Todavía no hay cotizaciones</span><b>—</b></div>';
   $('lista').innerHTML = ls.length ? '<div class="tw"><table><thead><tr><th>Fecha</th><th>Cliente / paquete</th><th>Viaje</th><th class="r">Neto</th><th class="r">Venta</th><th class="r">Comisión Martín</th><th class="r">Ganancia</th><th>Estado</th><th></th></tr></thead><tbody>'
-    + ls.map(r => { const k = calcular(r); return '<tr style="cursor:pointer" data-id="' + r.id + '"><td>' + fmt(r.creado) + '</td><td><b>' + esc(r.cliente || '—') + '</b><span class="sub">' + esc(r.paquete || r.destino || '') + (r.proveedor ? ' · ' + esc(r.proveedor) : '') + '</span></td>'
+    + ls.map(r => { const k = calcular(r); return '<tr style="cursor:pointer" data-id="' + r.id + '"><td>' + fmt(r.creado) + '</td><td><b>' + esc(r.cliente || '—') + '</b>' + ((r.adjuntos || []).length ? ' 🖼' : '') + '<span class="sub">' + esc(r.paquete || r.destino || '') + (r.proveedor ? ' · ' + esc(r.proveedor) : '') + '</span></td>'
       + '<td>' + fmt(r.salida) + (r.regreso ? '<span class="sub">al ' + fmt(r.regreso) + '</span>' : '') + (r.pasajeros ? '<span class="sub">' + r.pasajeros + ' pax</span>' : '') + '</td>'
       + '<td class="r">' + money(k.neto, r.moneda) + '</td><td class="r">' + money(k.venta, r.moneda) + '</td><td class="r">' + money(k.com, r.moneda) + '<span class="sub">' + k.pct + ' %</span></td>'
       + '<td class="r"><b class="' + (k.gan < 0 ? 'neg' : 'pos') + '">' + money(k.gan, r.moneda) + '</b></td><td><select class="estsel ' + esc(r.estado) + '" data-est="' + r.id + '">' + ESTADOS.map(s => '<option' + (s === r.estado ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></td><td><button type="button" class="btn ghost tiny" data-ed="' + r.id + '">✎ Editar</button></td></tr>'; }).join('')
@@ -208,6 +213,81 @@ function rentabilidad() {
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => { vista = t.dataset.v; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t)); $('vCot').style.display = vista === 'cot' ? '' : 'none'; $('vRent').style.display = vista === 'rent' ? '' : 'none'; if (vista === 'rent') rentabilidad(); });
 $('q').oninput = pintar; $('fEst').onchange = pintar; $('fMes').onchange = pintar;
 
+/* flyer: se lee el texto de la imagen (gratis, en la computadora) */
+function leerFlyer(texto) {
+  const MES = { enero:1, febrero:2, marzo:3, abril:4, mayo:5, junio:6, julio:7, agosto:8, septiembre:9, setiembre:9, octubre:10, noviembre:11, diciembre:12 };
+  let t = String(texto || '').replace(/\r/g, '');
+  t = t.replace(/(\d)\s*de\s*(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s*de\s*(\d{4})/gi, '$1 de $2 de $3');
+  t = t.replace(/\b([A-Z]{3})O(\d)/g, '$1 0$2').replace(/\b([A-Z]{3})(\d{1,2}[:.]\d{2})/g, '$1 $2');
+  const lines = t.split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const r = { destino: '', fechas: [], noches: '', regimen: '', moneda: '', opciones: [], vuelos: [], incluye: [] };
+  // fechas
+  let m; const reF = /(\d{1,2}) de ([a-záéíóú]+) de (\d{4})|(\d{1,2})\/(\d{1,2})\/(\d{4})/gi;
+  while ((m = reF.exec(t))) { const d = m[1] ? [m[3], MES[m[2].toLowerCase()], m[1]] : [m[6], +m[5], m[4]]; if (d[1]) r.fechas.push(d[0] + '-' + String(d[1]).padStart(2, '0') + '-' + String(d[2]).padStart(2, '0')); }
+  r.fechas = [...new Set(r.fechas)];
+  m = t.match(/(\d{1,2})\s*noches/i); if (m) r.noches = m[1];
+  m = t.match(/all inclusive|todo incluido|media pensi[oó]n|pensi[oó]n completa|desayuno|\bMAP\b|full board/i); if (m) r.regimen = /^map$/i.test(m[0]) ? 'MAP (media pensión)' : m[0].replace(/^./, c => c.toUpperCase());
+  r.moneda = /USD|U\$S|d[oó]lares/i.test(t) ? 'USD' : /EUR|€\s*\d/.test(t) ? 'EUR' : 'ARS';
+  for (const [re, txt] of [[/carry|equipaje|valija/i, 'equipaje'], [/traslado|TRF|IN ?\/ ?OUT/i, 'traslados'], [/asistencia/i, 'asistencia al viajero'], [/a[eé]reo|vuelo/i, 'aéreos']]) if (re.test(t)) r.incluye.push(txt);
+  // vuelos
+  for (const l of lines) { const v = l.match(/\b([A-Z]{3}) (\d{1,2})[:.](\d{2}) ?[>›→\-]+ ?([A-Z]{3}) (\d{1,2})[:.](\d{2})/); if (v) { const n = l.slice(v.index + v[0].length).match(/\b([A-Z][A-Z0-9]) ?(\d{3,4})\b/); const f = l.match(/(\d{1,2}) de ([a-záéíóú]+) de (\d{4})/i);
+      r.vuelos.push((f ? f[1] + ' ' + f[2].slice(0, 3) + ' · ' : '') + v[1] + ' ' + v[2].padStart(2, '0') + ':' + v[3] + ' → ' + v[4] + ' ' + v[5].padStart(2, '0') + ':' + v[6] + (n ? ' · ' + n[1] + ' ' + n[2] : '')); } }
+  // destino: primer título (Bahía 2027) + país en mayúsculas
+  const NO = /^(alma|viajera|turismo|vuelos?|ida|vuelta|regreso|opciones|impuestos|infantes|tarifa|precio|por persona|incluye|con carry|traslados)/i;
+  for (const l of lines.slice(0, 12)) { const x = l.replace(/[^\p{L}\d ,]/gu, '').trim(); if (!r.destino && /^\p{Lu}\p{Ll}+( \p{L}+){0,3}( 20\d\d)?$/u.test(x) && !NO.test(x)) r.destino = x.replace(/ 20\d\d$/, ''); }
+  const pais = lines.slice(0, 12).map(l => l.replace(/[^\p{L} ]/gu, '').trim()).find(l => /^(BRASIL|ARGENTINA|M[EÉ]XICO|CARIBE|URUGUAY|CHILE|PER[UÚ]|ESPA[ÑN]A|ITALIA|FRANCIA|EUROPA|CUBA|REP[UÚ]BLICA DOMINICANA|ESTADOS UNIDOS|COLOMBIA|PANAM[AÁ])$/.test(l));
+  if (pais) r.destino = (r.destino ? r.destino + ', ' : '') + pais.charAt(0) + pais.slice(1).toLowerCase();
+  // hoteles: renglones en mayúsculas (se unen los consecutivos) y el precio que sigue
+  const esHotel = l => { const x = l.replace(/[^\p{L} ]/gu, '').trim(); if (x.length < 6 || /\d/.test(l.replace(/\|.*$/, ''))) return ''; const may = (x.match(/\p{Lu}/gu) || []).length, min = (x.match(/\p{Ll}/gu) || []).length;
+    return may >= 5 && may > min * 3 && !/^(ALMA|VIAJERA|VUELOS|BRASIL|IDA|VUELTA|USD|TARIFA|IMPUESTOS|LATAM|LIGHT)\b/.test(x) && !/^(BRASIL|ARGENTINA|MEXICO|CARIBE)$/.test(x) ? x.replace(/\b(USD|ARS|EUR)\b/g, '').replace(/\b[A-Z]\b/g, '').replace(/\s+/g, ' ').trim() : ''; };
+  const precioEn = l => { const s = l.replace(/[|€$]/g, ' ').replace(/\b(USD|U\$S|ARS|EUR)\b/g, ' '); let ms = [...s.matchAll(/(?:^|\s)(\d{1,3}(?:[ .]\d{3})+|\d{3,6})(?:,(\d{2}))?(?=\s|$)/g)].map(x => Number(x[1].replace(/[ .]/g, '') + (x[2] ? '.' + x[2] : ''))).filter(n => n >= 100 && n <= 200000 && !(n >= 2024 && n <= 2035));
+    if (!ms.length) { const j = s.match(/(?:^|\s)(\d{1,4}(?: \d{1,4}){1,2})\s*$/); if (j) { const n = Number(j[1].replace(/ /g, '')); if (n >= 100 && n <= 200000) ms = [n]; } }
+    return ms.length ? ms[ms.length - 1] : null; };
+  let cur = null;
+  for (let i = 0; i < lines.length; i++) { const l = lines[i], h = esHotel(l);
+    if (h) { if (cur && !cur.precio && esHotel(lines[i - 1] || '') === cur._last) { cur.hotel += ' ' + h; cur._last = h; continue; } cur = { hotel: h, _last: h, precio: null, regimen: '', noches: '' }; r.opciones.push(cur); continue; }
+    if (!cur) continue;
+    if (/infantes|impuestos|tasas|@|\+54|piso/i.test(l)) continue;
+    const rg = l.match(/all inclusive|todo incluido|media pensi[oó]n|pensi[oó]n completa|desayuno|\bMAP\b/i); if (rg && !cur.regimen) cur.regimen = /^map$/i.test(rg[0]) ? 'MAP (media pensión)' : rg[0].replace(/^./, c => c.toUpperCase());
+    const nn = l.match(/(\d{1,2})\s*noches/i); if (nn && !cur.noches) cur.noches = nn[1];
+    const p = precioEn(l.replace(/\d{1,2}\s*noches/i, '')); if (p && !cur.precio) cur.precio = p;
+  }
+  r.opciones = r.opciones.filter(o => o.precio).map(({ _last, ...o }) => o);
+  // si no hubo hoteles con precio: un único precio «por persona» o «tarifa final»
+  if (!r.opciones.length) { const cands = lines.filter(l => /por persona|tarifa|precio|total|USD|U\$S/i.test(l)).map(precioEn).filter(Boolean); if (cands.length) r.opciones.push({ hotel: '', precio: Math.max(...cands), regimen: r.regimen, noches: r.noches }); }
+  return r;
+}
+let tess = null, flyerPend = [];
+function cargarTess() { if (tess) return tess; tess = new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; sc.onload = () => ok(window.Tesseract); sc.onerror = () => { tess = null; ko(new Error('No se pudo cargar el lector (revisá la conexión).')); }; document.head.appendChild(sc); }); return tess; }
+async function ocr(file, cb) { const T = await cargarTess(); const bmp = await createImageBitmap(file); const k = Math.max(1, Math.min(2.5, 2200 / bmp.width)); const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  const x = c.getContext('2d'); x.filter = 'grayscale(1) contrast(1.3)'; x.drawImage(bmp, 0, 0, c.width, c.height); return (await T.recognize(c, 'spa', { logger: m => { if (m.status === 'recognizing text') cb(Math.round(m.progress * 100)); } })).data.text; }
+function ventaDesdePP() { const pp = Number(F.precio_pp.value), px = Number(F.pasajeros.value); if (pp && px) F.venta.value = Math.round(pp * px * 100) / 100; }
+function aplicarFlyer(r, o) {
+  const set = (n, v) => { if (v != null && v !== '') F.elements[n].value = v; };
+  set('destino', r.destino); set('salida', r.fechas[0]); set('regreso', r.fechas[1]); set('moneda', r.moneda);
+  if (o) { set('paquete', [o.hotel, o.regimen || r.regimen, (o.noches || r.noches) ? (o.noches || r.noches) + ' noches' : '', r.vuelos.length ? 'con aéreo' : ''].filter(Boolean).join(' · ')); set('precio_pp', o.precio); }
+  const nota = [r.vuelos.length ? 'Vuelos: ' + r.vuelos.join(' | ') : '', r.incluye.length ? 'Incluye: ' + r.incluye.join(', ') : ''].filter(Boolean).join('\n');
+  if (nota && !F.notas.value.includes(nota)) F.notas.value = (F.notas.value ? F.notas.value + '\n' : '') + nota;
+  ventaDesdePP(); recalc(); $('flOpc').innerHTML = '<p class="sub" style="margin:6px 0 0">✓ Datos tomados del flyer. Revisalos, completá cliente y pasajeros, y cargá el <b>neto</b> a mano.</p>';
+}
+function pintarFlyers() { const ya = (actual?.adjuntos || []); $('flVer').innerHTML = ya.map((a, i) => ' <a href="#" data-fv="' + i + '">🖼 ' + esc(a.nombre) + '</a>').join('') + flyerPend.map(f => ' <span class="sub" style="display:inline">🖼 ' + esc(f.name) + ' (se guarda al tocar Guardar)</span>').join('');
+  $('flVer').querySelectorAll('[data-fv]').forEach(x => x.onclick = async e => { e.preventDefault(); const a = ya[+x.dataset.fv], w = window.open('', '_blank');
+    try { const r = await fetch(URL_ + '/storage/v1/object/authenticated/codigo/' + a.ruta, { headers: { apikey: KEY, Authorization: 'Bearer ' + await token() } }); if (!r.ok) throw new Error('No se pudo abrir el flyer'); const u = URL.createObjectURL(await r.blob()); if (w) w.location.href = u; else location.href = u; } catch (er) { if (w) w.close(); alert(er.message); } }); }
+async function subirFlyers(id) { const out = []; for (const f of flyerPend) { const ruta = id + '/' + Date.now() + '-' + f.name.replace(/[^\w.\-]+/g, '_');
+    const r = await fetch(URL_ + '/storage/v1/object/codigo/' + ruta, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + await token(), 'Content-Type': f.type || 'image/jpeg', 'x-upsert': 'true' }, body: f });
+    if (r.ok) out.push({ nombre: f.name, ruta }); } flyerPend = []; return out; }
+$('fFlyer').onchange = async e => {
+  const files = [...e.target.files]; e.target.value = ''; if (!files.length) return; flyerPend.push(...files); pintarFlyers();
+  const est = $('flEstado'); let txt = '';
+  try { for (let i = 0; i < files.length; i++) { est.textContent = 'Leyendo el flyer…'; txt += '\n' + await ocr(files[i], p => est.textContent = 'Leyendo el flyer… ' + p + ' %'); } }
+  catch (er) { est.textContent = ''; return alert(er.message || 'No se pudo leer el flyer'); }
+  est.textContent = ''; const r = leerFlyer(txt);
+  if (!r.opciones.length && !r.fechas.length && !r.destino) { $('flOpc').innerHTML = '<p class="sub" style="color:var(--bad)">No pude leer datos del flyer. Completalos a mano (el flyer queda guardado igual).</p>'; return; }
+  if (r.opciones.length > 1) { $('flOpc').innerHTML = '<p class="sub" style="margin:6px 0 2px">El flyer tiene ' + r.opciones.length + ' opciones. Elegí la que se cotiza:</p>' + r.opciones.map((o, i) => '<div class="opc" data-o="' + i + '"><b>' + esc(o.hotel || 'Opción ' + (i + 1)) + '</b><span class="sub" style="display:inline">' + esc([o.regimen, o.noches ? o.noches + ' noches' : ''].filter(Boolean).join(' · ')) + '</span><span style="margin-left:auto"><b>' + money(o.precio, r.moneda) + '</b> p/p</span></div>').join('');
+    $('flOpc').querySelectorAll('[data-o]').forEach(d => d.onclick = () => aplicarFlyer(r, r.opciones[+d.dataset.o])); }
+  else aplicarFlyer(r, r.opciones[0]);
+};
+
 /* formulario */
 const F = $('fCot');
 F.estado.innerHTML = ESTADOS.map(s => '<option>' + s + '</option>').join('');
@@ -216,22 +296,27 @@ function recalc() { const x = Object.fromEntries(new FormData(F)), k = calcular(
     + '<div><span>− Comisión de Martín (' + k.pct + ' % sobre ' + ({ venta: 'la venta', neto: 'el neto', margen: 'la diferencia' }[x.comision_base]) + ')</span><span>' + money(k.com, c) + '</span></div>'
     + '<div class="tot"><span>Ganancia del paquete</span><span class="' + (k.gan < 0 ? 'neg' : 'pos') + '">' + money(k.gan, c) + (k.venta ? ' · ' + pc(k.gan, k.venta) : '') + '</span></div>'; }
 F.addEventListener('input', recalc);
+F.precio_pp.addEventListener('input', ventaDesdePP); F.pasajeros.addEventListener('input', ventaDesdePP);
 function abrir(r) {
   actual = r || null; F.reset();
-  const v = r || { moneda: 'USD', estado: 'Pendiente', comision_base: 'venta', comision_pct: pctDef() };
+  const v = r ? { ...r, precio_pp: r.extra?.precio_pp ?? '' } : { moneda: 'USD', estado: 'Pendiente', comision_base: 'venta', comision_pct: pctDef() };
+  flyerPend = []; $('flOpc').innerHTML = ''; $('flEstado').textContent = '';
   for (const el of F.elements) if (el.name && v[el.name] != null) el.value = v[el.name];
   $('dTit').textContent = r ? 'Cotización · ' + (r.cliente || '') : 'Nueva cotización';
-  $('bBorrar').style.display = r ? '' : 'none'; recalc(); $('dlg').showModal();
+  $('bBorrar').style.display = r ? '' : 'none'; recalc(); pintarFlyers(); $('dlg').showModal();
 }
 $('bNueva').onclick = () => abrir(null);
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => $('dlg').close());
-$('bBorrar').onclick = async () => { if (!actual || !confirm('¿Eliminar esta cotización?')) return; try { await rest('codigo_cotizaciones?id=eq.' + actual.id, { method: 'DELETE' }); $('dlg').close(); await cargar(); } catch (e) { alert(e.message); } };
+$('bBorrar').onclick = async () => { if (!actual || !confirm('¿Eliminar esta cotización?')) return; try { for (const a of actual.adjuntos || []) { try { await fetch(URL_ + '/storage/v1/object/codigo/' + a.ruta, { method: 'DELETE', headers: { apikey: KEY, Authorization: 'Bearer ' + await token() } }); } catch (e) {} }
+    await rest('codigo_cotizaciones?id=eq.' + actual.id, { method: 'DELETE' }); $('dlg').close(); await cargar(); } catch (e) { alert(e.message); } };
 F.onsubmit = async e => {
   e.preventDefault(); const x = Object.fromEntries(new FormData(F)), n = v => v === '' ? null : Number(v), d = v => v || null;
   const body = { cliente: x.cliente.trim(), contacto: x.contacto.trim(), paquete: x.paquete.trim(), destino: x.destino.trim(), proveedor: x.proveedor.trim(), salida: d(x.salida), regreso: d(x.regreso),
-    pasajeros: n(x.pasajeros), moneda: x.moneda, neto: n(x.neto), venta: n(x.venta), comision_pct: n(x.comision_pct), comision_base: x.comision_base, estado: x.estado, notas: x.notas.trim(), actualizado: new Date().toISOString() };
-  try { if (actual) await rest('codigo_cotizaciones?id=eq.' + actual.id, { method: 'PATCH', body: JSON.stringify(body) });
-    else await rest('codigo_cotizaciones', { method: 'POST', body: JSON.stringify(body) });
+    pasajeros: n(x.pasajeros), moneda: x.moneda, neto: n(x.neto), venta: n(x.venta), comision_pct: n(x.comision_pct), comision_base: x.comision_base, estado: x.estado, notas: x.notas.trim(), actualizado: new Date().toISOString(), extra: { ...(actual?.extra || {}), precio_pp: n(x.precio_pp) } };
+  try { let id = actual?.id;
+    if (actual) await rest('codigo_cotizaciones?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(body) });
+    else id = (await (await rest('codigo_cotizaciones', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(body) })).json())[0]?.id;
+    if (flyerPend.length && id) { const nuevos = await subirFlyers(id); if (nuevos.length) await rest('codigo_cotizaciones?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ adjuntos: [...(actual?.adjuntos || []), ...nuevos] }) }); }
     $('dlg').close(); await cargar(); } catch (er) { alert('No se pudo guardar: ' + er.message); }
 };
 
