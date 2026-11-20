@@ -20,7 +20,7 @@ const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers
 const resp = (b: string | object, status = 200) => new Response(typeof b === "string" ? b : JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": typeof b === "string" ? "text/plain; charset=utf-8" : "application/json" } });
 
 async function enviar(subject: string, filas: [string, string][], pie = "") {
-  const pass = Deno.env.get("SMTP_PASS");
+  const pass = (Deno.env.get("SMTP_PASS") || "").trim();   // por si se pegó con espacios o salto de línea
   if (!pass) throw new Error("Falta la contraseña de info@ (secreto SMTP_PASS)");
   const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#222"><h2 style="color:#3b2f7a;margin:0 0 12px">${esc(subject)}</h2><table style="border-collapse:collapse">${filas.map(([k, v]) => `<tr><td style="padding:4px 14px 4px 0;color:#666">${esc(k)}</td><td style="padding:4px 0"><b>${esc(v)}</b></td></tr>`).join("")}</table>${pie ? `<p style="color:#666;margin-top:14px">${esc(pie)}</p>` : ""}<p style="color:#999;font-size:12px;margin-top:18px">Aviso automático del sistema de gestión de Alma Viajera Turismo.</p></div>`;
   const text = subject + "\n\n" + filas.map(([k, v]) => k + ": " + v).join("\n") + (pie ? "\n\n" + pie : "");
