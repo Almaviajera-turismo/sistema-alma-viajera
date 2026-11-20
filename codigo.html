@@ -38,7 +38,7 @@ td{padding:11px 10px;border-bottom:1px solid #f0eef6;vertical-align:top}.r{text-
 .sub{display:block;color:var(--muted);font-size:12px}.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#efedf8;color:var(--brand)}
 .tag.Confirmada{background:#e6f6ec;color:var(--ok)}.tag.Perdida{background:#fdecea;color:var(--bad)}
 .empty{color:var(--muted);text-align:center;padding:30px 10px}
-.pos{color:var(--ok)}.neg{color:var(--bad)}
+.pos{color:var(--ok)}tr.grp td{background:#f3f1fb;font-size:13px;padding:7px 10px;border-bottom:0}tr.op td:first-child{border-left:3px solid #cfc8f3}.neg{color:var(--bad)}
 dialog{border:0;border-radius:20px;padding:0;width:min(760px,96vw);box-shadow:0 20px 60px rgba(0,0,0,.3)}dialog::backdrop{background:rgba(20,16,40,.45)}
 .dh{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}.dh h2{margin:0;font-size:18px}
 .db{padding:18px 20px;max-height:72vh;overflow:auto}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.full{grid-column:1/-1}
@@ -105,7 +105,7 @@ dialog{border:0;border-radius:20px;padding:0;width:min(760px,96vw);box-shadow:0 
     <span></span>
     <label class="field full">Notas<textarea name="notas" rows="3"></textarea></label>
   </div></div>
-  <div class="df"><span><button type="button" class="btn danger tiny" id="bBorrar">Eliminar</button></span><span style="display:flex;gap:8px"><button type="button" class="btn ghost" data-cerrar>Cancelar</button><button class="btn" type="submit">Guardar</button></span></div>
+  <div class="df"><span style="display:flex;gap:8px"><button type="button" class="btn danger tiny" id="bBorrar">Eliminar</button><button type="button" class="btn ghost tiny" id="bOtra">+ Otra opción</button></span><span style="display:flex;gap:8px"><button type="button" class="btn ghost" data-cerrar>Cancelar</button><button class="btn" type="submit">Guardar</button></span></div>
 </form></dialog>
 
 <script>
@@ -162,10 +162,18 @@ function calcular(x) {
   const neto = Number(x.neto || 0), venta = Number(x.venta || 0), pct = Number(x.comision_pct || 0);
   const base = x.comision_base === 'neto' ? neto : x.comision_base === 'margen' ? Math.max(0, venta - neto) : venta;
   const com = Math.round(base * pct) / 100;
-  return { neto, venta, pct, com, gan: venta - neto - com };
+  const sinNeto = x.neto == null || x.neto === '' || (!Number(x.neto) && !!Number(x.venta));
+  return { neto, venta, pct, com, sinNeto, gan: sinNeto ? 0 : venta - neto - com };
 }
 const pctDef = () => { try { return localStorage.getItem(CK) || ''; } catch (e) { return ''; } };
 $('bConfig').onclick = () => { const v = prompt('Comisión de Martín por defecto (%) para las cotizaciones nuevas:', pctDef()); if (v == null) return; const n = Number(String(v).replace(',', '.')); if (!(n >= 0 && n <= 100)) return alert('Poné un porcentaje entre 0 y 100'); try { localStorage.setItem(CK, String(n)); } catch (e) {} alert('Listo: ' + n + ' % para las cotizaciones nuevas.'); };
+
+/* opciones: varias cotizaciones del mismo cliente comparten extra.grupo */
+const grupoDe = r => r.extra?.grupo || r.id;
+function porGrupo(ls) { const m = new Map(); for (const r of ls) { const g = grupoDe(r); if (!m.has(g)) m.set(g, []); m.get(g).push(r); }
+  for (const l of m.values()) l.sort((a, b) => String(a.creado).localeCompare(String(b.creado))); return m; }
+// para totales: una sola opción por cliente (la confirmada; si no hay, la de mayor ganancia)
+function unaPorGrupo(ls) { const out = []; for (const l of porGrupo(ls.filter(r => r.estado !== 'Perdida')).values()) { const c = l.filter(r => r.estado === 'Confirmada'), cn = l.filter(r => !calcular(r).sinNeto), pool = cn.length ? cn : l; out.push(...(c.length ? c : [pool.reduce((a, b) => calcular(b).gan > calcular(a).gan ? b : a)])); } return out; }
 
 /* lista */
 async function entrar() {
@@ -178,22 +186,25 @@ function pintar() {
   const q = $('q').value.toLowerCase(), est = $('fEst').value, mes = $('fMes').value;
   const ls = filas.filter(r => (!est || r.estado === est) && (!mes || String(r.creado).slice(0, 7) === mes) && (!q || [r.cliente, r.paquete, r.destino, r.proveedor, r.contacto].join(' ').toLowerCase().includes(q)));
   const tot = {};
-  for (const r of ls) { if (r.estado === 'Perdida') continue; const c = r.moneda || 'USD', k = calcular(r); tot[c] = tot[c] || { n: 0, v: 0, m: 0, g: 0, conf: 0 }; tot[c].n++; tot[c].v += k.venta; tot[c].m += k.com; tot[c].g += k.gan; if (r.estado === 'Confirmada') tot[c].conf++; }
+  for (const r of unaPorGrupo(ls)) { const c = r.moneda || 'USD', k = calcular(r); tot[c] = tot[c] || { n: 0, v: 0, m: 0, g: 0, conf: 0 }; tot[c].n++; tot[c].v += k.venta; tot[c].m += k.com; tot[c].g += k.gan; if (r.estado === 'Confirmada') tot[c].conf++; }
   const ms = Object.entries(tot);
-  $('kpis').innerHTML = ms.length ? ms.map(([c, t]) => '<div class="kpi"><span>Venta ' + c + ' (' + t.n + ' cot. · ' + t.conf + ' confirmadas)</span><b>' + money(t.v, c) + '</b></div><div class="kpi"><span>Comisión de Martín ' + c + '</span><b>' + money(t.m, c) + '</b></div><div class="kpi"><span>Ganancia del paquete ' + c + '</span><b class="' + (t.g < 0 ? 'neg' : 'pos') + '">' + money(t.g, c) + '</b></div>').join('') : '<div class="kpi"><span>Todavía no hay cotizaciones</span><b>—</b></div>';
+  $('kpis').innerHTML = ms.length ? ms.map(([c, t]) => '<div class="kpi"><span>Venta ' + c + ' (' + t.n + ' cliente/s · ' + t.conf + ' confirmadas)</span><b>' + money(t.v, c) + '</b></div><div class="kpi"><span>Comisión de Martín ' + c + '</span><b>' + money(t.m, c) + '</b></div><div class="kpi"><span>Ganancia del paquete ' + c + '</span><b class="' + (t.g < 0 ? 'neg' : 'pos') + '">' + money(t.g, c) + '</b></div>').join('') : '<div class="kpi"><span>Todavía no hay cotizaciones</span><b>—</b></div>';
   $('lista').innerHTML = ls.length ? '<div class="tw"><table><thead><tr><th>Fecha</th><th>Cliente / paquete</th><th>Viaje</th><th class="r">Neto</th><th class="r">Venta</th><th class="r">Comisión Martín</th><th class="r">Ganancia</th><th>Estado</th><th></th></tr></thead><tbody>'
-    + ls.map(r => { const k = calcular(r); return '<tr style="cursor:pointer" data-id="' + r.id + '"><td>' + fmt(r.creado) + '</td><td><b>' + esc(r.cliente || '—') + '</b>' + ((r.adjuntos || []).length ? ' 🖼' : '') + '<span class="sub">' + esc(r.paquete || r.destino || '') + (r.proveedor ? ' · ' + esc(r.proveedor) : '') + '</span></td>'
+    + [...porGrupo(ls).values()].sort((a, b) => String(b[b.length - 1].creado).localeCompare(String(a[a.length - 1].creado))).map(g => (g.length > 1 ? '<tr class="grp"><td colspan="9"><b>' + esc(g[0].cliente || '—') + '</b> · ' + g.length + ' opciones</td></tr>' : '') + g.map((r, i) => { const k = calcular(r); return '<tr style="cursor:pointer" data-id="' + r.id + '"' + (g.length > 1 ? ' class="op"' : '') + '><td>' + fmt(r.creado) + '</td><td>' + (g.length > 1 ? '<span class="tag">Opción ' + (i + 1) + '</span>' : '<b>' + esc(r.cliente || '—') + '</b>') + ((r.adjuntos || []).length ? ' 🖼' : '') + '<span class="sub">' + esc(r.paquete || r.destino || '') + (r.proveedor ? ' · ' + esc(r.proveedor) : '') + '</span></td>'
       + '<td>' + fmt(r.salida) + (r.regreso ? '<span class="sub">al ' + fmt(r.regreso) + '</span>' : '') + (r.pasajeros ? '<span class="sub">' + r.pasajeros + ' pax</span>' : '') + '</td>'
-      + '<td class="r">' + money(k.neto, r.moneda) + '</td><td class="r">' + money(k.venta, r.moneda) + '</td><td class="r">' + money(k.com, r.moneda) + '<span class="sub">' + k.pct + ' %</span></td>'
-      + '<td class="r"><b class="' + (k.gan < 0 ? 'neg' : 'pos') + '">' + money(k.gan, r.moneda) + '</b></td><td><select class="estsel ' + esc(r.estado) + '" data-est="' + r.id + '">' + ESTADOS.map(s => '<option' + (s === r.estado ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></td><td><button type="button" class="btn ghost tiny" data-ed="' + r.id + '">✎ Editar</button></td></tr>'; }).join('')
+      + '<td class="r">' + (k.sinNeto ? '—' : money(k.neto, r.moneda)) + '</td><td class="r">' + money(k.venta, r.moneda) + '</td><td class="r">' + money(k.com, r.moneda) + '<span class="sub">' + k.pct + ' %</span></td>'
+      + '<td class="r">' + (k.sinNeto ? '<span class="sub" style="color:#b45309">Falta neto</span>' : '<b class="' + (k.gan < 0 ? 'neg' : 'pos') + '">' + money(k.gan, r.moneda) + '</b>') + '</td><td><select class="estsel ' + esc(r.estado) + '" data-est="' + r.id + '">' + ESTADOS.map(s => '<option' + (s === r.estado ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></td><td><button type="button" class="btn ghost tiny" data-ed="' + r.id + '">✎ Editar</button></td></tr>'; }).join('')).join('')
     + '</tbody></table></div>' : '<p class="empty">No hay cotizaciones' + (q || est || mes ? ' con ese filtro' : '') + '.</p>';
   $('lista').querySelectorAll('tr[data-id]').forEach(tr => tr.onclick = e => { if (e.target.closest('select')) return; abrir(filas.find(r => r.id === tr.dataset.id)); });
   $('lista').querySelectorAll('[data-est]').forEach(sel => sel.onchange = async () => { const r = filas.find(x => x.id === sel.dataset.est); const antes = r.estado; r.estado = sel.value; sel.className = 'estsel ' + sel.value;
-    try { await rest('codigo_cotizaciones?id=eq.' + r.id, { method: 'PATCH', body: JSON.stringify({ estado: r.estado, actualizado: new Date().toISOString() }) }); pintar(); } catch (e) { r.estado = antes; alert('No se pudo cambiar el estado: ' + e.message); pintar(); } });
+    try { await rest('codigo_cotizaciones?id=eq.' + r.id, { method: 'PATCH', body: JSON.stringify({ estado: r.estado, actualizado: new Date().toISOString() }) });
+      const otras = filas.filter(x => x.id !== r.id && grupoDe(x) === grupoDe(r) && x.estado !== 'Perdida');
+      if (r.estado === 'Confirmada' && otras.length && confirm('¿Marcar las otras ' + otras.length + ' opción/es de ' + (r.cliente || 'este cliente') + ' como Perdida?')) for (const o of otras) { o.estado = 'Perdida'; await rest('codigo_cotizaciones?id=eq.' + o.id, { method: 'PATCH', body: JSON.stringify({ estado: 'Perdida', actualizado: new Date().toISOString() }) }); }
+      pintar(); } catch (e) { r.estado = antes; alert('No se pudo cambiar el estado: ' + e.message); pintar(); } });
   if (vista === 'rent') rentabilidad();
 }
 function rentabilidad() {
-  const el = $('vRent'), conf = filas.filter(r => r.estado === 'Confirmada'), pot = filas.filter(r => r.estado === 'Pendiente' || r.estado === 'Enviada');
+  const el = $('vRent'), conf = filas.filter(r => r.estado === 'Confirmada'), pot = unaPorGrupo(filas.filter(r => !porGrupo(filas.filter(x => x.estado === 'Confirmada')).has(grupoDe(r)))).filter(r => r.estado === 'Pendiente' || r.estado === 'Enviada');
   const agrupar = (ls, key) => { const m = {}; for (const r of ls) { const k = key(r) + '|' + (r.moneda || 'USD'), x = calcular(r); m[k] = m[k] || { k: key(r), c: r.moneda || 'USD', n: 0, pax: 0, v: 0, ne: 0, co: 0, g: 0 };
     const o = m[k]; o.n++; o.pax += Number(r.pasajeros || 0); o.v += x.venta; o.ne += x.neto; o.co += x.com; o.g += x.gan; } return Object.values(m); };
   const tabla = (tit, rows, col) => '<div class="panel" style="margin-bottom:14px"><h3 style="margin:0 0 10px">' + tit + '</h3>' + (rows.length ? '<div class="tw"><table><thead><tr><th>' + col + '</th><th class="r">Cotiz.</th><th class="r">Pax</th><th class="r">Venta</th><th class="r">Neto</th><th class="r">Comisión Martín</th><th class="r">Ganancia</th><th class="r">Margen</th></tr></thead><tbody>'
@@ -203,7 +214,7 @@ function rentabilidad() {
   const tot = agrupar(conf, () => 'Total confirmadas'), totP = agrupar(pot, () => 'En curso (pendientes y enviadas)');
   const efect = filas.length ? Math.round(conf.length / filas.filter(r => r.estado !== 'Pendiente').length * 100) || 0 : 0;
   el.innerHTML = '<div class="cards">' + tot.map(o => '<div class="kpi"><span>Ganancia confirmada ' + o.c + '</span><b class="pos">' + money(o.g, o.c) + '</b><span>' + o.n + ' cotiz. · margen ' + pc(o.g, o.v) + '</span></div><div class="kpi"><span>Comisión de Martín ' + o.c + '</span><b>' + money(o.co, o.c) + '</b></div>').join('')
-    + totP.map(o => '<div class="kpi"><span>Ganancia posible ' + o.c + ' (' + o.n + ' en curso)</span><b>' + money(o.g, o.c) + '</b></div>').join('')
+    + totP.map(o => '<div class="kpi"><span>Ganancia posible ' + o.c + ' (' + o.n + ' cliente/s en curso, mejor opción de cada uno)</span><b>' + money(o.g, o.c) + '</b></div>').join('')
     + '<div class="kpi"><span>Efectividad (confirmadas / enviadas+confirmadas+perdidas)</span><b>' + (filas.some(r => r.estado !== 'Pendiente') ? efect + ' %' : '—') + '</b></div></div>'
     + '<p class="sub" style="margin:-4px 0 12px">La rentabilidad real se calcula con las cotizaciones <b>Confirmadas</b>. Por mes de salida del viaje.</p>'
     + tabla('Por mes', agrupar(conf.slice().sort((a, b) => String(a.salida || a.creado).localeCompare(String(b.salida || b.creado))), mesN), 'Mes')
@@ -287,17 +298,31 @@ function pintarFlyers() { const ya = (actual?.adjuntos || []); $('flVer').innerH
 async function subirFlyers(id) { const out = []; for (const f of flyerPend) { const ruta = id + '/' + Date.now() + '-' + f.name.replace(/[^\w.\-]+/g, '_');
     const r = await fetch(URL_ + '/storage/v1/object/codigo/' + ruta, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + await token(), 'Content-Type': f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : 'image/jpeg'), 'x-upsert': 'true' }, body: f });
     if (r.ok) out.push({ nombre: f.name, ruta }); } flyerPend = []; return out; }
+let extraOps = [], grupoNuevo = null;
 $('fFlyer').onchange = async e => {
-  const files = [...e.target.files]; e.target.value = ''; if (!files.length) return; flyerPend.push(...files); pintarFlyers();
-  const est = $('flEstado'); let txt = '';
-  try { for (let i = 0; i < files.length; i++) { est.textContent = 'Leyendo el flyer…'; txt += '\n' + await ocr(files[i], p => est.textContent = 'Leyendo el flyer… ' + p + ' %'); } }
+  const files = [...e.target.files]; e.target.value = ''; if (!files.length) return;
+  const est = $('flEstado'), items = [];
+  try { for (let i = 0; i < files.length; i++) { est.textContent = 'Leyendo ' + (files.length > 1 ? 'flyer ' + (i + 1) + ' de ' + files.length : 'el flyer') + '…';
+      const r = leerFlyer(await ocr(files[i], p => est.textContent = 'Leyendo ' + (files.length > 1 ? 'flyer ' + (i + 1) + ' de ' + files.length : 'el flyer') + '… ' + p + ' %'));
+      if (r.opciones.length) for (const o of r.opciones) items.push({ file: files[i], r, o }); else items.push({ file: files[i], r, o: null }); } }
   catch (er) { est.textContent = ''; return alert(er.message || 'No se pudo leer el flyer'); }
-  est.textContent = ''; const r = leerFlyer(txt);
-  if (!r.opciones.length && !r.fechas.length && !r.destino) { $('flOpc').innerHTML = '<p class="sub" style="color:var(--bad)">No pude leer datos del flyer. Completalos a mano (el flyer queda guardado igual).</p>'; return; }
-  if (r.opciones.length > 1) { $('flOpc').innerHTML = '<p class="sub" style="margin:6px 0 2px">El flyer tiene ' + r.opciones.length + ' opciones. Elegí la que se cotiza:</p>' + r.opciones.map((o, i) => '<div class="opc" data-o="' + i + '"><b>' + esc(o.hotel || 'Opción ' + (i + 1)) + '</b><span class="sub" style="display:inline">' + esc([o.regimen, o.noches ? o.noches + ' noches' : ''].filter(Boolean).join(' · ')) + '</span><span style="margin-left:auto"><b>' + money(o.precio, r.moneda) + '</b> p/p</span></div>').join('');
-    $('flOpc').querySelectorAll('[data-o]').forEach(d => d.onclick = () => aplicarFlyer(r, r.opciones[+d.dataset.o])); }
-  else aplicarFlyer(r, r.opciones[0]);
+  est.textContent = '';
+  if (items.length === 1) { flyerPend.push(items[0].file); pintarFlyers(); if (!items[0].o && !items[0].r.fechas.length && !items[0].r.destino) { $('flOpc').innerHTML = '<p class="sub" style="color:var(--bad)">No pude leer datos del flyer. Completalos a mano (el flyer queda guardado igual).</p>'; return; } return aplicarFlyer(items[0].r, items[0].o); }
+  $('flOpc').innerHTML = '<p class="sub" style="margin:6px 0 2px">Encontré ' + items.length + ' opciones. Marcá las que le cotizás: la primera queda en esta cotización y cada una de las otras se crea como <b>otra opción del mismo cliente</b> (con su flyer) al tocar Guardar.</p>'
+    + items.map((it, i) => '<label class="opc"><input type="checkbox" data-it="' + i + '" checked><b>' + esc(it.o?.hotel || it.file.name) + '</b><span class="sub" style="display:inline">' + esc([it.o?.regimen, it.o?.noches ? it.o.noches + ' noches' : '', files.length > 1 ? it.file.name : ''].filter(Boolean).join(' · ')) + '</span><span style="margin-left:auto">' + (it.o?.precio ? '<b>' + money(it.o.precio, it.r.moneda) + '</b> p/p' : '') + '</span></label>').join('')
+    + '<div style="margin-top:8px"><button type="button" class="btn tiny" id="flUsar">Usar las marcadas</button></div>';
+  $('flUsar').onclick = () => { const sel = [...$('flOpc').querySelectorAll('[data-it]')].filter(c => c.checked).map(c => items[+c.dataset.it]); if (!sel.length) return alert('Marcá al menos una opción');
+    flyerPend.push(sel[0].file); extraOps = sel.slice(1); pintarFlyers(); aplicarFlyer(sel[0].r, sel[0].o);
+    if (extraOps.length) $('flOpc').innerHTML += '<p class="sub" style="margin:4px 0 0">Al guardar se crean además <b>' + extraOps.length + '</b> opción/es más para este cliente. Después cargás el neto de cada una.</p>'; };
 };
+async function crearOpcion(base, it, grupo) {
+  const o = it.o || {}, r = it.r, pax = Number(base.pasajeros || 0), pp = o.precio || null;
+  const body = { ...base, paquete: [o.hotel, o.regimen || r.regimen, (o.noches || r.noches) ? (o.noches || r.noches) + ' noches' : '', r.vuelos.length ? 'con aéreo' : ''].filter(Boolean).join(' · ') || base.paquete,
+    destino: r.destino || base.destino, salida: r.fechas[0] || base.salida, regreso: r.fechas[1] || base.regreso, moneda: r.moneda || base.moneda, neto: null, venta: pp && pax ? Math.round(pp * pax * 100) / 100 : null,
+    estado: 'Pendiente', notas: [r.vuelos.length ? 'Vuelos: ' + r.vuelos.join(' | ') : '', r.incluye.length ? 'Incluye: ' + r.incluye.join(', ') : ''].filter(Boolean).join('\n'), extra: { grupo, precio_pp: pp }, adjuntos: [] };
+  const id = (await (await rest('codigo_cotizaciones', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(body) })).json())[0]?.id;
+  if (id) { flyerPend = [it.file]; const adj = await subirFlyers(id); if (adj.length) await rest('codigo_cotizaciones?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ adjuntos: adj }) }); }
+}
 
 /* formulario */
 const F = $('fCot');
@@ -308,15 +333,20 @@ function recalc() { const x = Object.fromEntries(new FormData(F)), k = calcular(
     + '<div class="tot"><span>Ganancia del paquete</span><span class="' + (k.gan < 0 ? 'neg' : 'pos') + '">' + money(k.gan, c) + (k.venta ? ' · ' + pc(k.gan, k.venta) : '') + '</span></div>'; }
 F.addEventListener('input', recalc);
 F.precio_pp.addEventListener('input', ventaDesdePP); F.pasajeros.addEventListener('input', ventaDesdePP);
-function abrir(r) {
-  actual = r || null; F.reset();
-  const v = r ? { ...r, precio_pp: r.extra?.precio_pp ?? '' } : { moneda: 'USD', estado: 'Pendiente', comision_base: 'venta', comision_pct: pctDef() };
+function abrir(r, base) {
+  actual = r || null; F.reset(); extraOps = []; grupoNuevo = base ? base.grupo : null;
+  const v = r ? { ...r, precio_pp: r.extra?.precio_pp ?? '' } : { moneda: 'USD', estado: 'Pendiente', comision_base: 'venta', comision_pct: pctDef(), ...(base || {}) };
   flyerPend = []; $('flOpc').innerHTML = ''; $('flEstado').textContent = '';
   for (const el of F.elements) if (el.name && v[el.name] != null) el.value = v[el.name];
-  $('dTit').textContent = r ? 'Cotización · ' + (r.cliente || '') : 'Nueva cotización';
+  const nOp = r ? filas.filter(x => grupoDe(x) === grupoDe(r)).length : 0;
+  $('dTit').textContent = r ? 'Cotización · ' + (r.cliente || '') + (nOp > 1 ? ' (' + nOp + ' opciones)' : '') : base ? 'Otra opción · ' + (base.cliente || '') : 'Nueva cotización';
+  $('bOtra').style.display = r ? '' : 'none';
   $('bBorrar').style.display = r ? '' : 'none'; recalc(); pintarFlyers(); $('dlg').showModal();
 }
 $('bNueva').onclick = () => abrir(null);
+$('bOtra').onclick = async () => { if (!actual) return; const r = actual, g = grupoDe(r);
+  if (!r.extra?.grupo) { try { await rest('codigo_cotizaciones?id=eq.' + r.id, { method: 'PATCH', body: JSON.stringify({ extra: { ...(r.extra || {}), grupo: g } }) }); r.extra = { ...(r.extra || {}), grupo: g }; } catch (e) { return alert(e.message); } }
+  abrir(null, { grupo: g, cliente: r.cliente, contacto: r.contacto, pasajeros: r.pasajeros, proveedor: r.proveedor, destino: r.destino, salida: r.salida, regreso: r.regreso, moneda: r.moneda, comision_pct: r.comision_pct, comision_base: r.comision_base }); };
 document.querySelectorAll('[data-cerrar]').forEach(b => b.onclick = () => $('dlg').close());
 $('bBorrar').onclick = async () => { if (!actual || !confirm('¿Eliminar esta cotización?')) return; try { for (const a of actual.adjuntos || []) { try { await fetch(URL_ + '/storage/v1/object/codigo/' + a.ruta, { method: 'DELETE', headers: { apikey: KEY, Authorization: 'Bearer ' + await token() } }); } catch (e) {} }
     await rest('codigo_cotizaciones?id=eq.' + actual.id, { method: 'DELETE' }); $('dlg').close(); await cargar(); } catch (e) { alert(e.message); } };
@@ -324,10 +354,13 @@ F.onsubmit = async e => {
   e.preventDefault(); const x = Object.fromEntries(new FormData(F)), n = v => v === '' ? null : Number(v), d = v => v || null;
   const body = { cliente: x.cliente.trim(), contacto: x.contacto.trim(), paquete: x.paquete.trim(), destino: x.destino.trim(), proveedor: x.proveedor.trim(), salida: d(x.salida), regreso: d(x.regreso),
     pasajeros: n(x.pasajeros), moneda: x.moneda, neto: n(x.neto), venta: n(x.venta), comision_pct: n(x.comision_pct), comision_base: x.comision_base, estado: x.estado, notas: x.notas.trim(), actualizado: new Date().toISOString(), extra: { ...(actual?.extra || {}), precio_pp: n(x.precio_pp) } };
+  const grupo = actual?.extra?.grupo || grupoNuevo || (extraOps.length ? (actual?.id || crypto.randomUUID()) : null); if (grupo) body.extra.grupo = grupo;
   try { let id = actual?.id;
     if (actual) await rest('codigo_cotizaciones?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(body) });
     else id = (await (await rest('codigo_cotizaciones', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(body) })).json())[0]?.id;
     if (flyerPend.length && id) { const nuevos = await subirFlyers(id); if (nuevos.length) await rest('codigo_cotizaciones?id=eq.' + id, { method: 'PATCH', body: JSON.stringify({ adjuntos: [...(actual?.adjuntos || []), ...nuevos] }) }); }
+    if (extraOps.length) { const base = { cliente: body.cliente, contacto: body.contacto, pasajeros: body.pasajeros, proveedor: body.proveedor, destino: body.destino, salida: body.salida, regreso: body.regreso, moneda: body.moneda, comision_pct: body.comision_pct, comision_base: body.comision_base, paquete: '' };
+      for (const it of extraOps) await crearOpcion(base, it, grupo); extraOps = []; }
     $('dlg').close(); await cargar(); } catch (er) { alert('No se pudo guardar: ' + er.message); }
 };
 
