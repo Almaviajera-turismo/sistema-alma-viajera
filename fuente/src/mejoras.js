@@ -596,3 +596,6 @@ function almaCumpleBanner(){const head=document.querySelector('.main > .head')||
   +'</div><button type="button" class="alma-cumple-x" title="Ocultar por hoy" onclick="try{localStorage.setItem(\'almaCumpleOculto\',\''+hoyIso+'\')}catch(e){};document.getElementById(\'almaCumple\').style.display=\'none\'">✕</button>';
  el.style.display=''}
 {const o=render;render=(...a)=>{const r=o(...a);try{almaCumpleBanner()}catch(e){}return r}}
+
+// ── Finanzas: probar el aviso por mail de cobros (solo socios) ──
+{const d=document.querySelector('#tesoreria > .description');if(d&&!$('almaAvisoMailBtn'))d.insertAdjacentHTML('afterend','<div id="almaAvisoMailBtn" class="hint" style="margin:-4px 0 14px">📧 Cada cobro que se registra (o se anula) se avisa por mail a los socios desde info@almaviajeraturismo.com. <button type="button" class="btn ghost tiny" onclick="almaProbarAvisoMail()">Enviar mail de prueba</button></div>')}

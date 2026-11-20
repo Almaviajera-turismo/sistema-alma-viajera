@@ -664,6 +664,14 @@ window.almaDeleteDoc = async (pid, name) => {
 };
 /* Comprobantes de cobros (transferencias): espacio privado "comprobantes", carpeta = id del recibo */
 const CBUCKET = 'comprobantes';
+window.almaProbarAvisoMail = async () => {
+  try {
+    const t = await token();
+    const r = await fetch(CFG.url + '/functions/v1/aviso-cobro', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: CFG.key, Authorization: 'Bearer ' + t }, body: JSON.stringify({ prueba: true }) });
+    const tx = await r.text();
+    alert(r.ok ? 'Listo: se envió un mail de prueba a los 4 socios desde info@almaviajeraturismo.com. Revisá la bandeja (y spam).' : 'No se pudo enviar el mail de prueba: ' + tx);
+  } catch (e) { alert('No se pudo enviar el mail de prueba: ' + (e.message || e)); }
+};
 window.almaComprobantes = {
   async listar(rid) {
     const r = await storage('POST', 'object/list/' + CBUCKET,
