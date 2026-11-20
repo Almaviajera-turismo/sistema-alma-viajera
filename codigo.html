@@ -83,7 +83,7 @@ dialog{border:0;border-radius:20px;padding:0;width:min(760px,96vw);box-shadow:0 
 <dialog id="dlg"><form id="fCot" method="dialog">
   <div class="dh"><h2 id="dTit">Nueva cotización</h2><button type="button" class="btn ghost tiny" data-cerrar>✕</button></div>
   <div class="db"><div class="flyer">
-    <label class="btn ghost tiny" style="cursor:pointer">📎 Subir flyer<input type="file" id="fFlyer" accept="image/*" multiple hidden></label>
+    <label class="btn ghost tiny" style="cursor:pointer">📎 Subir flyer<input type="file" id="fFlyer" accept="image/*,application/pdf,.pdf" multiple hidden></label>
     <span id="flEstado" class="sub" style="display:inline"></span><span id="flVer"></span>
     <div id="flOpc" class="full"></div></div><div class="grid">
     <label class="field">Cliente<input name="cliente" required></label>
@@ -259,7 +259,18 @@ function leerFlyer(texto) {
 }
 let tess = null, flyerPend = [];
 function cargarTess() { if (tess) return tess; tess = new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; sc.onload = () => ok(window.Tesseract); sc.onerror = () => { tess = null; ko(new Error('No se pudo cargar el lector (revisá la conexión).')); }; document.head.appendChild(sc); }); return tess; }
-async function ocr(file, cb) { const T = await cargarTess(); const bmp = await createImageBitmap(file); const k = Math.max(1, Math.min(2.5, 2200 / bmp.width)); const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+let pdfjs = null;
+function cargarPdf() { if (pdfjs) return pdfjs; pdfjs = new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+  sc.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'; ok(window.pdfjsLib); }; sc.onerror = () => { pdfjs = null; ko(new Error('No se pudo cargar el lector de PDF (revisá la conexión).')); }; document.head.appendChild(sc); }); return pdfjs; }
+// PDF: si trae texto se lee directo (exacto); si es una imagen escaneada, se lee cada página como foto
+async function leerPdf(file, cb) { const L = await cargarPdf(), doc = await L.getDocument({ data: await file.arrayBuffer() }).promise; let txt = '';
+  for (let i = 1; i <= Math.min(doc.numPages, 6); i++) { const pg = await doc.getPage(i), tc = await pg.getTextContent();
+    let t = '', y = null; for (const it of tc.items) { const yy = Math.round(it.transform[5]); t += (y !== null && Math.abs(yy - y) > 3 ? '\n' : (t && !t.endsWith(' ') ? ' ' : '')) + it.str; y = yy; }
+    if (t.replace(/\s/g, '').length > 40) { txt += '\n' + t; continue; }
+    const vp = pg.getViewport({ scale: 2.2 }), c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height; await pg.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    const T = await cargarTess(); txt += '\n' + (await T.recognize(c, 'spa', { logger: m => { if (m.status === 'recognizing text') cb(Math.round(m.progress * 100), i, doc.numPages); } })).data.text; }
+  return txt; }
+async function ocr(file, cb) { if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) return leerPdf(file, cb); const T = await cargarTess(); const bmp = await createImageBitmap(file); const k = Math.max(1, Math.min(2.5, 2200 / bmp.width)); const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
   const x = c.getContext('2d'); x.filter = 'grayscale(1) contrast(1.3)'; x.drawImage(bmp, 0, 0, c.width, c.height); return (await T.recognize(c, 'spa', { logger: m => { if (m.status === 'recognizing text') cb(Math.round(m.progress * 100)); } })).data.text; }
 function ventaDesdePP() { const pp = Number(F.precio_pp.value), px = Number(F.pasajeros.value); if (pp && px) F.venta.value = Math.round(pp * px * 100) / 100; }
 function aplicarFlyer(r, o) {
@@ -270,11 +281,11 @@ function aplicarFlyer(r, o) {
   if (nota && !F.notas.value.includes(nota)) F.notas.value = (F.notas.value ? F.notas.value + '\n' : '') + nota;
   ventaDesdePP(); recalc(); $('flOpc').innerHTML = '<p class="sub" style="margin:6px 0 0">✓ Datos tomados del flyer. Revisalos, completá cliente y pasajeros, y cargá el <b>neto</b> a mano.</p>';
 }
-function pintarFlyers() { const ya = (actual?.adjuntos || []); $('flVer').innerHTML = ya.map((a, i) => ' <a href="#" data-fv="' + i + '">🖼 ' + esc(a.nombre) + '</a>').join('') + flyerPend.map(f => ' <span class="sub" style="display:inline">🖼 ' + esc(f.name) + ' (se guarda al tocar Guardar)</span>').join('');
+function pintarFlyers() { const ya = (actual?.adjuntos || []); $('flVer').innerHTML = ya.map((a, i) => ' <a href="#" data-fv="' + i + '">' + (/\.pdf$/i.test(a.nombre) ? '📄 ' : '🖼 ') + esc(a.nombre) + '</a>').join('') + flyerPend.map(f => ' <span class="sub" style="display:inline">🖼 ' + esc(f.name) + ' (se guarda al tocar Guardar)</span>').join('');
   $('flVer').querySelectorAll('[data-fv]').forEach(x => x.onclick = async e => { e.preventDefault(); const a = ya[+x.dataset.fv], w = window.open('', '_blank');
     try { const r = await fetch(URL_ + '/storage/v1/object/authenticated/codigo/' + a.ruta, { headers: { apikey: KEY, Authorization: 'Bearer ' + await token() } }); if (!r.ok) throw new Error('No se pudo abrir el flyer'); const u = URL.createObjectURL(await r.blob()); if (w) w.location.href = u; else location.href = u; } catch (er) { if (w) w.close(); alert(er.message); } }); }
 async function subirFlyers(id) { const out = []; for (const f of flyerPend) { const ruta = id + '/' + Date.now() + '-' + f.name.replace(/[^\w.\-]+/g, '_');
-    const r = await fetch(URL_ + '/storage/v1/object/codigo/' + ruta, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + await token(), 'Content-Type': f.type || 'image/jpeg', 'x-upsert': 'true' }, body: f });
+    const r = await fetch(URL_ + '/storage/v1/object/codigo/' + ruta, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + await token(), 'Content-Type': f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : 'image/jpeg'), 'x-upsert': 'true' }, body: f });
     if (r.ok) out.push({ nombre: f.name, ruta }); } flyerPend = []; return out; }
 $('fFlyer').onchange = async e => {
   const files = [...e.target.files]; e.target.value = ''; if (!files.length) return; flyerPend.push(...files); pintarFlyers();
