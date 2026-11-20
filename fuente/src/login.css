@@ -147,5 +147,6 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 .alma-cumple-ic{font-size:22px;line-height:1}.alma-cumple-txt{flex:1}.alma-cumple-txt details{margin-top:4px}.alma-cumple-txt summary{cursor:pointer;color:#5a4a9a;font-weight:600}
 .alma-cumple-wa{font-size:12px;font-weight:600;color:#128c4a;text-decoration:none;border:1px solid #bfe5cf;background:#effaf3;border-radius:999px;padding:1px 8px;margin-left:2px;white-space:nowrap}
 .alma-cumple-x{border:0;background:transparent;cursor:pointer;color:#8a7f99;font-size:14px;padding:2px 4px}
+.alma-codigo{width:min(1200px,96vw);max-width:96vw}.cd-barra{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}.cd-barra input{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font:inherit}.cd-barra select{padding:9px;border:1px solid var(--line,#ddd);border-radius:10px;font:inherit}#almaVer{cursor:default}
 </style>
 
