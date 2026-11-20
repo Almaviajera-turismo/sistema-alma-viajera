@@ -13,6 +13,8 @@ const fecha = (d: string) => d ? d.slice(0, 10).split("-").reverse().join("/") :
 const hora = (t: string) => t ? new Date(t).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 const OFI: Record<string, string> = { centro: "Centro", gaona: "Gaona" };
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const resp = (b: string | object, status = 200) => new Response(typeof b === "string" ? b : JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": typeof b === "string" ? "text/plain; charset=utf-8" : "application/json" } });
 
 async function enviar(subject: string, filas: [string, string][], pie = "") {
   const pass = Deno.env.get("SMTP_PASS");
@@ -25,6 +27,7 @@ async function enviar(subject: string, filas: [string, string][], pie = "") {
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
     const body = await req.json().catch(() => ({}));
     if (body.prueba) {
@@ -32,19 +35,19 @@ Deno.serve(async (req) => {
       const jwt = (req.headers.get("Authorization") || "").replace("Bearer ", "");
       const { data: u } = await db.auth.getUser(jwt);
       const { data: p } = u?.user ? await db.from("perfiles").select("rol").eq("id", u.user.id).maybeSingle() : { data: null };
-      if (p?.rol !== "socio") return new Response("no autorizado", { status: 401 });
+      if (p?.rol !== "socio") return resp("no autorizado", 401);
       await enviar("✅ Prueba de avisos de cobro", [["Estado", "El envío desde info@ funciona"], ["Enviado", hora(new Date().toISOString())]]);
-      return Response.json({ ok: true });
+      return resp({ ok: true });
     }
     const id = String(body.id || ""), tipo = body.tipo === "anulado" ? "anulado" : "nuevo";
-    if (!/^[0-9a-f-]{36}$/.test(id)) return new Response("id inválido", { status: 400 });
+    if (!/^[0-9a-f-]{36}$/.test(id)) return resp("id inválido", 400);
     const { data: c } = await db.from("cobros").select("*").eq("id", id).maybeSingle();
-    if (!c) return new Response("no existe", { status: 404 });
+    if (!c) return resp("no existe", 404);
     const ref = tipo === "anulado" ? c.anulado : c.registrado;
-    if (!ref || Date.now() - new Date(ref).getTime() > 15 * 60 * 1000) return new Response("viejo", { status: 409 });
+    if (!ref || Date.now() - new Date(ref).getTime() > 15 * 60 * 1000) return resp("viejo", 409);
     // un solo aviso por cobro y por tipo
     const { error: dup } = await db.from("avisos_cobro").insert({ cobro_id: id, tipo });
-    if (dup) return new Response("ya avisado", { status: 200 });
+    if (dup) return resp("ya avisado", 200);
     const f = c.foto || {}, x = c.extra || {}, mon = c.moneda || f.currency || "USD";
     const destino = x.destination ? (x.destination === "Otro" ? (x.destinationDetail || "Otro") : x.destination) : "";
     const filas: [string, string][] = [
@@ -56,7 +59,6 @@ Deno.serve(async (req) => {
       ["Registró", (c.registrado_por || "—") + " · Oficina " + (OFI[c.caja] || c.caja || "—")],
     ];
     if (f.balanceAfter != null) filas.push(["Saldo del file", money(f.balanceAfter, f.currency || mon)]);
-    if (x.fxRate && x.fxFrom) filas.push(["Cambio", x.fxFrom + " a " + x.fxRate]);
     try {
     if (tipo === "anulado") {
       filas.push(["Anuló", (c.anulado_por || "—") + " · " + hora(c.anulado)], ["Motivo", c.motivo_anulacion || "—"]);
@@ -65,9 +67,9 @@ Deno.serve(async (req) => {
       await enviar("💰 Nuevo cobro · " + (c.numero || "") + " · " + money(c.importe, mon) + " · " + (f.client || ""), filas, c.notas ? "Notas: " + c.notas : "");
     }
     } catch (e) { await db.from("avisos_cobro").delete().eq("cobro_id", id).eq("tipo", tipo); throw e; }
-    return Response.json({ ok: true });
+    return resp({ ok: true });
   } catch (e) {
     console.error(e);
-    return new Response(String((e as Error).message || e), { status: 500 });
+    return resp(String((e as Error).message || e), 500);
   }
 });
