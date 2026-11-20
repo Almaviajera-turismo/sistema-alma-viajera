@@ -148,5 +148,6 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 .alma-cumple-wa{font-size:12px;font-weight:600;color:#128c4a;text-decoration:none;border:1px solid #bfe5cf;background:#effaf3;border-radius:999px;padding:1px 8px;margin-left:2px;white-space:nowrap}
 .alma-cumple-x{border:0;background:transparent;cursor:pointer;color:#8a7f99;font-size:14px;padding:2px 4px}
 #almaVer{cursor:default}
+.alma-sf{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;margin-bottom:6px;background:#f6f5fb;border:1px dashed #cfc8f3;border-radius:14px}.alma-sf #almaSfRes{flex-basis:100%}.alma-sf-ok{outline:2px solid #8fd3a8!important;background:#f1fbf4!important}
 </style>
 

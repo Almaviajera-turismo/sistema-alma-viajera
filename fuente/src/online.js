@@ -857,6 +857,21 @@ window.almaSubirFolleto = async input => {
   window.almaFolleto(id);
 };
 
+// Folleto desde «Subir flyer» de Nueva/Editar salida: espera a que la salida esté guardada y lo sube
+window.almaFolletoParaSalida = async (id, file) => {
+  for (let i = 0; i < 40 && !snap.groups?.has(id); i++) await new Promise(r => setTimeout(r, 500));
+  const g = APP?.getState().groups.find(x => x.id === id); if (!g) return;
+  try {
+    const p = await prepareFile(file);
+    const path = id + '/' + safeName('folleto-' + stamp()) + '.' + p.ext;
+    await storage('POST', 'object/' + FBUCKET + '/' + path, p.blob, { 'Content-Type': p.type, 'x-upsert': 'true' });
+    await rest('POST', 'rpc/cambiar_folleto', { p_salida: id, p_url: CFG.url + '/storage/v1/object/public/' + FBUCKET + '/' + path });
+    const row = (await rest('GET', 'salidas?select=*&id=eq.' + encodeURIComponent(id)))?.[0];
+    if (row) { Object.assign(g, fromRow(row, MAPS.groups)); snap.groups?.set(id, JSON.stringify(toRow(g, MAPS.groups))); }
+    notifyOk('Folleto guardado en la salida ' + g.name + '.'); APP?.render();
+  } catch (e) { alert('La salida se guardó, pero no se pudo subir el folleto: ' + e.message + '. Podés subirlo desde la salida.'); }
+};
+
 /* Fotos de las cotizaciones (bucket público "cotizaciones"; lo usa cotizador.js) */
 window.almaSubirFotoCot = async (blob, path) => {
   await storage('POST', 'object/cotizaciones/' + path, blob, { 'Content-Type': 'image/jpeg', 'x-upsert': 'true' });

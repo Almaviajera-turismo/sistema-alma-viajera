@@ -163,6 +163,7 @@ online = (HERE / 'src' / 'online.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'ayuda.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'cotizador.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'sciweb.js').read_text(encoding='utf-8')
+online += '\n' + (HERE / 'src' / 'salidaflyer.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'codigo.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'whatsapp.js').read_text(encoding='utf-8')
 
