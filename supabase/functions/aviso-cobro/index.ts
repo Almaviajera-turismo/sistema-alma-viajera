@@ -6,7 +6,9 @@ import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 const DE = "info@almaviajeraturismo.com";
 const PARA = ["hernan@almaviajeraturismo.com", "diego@almaviajeraturismo.com", "adriel@almaviajeraturismo.com", "sandro@almaviajeraturismo.com"];
 const HOST = Deno.env.get("SMTP_HOST") || "mail.almaviajeraturismo.com";
-const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+const URL_ = Deno.env.get("SUPABASE_URL")!;
+const KEY = (() => { try { const j = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}"); return j.default || Object.values(j)[0] || ""; } catch { return ""; } })() || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const db = createClient(URL_, KEY, { auth: { persistSession: false, autoRefreshToken: false } });
 
 const money = (n: number, c: string) => (c || "USD") + " " + Number(n || 0).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fecha = (d: string) => d ? d.slice(0, 10).split("-").reverse().join("/") : "—";
@@ -33,9 +35,11 @@ Deno.serve(async (req) => {
     if (body.prueba) {
       // prueba manual: solo si la pide alguien con sesión de socio
       const jwt = (req.headers.get("Authorization") || "").replace("Bearer ", "");
-      const { data: u } = await db.auth.getUser(jwt);
-      const { data: p } = u?.user ? await db.from("perfiles").select("rol").eq("id", u.user.id).maybeSingle() : { data: null };
-      if (p?.rol !== "socio") return resp("no autorizado", 401);
+      const ur = await fetch(URL_ + "/auth/v1/user", { headers: { apikey: KEY, Authorization: "Bearer " + jwt } });
+      const u = ur.ok ? await ur.json() : null;
+      if (!u?.id) return resp("no autorizado (sesión no válida: " + ur.status + ")", 401);
+      const { data: p, error: pe } = await db.from("perfiles").select("rol").eq("id", u.id).maybeSingle();
+      if (p?.rol !== "socio") return resp("no autorizado" + (pe ? " (" + pe.message + ")" : ""), 401);
       await enviar("✅ Prueba de avisos de cobro", [["Estado", "El envío desde info@ funciona"], ["Enviado", hora(new Date().toISOString())]]);
       return resp({ ok: true });
     }
