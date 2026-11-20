@@ -208,12 +208,18 @@ const MAPS = {
     seller: ['vendedor'], month: ['mes'], currency: ['moneda'], amount: ['importe', N], detail: ['detalle', J],
     paidDate: ['pagado', D], paidBy: ['pagado_por'] } },
   bankAccounts: { table: 'cuentas_banco', order: 'creado.asc', cols: {
-    name: ['nombre'], opening: [['saldo_inicial_ars', 'saldo_inicial_usd'], PAIR], since: ['desde', D] } }
+    name: ['nombre'], opening: [['saldo_inicial_ars', 'saldo_inicial_usd'], PAIR], since: ['desde', D] } },
+  partnerExpenses: { table: 'gastos_socios', order: 'fecha.asc', cols: {
+    date: ['fecha', D], receipt: ['comprobante'], dueDate: ['vencimiento', D], description: ['descripcion'], category: ['categoria'],
+    amount: ['importe', N], currency: ['moneda'], payers: ['pagadores', J], notes: ['notas'], recordedBy: ['registrado_por'], createdAt: ['creado'] } },
+  partnerRefunds: { table: 'reintegros_socios', order: 'registrado.asc', cols: {
+    expenseId: ['gasto_id', FK], partner: ['socio'], amount: ['importe', N], currency: ['moneda'], date: ['fecha', D],
+    source: ['origen'], kind: ['tipo'], recordedBy: ['registrado_por'], recordedAt: ['registrado'] } }
 };
 // Orden de guardado (respeta las dependencias entre tablas)
 const ORDER = ['passengers', 'groups', 'rooms', 'orders', 'bookings', 'extensions', 'flights', 'payments',
   'cashSessions', 'cashMovements', 'cashTransfers', 'providers', 'expenses', 'supplierPayments', 'groupExtras',
-  'commissionRates', 'commissionPayouts', 'bankAccounts'];
+  'commissionRates', 'commissionPayouts', 'bankAccounts', 'partnerExpenses', 'partnerRefunds'];
 // Columnas que fija el servidor y nunca se reenvían al editar
 const SERVER_ONLY = new Set(['creado', 'creado_por', 'registrado', 'abierto', 'cerrado', 'anulado_por']);
 
