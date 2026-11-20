@@ -672,3 +672,17 @@ window.almaGsReintegrar=id=>{if(!adminOnly())return;const g=state.partnerExpense
    save();closeDialog('almaGsReDialog');render();notify(src==='capital'?'Registrado como aporte de capital':'Reintegro registrado')},'Registrar')};
 {const o=render;render=(...a)=>{const r=o(...a);try{almaGsPanel()}catch(e){console.error(e)}return r}}
 {const q=document.querySelector('#tesoreria .quick:last-of-type')?.parentElement;if(q&&!$('almaGsQuick'))q.insertAdjacentHTML('beforeend','<button class="quick" id="almaGsQuick" onclick="document.getElementById(\'almaGsPanel\')?.scrollIntoView({behavior:\'smooth\'})"><b>👥 &nbsp; Gastos de socios</b><small>Lo que pagaron los socios de su bolsillo y su reintegro.</small></button>')}
+
+// ── Proveedores: adjuntar el recibo de cada pago (se guarda en «comprobantes/prov-<pago>») ──
+function almaProvRecibos(sp){const rs=sp.receipts||[];
+ return rs.map((n,i)=>'<a href="#" onclick="event.preventDefault();almaComprobantes.abrir(&quot;prov-'+sp.id+'&quot;,&quot;'+esc(n)+'&quot;)">📄 Recibo'+(rs.length>1?' '+(i+1):'')+'</a>').join('<br>')
+  +(rs.length?'<br>':'')+'<label class="btn ghost tiny" style="cursor:pointer;margin-top:3px">📎 '+(rs.length?'Otro':'Adjuntar')+'<input type="file" accept="image/*,application/pdf" hidden onchange="almaProvSubir(&quot;'+sp.id+'&quot;,this)"></label>'}
+window.almaProvRecibos=almaProvRecibos;
+async function almaProvGuardarRecibo(sp,file){const name=await window.almaComprobantes.subir('prov-'+sp.id,file);sp.receipts=[...(sp.receipts||[]),name];
+ const e=state.expenses.find(x=>x.id===sp.expenseId);audit('Recibo de pago a proveedor','Finanzas',(e?.concept||'Pago')+' · '+money(sp.amount,e?.currency||'USD'));save();return name}
+window.almaProvSubir=async(id,inp)=>{const file=inp.files?.[0];inp.value='';const sp=state.supplierPayments.find(x=>x.id===id);if(!file||!sp)return;const cell=$('almaPR'+id);if(cell)cell.innerHTML='<span class="sub">Subiendo…</span>';
+ try{await almaProvGuardarRecibo(sp,file);notify('Recibo adjuntado')}catch(e){alert('No se pudo subir el recibo: '+e.message)}const c2=$('almaPR'+id);if(c2)c2.innerHTML=almaProvRecibos(sp)};
+{const o=window.commitSupplierPayment;window.commitSupplierPayment=(...a)=>{const antes=new Set(state.supplierPayments.map(x=>x.id)),inp=$('almaProvRecibo'),file=inp?.files?.[0];const r=o(...a);
+ const nuevo=state.supplierPayments.find(x=>!antes.has(x.id));if(nuevo&&file){inp.value='';almaProvGuardarRecibo(nuevo,file).then(()=>notify('Pago registrado con su recibo')).catch(e=>alert('El pago se registró, pero no se pudo subir el recibo: '+e.message+'. Podés adjuntarlo desde la cuenta del proveedor.'))}
+ return r}}
+{const o=window.openSupplierPayment;if(o)window.openSupplierPayment=(...a)=>{const r=o(...a);const i=$('almaProvRecibo');if(i)i.value='';return r}}

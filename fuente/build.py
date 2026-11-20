@@ -464,6 +464,11 @@ fsub("<button class=\"quick\" onclick=\"document.getElementById('commissionPanel
 fsub("records.map(o=>'<tr><td><b>'+esc(o.client)+'</b><div><button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"editOrder(",
      "records.map(o=>'<tr'+(o.status==='Cotización enviada'?' class=\"alma-enviada\"':'')+'><td><b>'+esc(o.client)+'</b><div><button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"editOrder(")
 
+# Proveedores: recibo de cada pago (src/mejoras.js)
+fsub('<div class="field full"><div id="supplierPaymentHelp"', '<label class="field full">Recibo del pago (opcional)<input type="file" id="almaProvRecibo" accept="image/*,application/pdf"><small class="hint">Foto o PDF del recibo/factura. Queda guardado en la cuenta del proveedor.</small></label><div class="field full"><div id="supplierPaymentHelp"')
+fsub("<th>Fecha</th><th>Concepto</th><th>Oficina</th><th>Importe</th></tr></thead><tbody>'+ps.map(sp=>{const e=es.find(e=>e.id===sp.expenseId);return '<tr><td>'+fmt(sp.date)+'</td><td>'+esc(e?.concept||'')+'</td><td>'+esc(cashboxName(sp.cashbox))+'</td><td>'+money(sp.amount,e?.currency||'USD')+'</td></tr>'}",
+     "<th>Fecha</th><th>Concepto</th><th>Oficina</th><th>Importe</th><th>Recibo</th></tr></thead><tbody>'+ps.map(sp=>{const e=es.find(e=>e.id===sp.expenseId);return '<tr><td>'+fmt(sp.date)+'</td><td>'+esc(e?.concept||'')+'</td><td>'+esc(cashboxName(sp.cashbox))+'</td><td>'+money(sp.amount,e?.currency||'USD')+'</td><td id=\"almaPR'+sp.id+'\">'+almaProvRecibos(sp)+'</td></tr>'}")
+
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)
