@@ -5,7 +5,8 @@ import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const DE = "info@almaviajeraturismo.com";
 const PARA = ["hernan@almaviajeraturismo.com", "diego@almaviajeraturismo.com", "adriel@almaviajeraturismo.com", "sandro@almaviajeraturismo.com"];
-const HOST = Deno.env.get("SMTP_HOST") || "mail.almaviajeraturismo.com";
+// mail.almaviajeraturismo.com está en el servidor c265 de Ferozo (DonWeb); su certificado es *.ferozo.com
+const HOST = Deno.env.get("SMTP_HOST") || "c265.ferozo.com";
 const URL_ = Deno.env.get("SUPABASE_URL")!;
 const KEY = (() => { try { const j = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}"); return j.default || Object.values(j)[0] || ""; } catch { return ""; } })() || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const db = createClient(URL_, KEY, { auth: { persistSession: false, autoRefreshToken: false } });
