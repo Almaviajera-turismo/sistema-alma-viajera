@@ -686,3 +686,61 @@ window.almaProvSubir=async(id,inp)=>{const file=inp.files?.[0];inp.value='';cons
  const nuevo=state.supplierPayments.find(x=>!antes.has(x.id));if(nuevo&&file){inp.value='';almaProvGuardarRecibo(nuevo,file).then(()=>notify('Pago registrado con su recibo')).catch(e=>alert('El pago se registró, pero no se pudo subir el recibo: '+e.message+'. Podés adjuntarlo desde la cuenta del proveedor.'))}
  return r}}
 {const o=window.openSupplierPayment;if(o)window.openSupplierPayment=(...a)=>{const r=o(...a);const i=$('almaProvRecibo');if(i)i.value='';return r}}
+
+/* ---------- Recibo: ORIGINAL + DUPLICADO en la misma hoja A4, y envío por mail al pasajero desde info@ ---------- */
+function almaRecDuplicar(){const r=$('receiptPaper');if(!r)return;
+ r.querySelectorAll('.alma-copia').forEach(x=>x.remove());document.querySelectorAll('#almaRecDup,.alma-corte').forEach(x=>x.remove());
+ if(!r.innerHTML.trim())return;
+ const lab=t=>{const d=document.createElement('div');d.className='alma-copia';d.textContent=t;return d};
+ const d=r.cloneNode(true);d.id='almaRecDup';r.prepend(lab('ORIGINAL · PASAJERO'));d.prepend(lab('DUPLICADO · ALMA VIAJERA'));
+ const c=document.createElement('div');c.className='alma-corte';c.innerHTML='<span>✂ cortar por aquí</span>';r.after(c);c.after(d)}
+window.addEventListener('beforeprint',()=>{if($('receiptDialog')?.open&&!document.body.classList.contains('print-report'))almaRecDuplicar()});
+{const o=window.print.bind(window);window.print=()=>{if($('receiptDialog')?.open&&!document.body.classList.contains('print-report'))almaRecDuplicar();o()}}
+function almaRecEmail(p){const b=findBooking(p.bookingId),ps=state.passengers;
+ const quien=(p.forPassengerId&&ps.find(x=>x.id===p.forPassengerId))||(b&&ps.find(x=>x.id===b.passengerId));
+ return String(quien?.email||b?.email||'').trim()}
+function almaRecTexto(p){const b=findBooking(p.bookingId),n=p.forPassengerName||p.snapshot?.client||b?.client||'';
+ return{subject:'Alma Viajera Turismo · Recibo '+p.number,
+  body:'Hola'+(n?' '+n:'')+':\n\nTe enviamos adjunto el recibo '+p.number+' correspondiente a tu pago.\n\nAnte cualquier consulta, respondé este correo.\n\nSaludos,\nAlma Viajera Turismo\ninfo@almaviajeraturismo.com · +54 9 11 2671-3436'}}
+const ALMA_H2C='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',ALMA_JSPDF='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+function almaJs(src){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>ko(new Error('no se pudo cargar el generador de PDF (revisá la conexión)'));document.head.appendChild(s)})}
+async function almaReciboPdf(){
+ if(!window.html2canvas)await almaJs(ALMA_H2C);if(!window.jspdf)await almaJs(ALMA_JSPDF);
+ const box=document.createElement('div');box.style.cssText='position:fixed;left:-12000px;top:0;width:820px;background:#fff';
+ const c=$('receiptPaper').cloneNode(true);c.removeAttribute('id');c.querySelectorAll('.alma-copia').forEach(x=>x.remove());c.style.maxWidth='none';c.style.margin='0';
+ box.appendChild(c);document.body.appendChild(box);
+ try{const cv=await window.html2canvas(c,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
+  const doc=new window.jspdf.jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+  let w=190,h=cv.height*w/cv.width;if(h>277){w=w*277/h;h=277}
+  doc.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',(210-w)/2,10,w,h);
+  return doc.output('datauristring').split(',')[1]}finally{box.remove()}}
+function almaRecMailEstado(p){const el=$('almaRecMail');if(!el)return;const m=(p&&p.mailed)||[];
+ el.innerHTML=m.length?'✉ Enviado por mail: '+m.map(x=>esc(x.to)+' ('+formatCaptureStamp(x.at)+')').join(' · '):'';el.style.display=m.length?'':'none'}
+async function almaMandarRecibo(p,to,subject,body){
+ if(window.currentReceiptId!==p.id||!$('receiptDialog')?.open)showReceipt(p.id);
+ const pdf=await almaReciboPdf();
+ await window.almaEnviarRecibo(p.id,to,subject,body,pdf);
+ p.mailed=[...(p.mailed||[]),{to,at:new Date().toISOString(),by:currentDemoOperator()}];save();
+ if(window.currentReceiptId===p.id)almaRecMailEstado(p);notify('Recibo enviado por mail a '+to)}
+{const o=window.showReceipt;window.showReceipt=(id,...a)=>{o(id,...a);almaRecDuplicar();
+ if(!$('almaRecMail'))$('receiptPaper')?.insertAdjacentHTML('beforebegin','<div id="almaRecMail" class="alma-recmail"></div>');
+ almaRecMailEstado(state.payments.find(x=>x.id===id))}}
+{const o=window.openReceiptEmail;window.openReceiptEmail=(...a)=>{const r=o(...a);const p=state.payments.find(x=>x.id===window.currentReceiptId);
+ if(p&&$('receiptEmailDialog')?.open){const t=almaRecTexto(p);if(!$('receiptEmailTo').value)$('receiptEmailTo').value=almaRecEmail(p);$('receiptEmailBody').value=t.body;
+  $('receiptEmailInfo').textContent='Se envía desde info@almaviajeraturismo.com con el recibo '+p.number+' en PDF adjunto (llega también una copia a info@).'+((p.mailed||[]).length?' Ya se envió antes a: '+p.mailed.map(x=>x.to).join(', ')+'.':'');
+  const bt=$('receiptEmailForm').querySelector('button[type=submit]');if(bt)bt.textContent='✉ Enviar desde info@'}
+ return r}}
+document.addEventListener('submit',async e=>{if(e.target?.id!=='receiptEmailForm')return;e.preventDefault();e.stopPropagation();
+ const p=state.payments.find(x=>x.id===window.currentReceiptId);if(!p)return;if(p.voidedAt){alert('Este recibo fue anulado y no puede enviarse.');return}
+ const to=$('receiptEmailTo').value.trim();if(!to||!$('receiptEmailTo').checkValidity()){alert('Ingresá una dirección de correo válida');return}
+ const bt=e.target.querySelector('button[type=submit]'),txt=bt?.textContent;if(bt){bt.disabled=true;bt.textContent='Enviando…'}
+ try{closeDialog('receiptEmailDialog');await almaMandarRecibo(p,to,$('receiptEmailSubject').value,$('receiptEmailBody').value)}
+ catch(err){alert('No se pudo enviar el recibo: '+(err.message||err))}
+ finally{if(bt){bt.disabled=false;bt.textContent=txt}}},true);
+/* Al registrar un cobro nuevo: si el pasajero tiene email cargado, se le envía el recibo automáticamente */
+if($('paymentForm')){let antes=null;
+ $('paymentForm').addEventListener('submit',()=>{antes=window.currentReceiptId},true);
+ $('paymentForm').addEventListener('submit',()=>{const rid=window.currentReceiptId;if(!rid||rid===antes)return;
+  const p=state.payments.find(x=>x.id===rid);if(!p||p.voidedAt)return;const to=almaRecEmail(p);
+  if(!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(to))return;const t=almaRecTexto(p);
+  setTimeout(()=>almaMandarRecibo(p,to,t.subject,t.body).catch(err=>alert('El cobro quedó registrado, pero no se pudo enviar el recibo por mail a '+to+': '+(err.message||err)+'\nPodés reenviarlo con «✉ Enviar por mail».')),400)})}

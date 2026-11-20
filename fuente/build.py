@@ -470,6 +470,10 @@ fsub('<div class="field full"><div id="supplierPaymentHelp"', '<label class="fie
 fsub("<th>Fecha</th><th>Concepto</th><th>Oficina</th><th>Importe</th></tr></thead><tbody>'+ps.map(sp=>{const e=es.find(e=>e.id===sp.expenseId);return '<tr><td>'+fmt(sp.date)+'</td><td>'+esc(e?.concept||'')+'</td><td>'+esc(cashboxName(sp.cashbox))+'</td><td>'+money(sp.amount,e?.currency||'USD')+'</td></tr>'}",
      "<th>Fecha</th><th>Concepto</th><th>Oficina</th><th>Importe</th><th>Recibo</th></tr></thead><tbody>'+ps.map(sp=>{const e=es.find(e=>e.id===sp.expenseId);return '<tr><td>'+fmt(sp.date)+'</td><td>'+esc(e?.concept||'')+'</td><td>'+esc(cashboxName(sp.cashbox))+'</td><td>'+money(sp.amount,e?.currency||'USD')+'</td><td id=\"almaPR'+sp.id+'\">'+almaProvRecibos(sp)+'</td></tr>'}")
 
+# Recibo: envío real por mail desde info@ (con PDF adjunto)
+fsub('<button class="btn ghost" onclick="openReceiptEmail()">✉ Preparar correo</button>', '<button class="btn ghost" onclick="openReceiptEmail()">✉ Enviar por mail</button>')
+fsub('<p class="hint receipt-email-hint">Para enviar: guardá primero el recibo como PDF y adjuntalo al email.</p>',
+     '<p class="hint receipt-email-hint">Al imprimir sale en una hoja A4 el original y el duplicado. Si el pasajero tiene email cargado, el recibo se le envía solo desde info@ al registrar el cobro.</p>')
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)

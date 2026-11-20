@@ -149,5 +149,17 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 .alma-cumple-x{border:0;background:transparent;cursor:pointer;color:#8a7f99;font-size:14px;padding:2px 4px}
 #almaVer{cursor:default}
 .alma-sf{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;margin-bottom:6px;background:#f6f5fb;border:1px dashed #cfc8f3;border-radius:14px}.alma-sf #almaSfRes{flex-basis:100%}.alma-sf-ok{outline:2px solid #8fd3a8!important;background:#f1fbf4!important}
+/* Recibo: original + duplicado en la misma hoja; estado de envío por mail */
+.alma-copia, .alma-corte, #almaRecDup { display: none; }
+.alma-recmail { max-width: 850px; margin: 0 auto 10px; padding: 8px 12px; background: #e5f6eb; color: #286d42; border-radius: 10px; font-size: 13px; }
+@media print {
+  .alma-recmail, #almaComprob { display: none !important; }
+  body:not(.print-report) .alma-copia { display: block !important; text-align: right; font-size: 9px; font-weight: 800; letter-spacing: .12em; color: #51407a; margin: 0 0 2px; }
+  body:not(.print-report) #almaRecDup { display: block !important; }
+  body:not(.print-report) #receiptPaper { min-height: 128mm; }
+  body:not(.print-report) #receiptPaper, body:not(.print-report) #almaRecDup { break-inside: avoid; page-break-inside: avoid; }
+  body:not(.print-report) .alma-corte { display: block !important; border-top: 1px dashed #999; margin: 4mm 0 4mm; text-align: center; height: 0; }
+  body:not(.print-report) .alma-corte span { position: relative; top: -7px; background: #fff; padding: 0 8px; font-size: 9px; color: #888; }
+}
 </style>
 

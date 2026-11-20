@@ -678,6 +678,20 @@ window.almaProbarAvisoMail = async () => {
     alert(r.ok ? 'Listo: se envió un mail de prueba a los 4 socios desde info@almaviajeraturismo.com. Revisá la bandeja (y spam).' : 'No se pudo enviar el mail de prueba: ' + tx);
   } catch (e) { alert('No se pudo enviar el mail de prueba: ' + (e.message || e)); }
 };
+/* Envío del recibo al pasajero desde info@ (función "enviar-recibo"). Si el cobro recién se cargó
+   y todavía no llegó al servidor, espera y reintenta unos segundos. */
+window.almaEnviarRecibo = async (cobroId, to, subject, body, pdf) => {
+  for (let i = 0; ; i++) {
+    const t = await token();
+    const r = await fetch(CFG.url + '/functions/v1/enviar-recibo', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: CFG.key, Authorization: 'Bearer ' + t },
+      body: JSON.stringify({ cobro_id: cobroId, to, subject, body, pdf }) });
+    if (r.ok) return true;
+    const tx = await r.text();
+    if (r.status === 404 && i < 8) { await new Promise(res => setTimeout(res, 2500)); continue; }
+    throw new Error(tx || ('error ' + r.status));
+  }
+};
 window.almaComprobantes = {
   async listar(rid) {
     const r = await storage('POST', 'object/list/' + CBUCKET,
