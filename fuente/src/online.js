@@ -1,4 +1,12 @@
 /* Alma Viajera · capa online: ingreso, carga y guardado en Supabase */
+/* Horas siempre en formato 24 hs (00:00 a 23:59), sin importar la configuración de la computadora */
+(() => {
+  const h23 = o => { o = Object.assign({}, o || {}); delete o.hour12; o.hourCycle = 'h23'; return o; };
+  for (const fn of ['toLocaleString', 'toLocaleTimeString']) {
+    const orig = Date.prototype[fn];
+    Date.prototype[fn] = function (loc, opt) { return orig.call(this, loc, h23(opt)); };
+  }
+})();
 (() => {
 'use strict';
 const CFG = Object.assign({
