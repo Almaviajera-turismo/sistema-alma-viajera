@@ -164,4 +164,6 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 .alma-vr-prov { border: 1px solid #e4ddef; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; background: #fff; }
 .alma-vr-provhead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
 #almaVerResDialog .tablewrap { margin-top: 6px; }
+#ordersTable tr.alma-atrasado>td{background:rgba(220,38,38,.13)}#ordersTable tr.alma-atrasado>td:first-child{box-shadow:inset 4px 0 0 rgba(220,38,38,.7)}
+#almaPedFiltro{border:1px solid #d6d0e2;border-radius:10px;padding:8px 10px;background:#fff;font:inherit}
 </style>

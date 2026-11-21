@@ -92,6 +92,7 @@ app = sub("render();\nupdateBackButton();\n})();",
           (HERE / 'src' / 'eliminar.js').read_text(encoding='utf-8') + '\n' + (HERE / 'src' / 'salida.js').read_text(encoding='utf-8')
           + '\n' + (HERE / 'src' / 'mejoras.js').read_text(encoding='utf-8')
           + '\n' + (HERE / 'src' / 'verreserva.js').read_text(encoding='utf-8')
+          + '\n' + (HERE / 'src' / 'pedidos.js').read_text(encoding='utf-8')
           + "\nrender();\nupdateBackButton();\n})();", app)
 # Ficha de la salida grupal: pestaña nueva (se abre primero) y edición (src/salida.js)
 app = sub("$('groupDetailTitle').textContent=g.name+' · pasajeros';showGroupTab('pasajeros',true);",
@@ -480,6 +481,21 @@ fsub("<th>Fecha</th><th>Concepto</th><th>Oficina</th><th>Importe</th></tr></thea
 fsub('<button class="btn ghost" onclick="openReceiptEmail()">✉ Preparar correo</button>', '<button class="btn ghost" onclick="openReceiptEmail()">✉ Enviar por mail</button>')
 fsub('<p class="hint receipt-email-hint">Para enviar: guardá primero el recibo como PDF y adjuntalo al email.</p>',
      '<p class="hint receipt-email-hint">Al imprimir sale en una hoja A4 el original y el duplicado. Si el pasajero tiene email cargado, el recibo se le envía solo desde info@ al registrar el cobro.</p>')
+# Pedidos: filtro por estado, «Pedidos cancelados», pendientes primero y en rojo después de 2 días (src/pedidos.js)
+fsub("let records=state.orders.filter(x=>(x.client+' '+x.destination+' '+(x.notes||'')).toLowerCase().includes(q));",
+     "let records=state.orders.filter(x=>almaPedidoFiltro(x)&&(x.client+' '+x.destination+' '+(x.notes||'')).toLowerCase().includes(q));")
+fsub("records=[...seen.values()].flatMap(list=>list.slice().sort((a,b)=>optionSiblings(a).indexOf(a)-optionSiblings(b).indexOf(b)))}",
+     "records=[...seen.values()].flatMap(list=>list.slice().sort((a,b)=>optionSiblings(a).indexOf(a)-optionSiblings(b).indexOf(b)))}records=almaPedidosOrden(records);")
+fsub("records.map(o=>'<tr'+(o.status==='Cotización enviada'?' class=\"alma-enviada\"':'')+'><td>", "records.map(o=>'<tr'+almaPedidoClase(o)+'><td>")
+fsub("</select>'+orderNextStep(o)+", "</select>'+almaPedidoAviso(o)+orderNextStep(o)+")
+fsub("+'</td></tr>'),'Todavía no hay pedidos')}", "+'</td></tr>'),window.almaPedEstado?'No hay pedidos con este estado':'Todavía no hay pedidos')}")
+fsub('<button class="btn" onclick="openOrder()">+ Nuevo pedido</button></div></div><div id="ordersTable">',
+     '<select id="almaPedFiltro" onchange="almaPedFiltrar(this.value)" aria-label="Filtrar por estado">'
+     '<option value="">Todos (sin cancelados)</option><option value="pendiente">Pendientes</option>'
+     '<option value="enviada">Cotización enviada</option><option value="cancelado">Cancelados</option></select>'
+     '<button class="btn" onclick="openOrder()">+ Nuevo pedido</button>'
+     '<button class="btn ghost" id="almaPedCancBtn" onclick="almaPedCancelados()">Pedidos cancelados</button></div></div><div id="ordersTable">')
+
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)
