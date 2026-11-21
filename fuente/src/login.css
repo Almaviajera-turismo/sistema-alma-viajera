@@ -161,5 +161,7 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
   body:not(.print-report) .alma-corte { display: block !important; border-top: 1px dashed #999; margin: 4mm 0 4mm; text-align: center; height: 0; }
   body:not(.print-report) .alma-corte span { position: relative; top: -7px; background: #fff; padding: 0 8px; font-size: 9px; color: #888; }
 }
+.alma-vr-prov { border: 1px solid #e4ddef; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; background: #fff; }
+.alma-vr-provhead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+#almaVerResDialog .tablewrap { margin-top: 6px; }
 </style>
-

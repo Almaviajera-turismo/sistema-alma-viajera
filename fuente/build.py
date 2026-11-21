@@ -91,6 +91,7 @@ app = sub("render();\nupdateBackButton();\n})();",
 app = sub("render();\nupdateBackButton();\n})();",
           (HERE / 'src' / 'eliminar.js').read_text(encoding='utf-8') + '\n' + (HERE / 'src' / 'salida.js').read_text(encoding='utf-8')
           + '\n' + (HERE / 'src' / 'mejoras.js').read_text(encoding='utf-8')
+          + '\n' + (HERE / 'src' / 'verreserva.js').read_text(encoding='utf-8')
           + "\nrender();\nupdateBackButton();\n})();", app)
 # Ficha de la salida grupal: pestaña nueva (se abre primero) y edición (src/salida.js)
 app = sub("$('groupDetailTitle').textContent=g.name+' · pasajeros';showGroupTab('pasajeros',true);",
@@ -111,6 +112,11 @@ app = sub("table('providerPaymentHistory',['Fecha','Proveedor / concepto','Ofici
           "table('providerPaymentHistory',['Fecha','Proveedor / concepto','Oficina','Medio / ref.','Importe','Acción']", app)
 app = sub("money(p.amount,e?.currency||'USD')+'</b></td></tr>'}),'Sin pagos registrados')",
           "money(p.amount,e?.currency||'USD')+'</b></td><td>'+almaDelBtn('almaEliminarPagoProveedor',p.id)+'</td></tr>'}),'Sin pagos registrados')", app)
+
+# Botón «👁 Ver reserva» junto a cada «✎ Editar reserva» (ficha completa con cobros y pagos: src/verreserva.js)
+app, _n = re.subn(r"onclick=\"editBooking\(&quot;'\+([\w.]+)\+'&quot;\)\">✎ Editar reserva</button>",
+                  lambda m: m.group(0) + " <button class=\"btn tiny\" style=\"margin:6px 0\" onclick=\"almaVerReserva(&quot;'+" + m.group(1) + "+'&quot;)\">👁 Ver reserva</button>", app)
+assert _n >= 3, _n
 
 # ---------- cambios en la pantalla ----------
 before = sub("""<button id="tabGroupPassengers" type="button" class="btn tiny" onclick="showGroupTab('pasajeros')">Pasajeros</button>""",
