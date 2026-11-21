@@ -587,14 +587,16 @@ function almaCumpleBanner(){const head=document.querySelector('.main > .head')||
  const key='almaCumpleOculto',hoyIso=today();let oculto='';try{oculto=localStorage.getItem(key)||''}catch(e){}
  const ls=almaCumples(7),hoy=ls.filter(x=>x.d===0),prox=ls.filter(x=>x.d>0);
  if(!ls.length||oculto===hoyIso){el.style.display='none';return}
- const wa=x=>{const n=almaWaNum(x.p.phone);if(!n)return '';const txt=encodeURIComponent('¡Feliz cumpleaños, '+x.p.name.split(' ')[0]+'! 🎉 Te saludamos con mucho cariño desde Alma Viajera Turismo.');return ' <a class="alma-cumple-wa" href="https://wa.me/'+n+'?text='+txt+'" target="_blank" rel="noopener" title="Saludar por WhatsApp">💬 Saludar</a>'};
+ const sk='almaSaludados-'+hoyIso;let sal=[];try{sal=JSON.parse(localStorage.getItem(sk)||'[]')}catch(e){}
+ const wa=x=>{const n=almaWaNum(x.p.phone);if(!n)return ' <span class="sub" style="display:inline;color:#aa431d">sin teléfono cargado</span>';const ok=sal.includes(x.p.id);const txt=encodeURIComponent('¡Feliz cumpleaños, '+x.p.name.split(' ')[0]+'! 🎉 Te saludamos con mucho cariño desde Alma Viajera Turismo.');return ' <a class="alma-cumple-wa'+(ok?' alma-saludado':'')+'" href="https://wa.me/'+n+'?text='+txt+'" target="_blank" rel="noopener" title="Saludar por WhatsApp" onclick="almaSaludado(&quot;'+esc(x.p.id)+'&quot;,this)">'+(ok?'✓ Saludado':'💬 Saludar')+'</a>'};
  const nom=x=>'<button type="button" class="textlink" onclick="openPassengerProfile(&quot;'+esc(x.p.id)+'&quot;)">'+esc(x.p.name)+'</button> <span class="sub" style="display:inline">('+x.edad+')</span>';
  const dia=x=>x.d===1?'mañana':x.fecha.toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'});
  el.innerHTML='<span class="alma-cumple-ic">🎂</span><div class="alma-cumple-txt">'
-  +(hoy.length?'<b>Hoy cumple'+(hoy.length>1?'n':'')+' años:</b> '+hoy.map(x=>nom(x)+wa(x)).join(' · '):'<b>Hoy no hay cumpleaños.</b>')
-  +(prox.length?'<details><summary>Próximos 7 días ('+prox.length+')</summary>'+prox.map(x=>'<div>'+esc(dia(x))+' · '+nom(x)+wa(x)+'</div>').join('')+'</details>':'')
+  +(hoy.length?'<b>Hoy cumple'+(hoy.length>1?'n':'')+' años:</b>'+hoy.map(x=>'<div class="alma-cumple-hoy">'+nom(x)+wa(x)+'</div>').join(''):'<b>Hoy no hay cumpleaños.</b>')
+  +(prox.length?'<details><summary>Próximos 7 días ('+prox.length+')</summary>'+prox.map(x=>'<div>'+esc(dia(x))+' · '+nom(x)+'</div>').join('')+'</details>':'')
   +'</div><button type="button" class="alma-cumple-x" title="Ocultar por hoy" onclick="try{localStorage.setItem(\'almaCumpleOculto\',\''+hoyIso+'\')}catch(e){};document.getElementById(\'almaCumple\').style.display=\'none\'">✕</button>';
  el.style.display=''}
+window.almaSaludado=(id,a)=>{const sk='almaSaludados-'+today();let sal=[];try{sal=JSON.parse(localStorage.getItem(sk)||'[]')}catch(e){}if(!sal.includes(id))sal.push(id);try{localStorage.setItem(sk,JSON.stringify(sal))}catch(e){}setTimeout(()=>{a.classList.add('alma-saludado');a.textContent='✓ Saludado'},300)};
 {const o=render;render=(...a)=>{const r=o(...a);try{almaCumpleBanner()}catch(e){}return r}}
 
 // ── Finanzas: probar el aviso por mail de cobros (solo socios) ──
