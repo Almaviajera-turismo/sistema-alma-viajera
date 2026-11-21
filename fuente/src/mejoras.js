@@ -744,3 +744,7 @@ if($('paymentForm')){let antes=null;
   const p=state.payments.find(x=>x.id===rid);if(!p||p.voidedAt)return;const to=almaRecEmail(p);
   if(!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(to))return;const t=almaRecTexto(p);
   setTimeout(()=>almaMandarRecibo(p,to,t.subject,t.body).catch(err=>alert('El cobro quedó registrado, pero no se pudo enviar el recibo por mail a '+to+': '+(err.message||err)+'\nPodés reenviarlo con «✉ Enviar por mail».')),400)})}
+
+/* ---------- Pedido de cotización: canal de entrada (WhatsApp por defecto en los pedidos nuevos) ---------- */
+{const o=window.openOrder;window.openOrder=(...a)=>{const r=o(...a);if($('orderChannel'))$('orderChannel').value='WhatsApp';return r}}
+{const o=window.editOrder;window.editOrder=(id,...a)=>{const r=o(id,...a);const p=findOrder(id);if(p&&$('orderChannel'))$('orderChannel').value=p.channel||'';return r}}

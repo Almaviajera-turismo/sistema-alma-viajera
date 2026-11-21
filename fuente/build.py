@@ -496,6 +496,11 @@ fsub('<button class="btn" onclick="openOrder()">+ Nuevo pedido</button></div></d
      '<button class="btn" onclick="openOrder()">+ Nuevo pedido</button>'
      '<button class="btn ghost" id="almaPedCancBtn" onclick="almaPedCancelados()">Pedidos cancelados</button></div></div><div id="ordersTable">')
 
+# Pedido de cotización: por dónde entró la consulta
+fsub('<label class="field">WhatsApp / contacto<input name="phone" placeholder="Opcional"></label>',
+     '<label class="field">WhatsApp / contacto<input name="phone" placeholder="Opcional"></label><label class="field">¿Por dónde entró la consulta?<select name="channel" id="orderChannel"><option value="">— Sin indicar —</option><option>WhatsApp</option><option>Instagram</option><option>Facebook</option><option>Llamada telefónica</option><option>Email</option><option>Presencial en oficina</option><option>Página web</option><option>Recomendación de un pasajero</option><option>Otro</option></select></label>')
+fsub("esc(o.client)+'</b><div><button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"editOrder(",
+     "esc(o.client)+'</b>'+(o.channel?'<span class=\"sub\">vía '+esc(o.channel)+'</span>':'')+'<div><button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"editOrder(")
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)
