@@ -501,6 +501,9 @@ fsub('<label class="field">WhatsApp / contacto<input name="phone" placeholder="O
      '<label class="field">WhatsApp / contacto<input name="phone" placeholder="Opcional"></label><label class="field">¿Por dónde entró la consulta?<select name="channel" id="orderChannel"><option value="">— Sin indicar —</option><option>WhatsApp</option><option>Instagram</option><option>Facebook</option><option>Llamada telefónica</option><option>Email</option><option>Presencial en oficina</option><option>Página web</option><option>Recomendación de un pasajero</option><option>Otro</option></select></label>')
 fsub("esc(o.client)+'</b><div><button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"editOrder(",
      "esc(o.client)+'</b>'+(o.channel?'<span class=\"sub\">vía '+esc(o.channel)+'</span>':'')+'<div><button class=\"btn ghost tiny\" style=\"margin:6px 0\" onclick=\"editOrder(")
+# Inscribir en grupo: aviso visible para cargar al acompañante de habitación
+fsub('<label class="field full">Nombre del pasajero<input name="client" id="groupPassengerName" placeholder="Un pasajero por ficha" required></label>',
+     '<label class="field full">Nombre del pasajero<input name="client" id="groupPassengerName" placeholder="Un pasajero por ficha" required></label><div class="field full alma-acomp-aviso" id="almaAcompAviso">🛏 <b>¿Comparte habitación?</b> Elegí <b>Doble, Triple o Cuádruple</b> en «Tipo de habitación» y ahí seleccionás al acompañante. <button type="button" class="btn ghost tiny" onclick="const s=document.getElementById(\'almaRoomType\');s.scrollIntoView({behavior:\'smooth\',block:\'center\'});s.focus()">Elegir habitación ↓</button></div>')
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)

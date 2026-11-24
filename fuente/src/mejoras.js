@@ -750,3 +750,7 @@ if($('paymentForm')){let antes=null;
 /* ---------- Pedido de cotización: canal de entrada (WhatsApp por defecto en los pedidos nuevos) ---------- */
 {const o=window.openOrder;window.openOrder=(...a)=>{const r=o(...a);if($('orderChannel'))$('orderChannel').value='WhatsApp';return r}}
 {const o=window.editOrder;window.editOrder=(id,...a)=>{const r=o(id,...a);const p=findOrder(id);if(p&&$('orderChannel'))$('orderChannel').value=p.channel||'';return r}}
+
+/* Inscribir en grupo: el aviso de acompañante se oculta cuando ya se eligió habitación compartida */
+{const av=()=>{const a=$('almaAcompAviso');if(a)a.classList.toggle('alma-off',(ALMA_CAP[$('almaRoomType')?.value]||1)>1)};
+ $('almaRoomType')?.addEventListener('change',av);const o=window.openGroupBooking;window.openGroupBooking=(...x)=>{const r=o(...x);av();return r}}

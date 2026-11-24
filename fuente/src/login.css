@@ -168,4 +168,7 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 #almaPedFiltro{border:1px solid #d6d0e2;border-radius:10px;padding:8px 10px;background:#fff;font:inherit}
 .alma-cumple-hoy { margin: 4px 0; }
 .alma-cumple-wa.alma-saludado { background: #eef0f3 !important; color: #526171 !important; border-color: #d8dde3 !important; }
+.alma-acomp-aviso { display: block !important; background: #f1ecfb; border: 1px solid #ddd2f3; color: #3f2f66; border-radius: 10px; padding: 10px 12px; font-size: 13.5px; line-height: 1.5; }
+.alma-acomp-aviso .btn { margin-left: 6px; display: inline-flex !important; width: auto !important; }
+.alma-acomp-aviso.alma-off { display: none !important; }
 </style>
