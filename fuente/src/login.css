@@ -180,4 +180,5 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 @media print { .receipt-firma { max-height: 20mm; max-width: 60mm; } }
 .alma-liq { margin: 4px 0 2px; font-size: 12.5px; }
 .alma-liq .btn { margin-left: 4px; }
+.alma-liq-top { background: #f6f0fd; border: 1px dashed #c9b6ec; border-radius: 10px; padding: 10px 12px; }
 </style>

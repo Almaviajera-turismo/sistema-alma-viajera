@@ -854,16 +854,32 @@ window.almaLiqHtml=almaLiqHtml;
 window.almaLiqSubir=async(id,inp)=>{const file=inp.files?.[0];inp.value='';const e=state.expenses.find(x=>x.id===id);if(!file||!e)return;
  document.querySelectorAll('[id="almaLiq'+id+'"]').forEach(c=>c.innerHTML='<span class="sub">Subiendo…</span>');
  try{const name=await window.almaComprobantes.subir('liq-'+id,file);e.liquidaciones=[...(e.liquidaciones||[]),name];audit('Liquidación de proveedor adjuntada','Finanzas',(e.provider||'')+' · '+(e.concept||''));save();notify('Liquidación adjuntada')}
- catch(err){alert('No se pudo subir la liquidación: '+err.message)}
+ catch(err){alert('No se pudo subir la liquidación: '+err.message);document.querySelectorAll('[id="almaLiq'+id+'"]').forEach(c=>c.innerHTML=almaLiqHtml(e));return}
+ // Si se puede leer, ofrecer actualizar importe, file del proveedor y vencimiento
+ try{const r=await window.almaLiq?.leer(file);if(r&&isFinite(r.total)&&(Math.abs(r.total-Number(e.amount))>.009||(r.ref&&r.ref!==e.supplierRef)||(r.vence&&r.vence!==e.dueDate))){
+  const pag=paidSupplier(e);
+  if(r.total<pag-.001)alert('La liquidación dice '+money(r.total,r.moneda||e.currency)+', menos de lo ya pagado ('+money(pag,e.currency)+'). Revisalo con el proveedor.');
+  else if(confirm('La liquidación dice:\n\nImporte: '+money(r.total,r.moneda||e.currency)+' (el compromiso tiene '+money(e.amount,e.currency)+')'+(r.ref?'\nFile del proveedor: '+r.ref:'')+(r.vence?'\nVence: '+fmt(r.vence):'')+'\n\n¿Actualizar el compromiso con estos datos?')){
+   Object.assign(e,{amount:r.total,currency:r.moneda||e.currency,supplierRef:r.ref||e.supplierRef||'',dueDate:r.vence||e.dueDate||'',notes:[window.almaLiq.notas(r),e.notes].filter(Boolean).join('\n')});
+   audit('Compromiso actualizado con la liquidación','Finanzas',(e.provider||'')+' · '+money(e.amount,e.currency));save();render();if(window.currentGroupDetail)renderGroupDetail();if($('almaVerResDialog')?.open&&e.bookingId)almaVerReserva(e.bookingId);notify('Compromiso actualizado')}}}catch(_){}
  document.querySelectorAll('[id="almaLiq'+id+'"]').forEach(c=>c.innerHTML=almaLiqHtml(e))};
 
 /* Registrar compromiso: adjuntar la liquidación del proveedor en el mismo paso */
-{const f=$('expenseForm'),obs=f?.elements.notes?.closest('label');if(obs&&!$('almaLiqNueva'))obs.insertAdjacentHTML('afterend',
- '<label class="field full">Liquidación del proveedor (opcional)<input type="file" id="almaLiqNueva" accept="image/*,application/pdf" multiple><small class="hint">PDF o foto. Queda guardada en el compromiso; también se puede adjuntar después.</small></label>');
+{const f=$('expenseForm'),obs=f?.querySelector('.formgrid');if(obs&&!$('almaLiqNueva'))obs.insertAdjacentHTML('afterbegin',
+ '<label class="field full alma-liq-top">📄 Liquidación del proveedor (opcional)<input type="file" id="almaLiqNueva" accept="image/*,application/pdf" multiple><small class="hint">Subila primero: el sistema la lee y completa los datos (proveedor, pasajero, file, importe, vencimiento). Queda guardada en el compromiso.</small></label>');
  let antes=null;f?.addEventListener('submit',()=>{antes=new Set(state.expenses.map(e=>e.id))},true);
- f?.addEventListener('submit',()=>{const inp=$('almaLiqNueva'),files=[...(inp?.files||[])],a=antes;antes=null;if(!a)return;const e=state.expenses.find(x=>!a.has(x.id));if(!e||!files.length)return;inp.value='';
+ f?.addEventListener('submit',()=>{const inp=$('almaLiqNueva'),files=[...(inp?.files||[])],a=antes,bid=window.__almaLiqBooking;antes=null;window.__almaLiqBooking=null;if(!a)return;const e=state.expenses.find(x=>!a.has(x.id));if(!e)return;
+  if(bid&&!e.bookingId){const bk=findBooking(bid);if(bk&&(e.operationKey==='G:'+bk.groupId||e.operationKey==='B:'+bk.id)){e.bookingId=bk.id;e.passengerId=bk.passengerId;save()}}
+  if(!files.length)return;inp.value='';const av=$('almaLiqAviso');if(av)av.style.display='none';
   (async()=>{try{for(const file of files){const name=await window.almaComprobantes.subir('liq-'+e.id,file);e.liquidaciones=[...(e.liquidaciones||[]),name]}
    audit('Liquidación de proveedor adjuntada','Finanzas',(e.provider||'')+' · '+(e.concept||''));save();render();if(window.currentGroupDetail)renderGroupDetail();notify('Compromiso registrado con su liquidación')}
    catch(err){alert('El compromiso se registró, pero no se pudo subir la liquidación: '+err.message+'\nPodés adjuntarla desde la cuenta del proveedor.')}})()})}
 {const o=window.openExpense;if(o)window.openExpense=(...a)=>{const r=o(...a);const i=$('almaLiqNueva');if(i)i.value='';return r}}
 {const o=window.openGroupExpense;if(o)window.openGroupExpense=(...a)=>{const r=o(...a);const i=$('almaLiqNueva');if(i)i.value='';return r}}
+
+/* Liquidación leída sobre un compromiso que ya existía (el automático del pasajero): se actualiza y se adjunta */
+window.almaLiqActualizado=async(e,files)=>{audit('Compromiso actualizado con la liquidación','Finanzas',(e.provider||'')+' · '+(e.concept||'')+' · '+money(e.amount,e.currency));
+ closeDialog('expenseDialog');save();render();if(window.currentGroupDetail)renderGroupDetail();
+ try{for(const file of files){const name=await window.almaComprobantes.subir('liq-'+e.id,file);e.liquidaciones=[...(e.liquidaciones||[]),name]}if(files.length){save();render();if(window.currentGroupDetail)renderGroupDetail()}
+  notify('Compromiso actualizado con la liquidación: '+money(e.amount,e.currency))}
+ catch(err){alert('El compromiso se actualizó, pero no se pudo subir la liquidación: '+err.message)}};

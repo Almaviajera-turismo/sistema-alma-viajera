@@ -172,6 +172,7 @@ online += '\n' + (HERE / 'src' / 'cotizador.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'sciweb.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'salidaflyer.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'codigo.js').read_text(encoding='utf-8')
+online += '\n' + (HERE / 'src' / 'liquidacion.js').read_text(encoding='utf-8')
 online += '\n' + (HERE / 'src' / 'whatsapp.js').read_text(encoding='utf-8')
 
 before = sub('</head>', (HERE / 'src' / 'login.css').read_text(encoding='utf-8') + (HERE / 'src' / 'cotizador.css').read_text(encoding='utf-8') + '</head>', before)
