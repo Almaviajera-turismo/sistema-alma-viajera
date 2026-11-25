@@ -856,3 +856,14 @@ window.almaLiqSubir=async(id,inp)=>{const file=inp.files?.[0];inp.value='';const
  try{const name=await window.almaComprobantes.subir('liq-'+id,file);e.liquidaciones=[...(e.liquidaciones||[]),name];audit('Liquidación de proveedor adjuntada','Finanzas',(e.provider||'')+' · '+(e.concept||''));save();notify('Liquidación adjuntada')}
  catch(err){alert('No se pudo subir la liquidación: '+err.message)}
  document.querySelectorAll('[id="almaLiq'+id+'"]').forEach(c=>c.innerHTML=almaLiqHtml(e))};
+
+/* Registrar compromiso: adjuntar la liquidación del proveedor en el mismo paso */
+{const f=$('expenseForm'),obs=f?.elements.notes?.closest('label');if(obs&&!$('almaLiqNueva'))obs.insertAdjacentHTML('afterend',
+ '<label class="field full">Liquidación del proveedor (opcional)<input type="file" id="almaLiqNueva" accept="image/*,application/pdf" multiple><small class="hint">PDF o foto. Queda guardada en el compromiso; también se puede adjuntar después.</small></label>');
+ let antes=null;f?.addEventListener('submit',()=>{antes=new Set(state.expenses.map(e=>e.id))},true);
+ f?.addEventListener('submit',()=>{const inp=$('almaLiqNueva'),files=[...(inp?.files||[])],a=antes;antes=null;if(!a)return;const e=state.expenses.find(x=>!a.has(x.id));if(!e||!files.length)return;inp.value='';
+  (async()=>{try{for(const file of files){const name=await window.almaComprobantes.subir('liq-'+e.id,file);e.liquidaciones=[...(e.liquidaciones||[]),name]}
+   audit('Liquidación de proveedor adjuntada','Finanzas',(e.provider||'')+' · '+(e.concept||''));save();render();if(window.currentGroupDetail)renderGroupDetail();notify('Compromiso registrado con su liquidación')}
+   catch(err){alert('El compromiso se registró, pero no se pudo subir la liquidación: '+err.message+'\nPodés adjuntarla desde la cuenta del proveedor.')}})()})}
+{const o=window.openExpense;if(o)window.openExpense=(...a)=>{const r=o(...a);const i=$('almaLiqNueva');if(i)i.value='';return r}}
+{const o=window.openGroupExpense;if(o)window.openGroupExpense=(...a)=>{const r=o(...a);const i=$('almaLiqNueva');if(i)i.value='';return r}}
