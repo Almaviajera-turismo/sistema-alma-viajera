@@ -754,3 +754,13 @@ if($('paymentForm')){let antes=null;
 /* Inscribir en grupo: el aviso de acompañante se oculta cuando ya se eligió habitación compartida */
 {const av=()=>{const a=$('almaAcompAviso');if(a)a.classList.toggle('alma-off',(ALMA_CAP[$('almaRoomType')?.value]||1)>1||$('almaRoomType')?.value==='A compartir')};
  $('almaRoomType')?.addEventListener('change',av);const o=window.openGroupBooking;window.openGroupBooking=(...x)=>{const r=o(...x);av();return r}}
+
+/* ---------- Pago a proveedor: desde qué cuenta se pagó (si no es efectivo) ---------- */
+function almaOrigSync(){const f=$('supplierForm'),w=$('almaOrigWrap');if(!f||!w)return;const no=f.elements.method.value!=='Efectivo',v=f.elements.source.value;
+ w.style.display=no?'':'none';f.elements.source.required=no;const det=no&&(v==='Otro'||v==='Cuenta personal de un socio');f.elements.sourceDetail.required=det;
+ $('almaOrigDetLbl').textContent=v==='Cuenta personal de un socio'?'¿De qué socio? (obligatorio)':det?'¿Qué cuenta? (obligatorio)':'Detalle (opcional)';
+ if(!no){f.elements.source.value='';f.elements.sourceDetail.value=''}}
+$('supplierForm')?.addEventListener('change',e=>{if(['method','source'].includes(e.target.name))almaOrigSync()},true);
+{const o=window.openSupplierPayment;window.openSupplierPayment=(...a)=>{const r=o(...a);const f=$('supplierForm');if(f?.elements.source){f.elements.source.value='';f.elements.sourceDetail.value='';
+ const ex=state.expenses.find(e=>e.id===f.elements.expenseId.value);if(f.elements.method.value!=='Efectivo')f.elements.source.value=ex?.currency==='USD'?'BBVA dólares (agencia)':'BBVA pesos (agencia)';almaOrigSync()}return r}}
+$('supplierExpense')?.addEventListener('change',()=>{const f=$('supplierForm'),ex=state.expenses.find(e=>e.id===f.elements.expenseId.value);if(ex&&String(f.elements.source.value).startsWith('BBVA'))f.elements.source.value=ex.currency==='USD'?'BBVA dólares (agencia)':'BBVA pesos (agencia)'});
