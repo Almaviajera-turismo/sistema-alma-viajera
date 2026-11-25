@@ -512,6 +512,8 @@ fsub('<label class="field">Referencia / comprobante<input name="reference" place
 fsub("category:'Pago a proveedor',detail:(e?.provider||'Proveedor')+' · '+(e?.concept||''),method:p.method,currency:e?.currency||'USD',amount:-Number(p.amount)})",
      "category:'Pago a proveedor',detail:(e?.provider||'Proveedor')+' · '+(e?.concept||'')+(p.method!=='Efectivo'&&p.source?' · desde '+p.source+(p.sourceDetail?' ('+p.sourceDetail+')':''):''),method:p.method,currency:e?.currency||'USD',amount:-Number(p.amount),dest:p.method!=='Efectivo'?(p.source||''):''})")
 fsub("+'\\nMedio: '+x.method+'\\nSaldo después del pago: '", "+'\\nMedio: '+x.method+(x.method!=='Efectivo'&&x.source?'\\nDesde: '+x.source+(x.sourceDetail?' ('+x.sourceDetail+')':''):'')+'\\nSaldo después del pago: '")
+# Recibo: botón para cargar la firma digitalizada
+fsub('<button class="btn ghost" onclick="openReceiptEmail()">✉ Enviar por mail</button>', '<button class="btn ghost" onclick="openReceiptEmail()">✉ Enviar por mail</button><button class="btn ghost" onclick="openFirmas()">✍ Firmas</button>')
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)

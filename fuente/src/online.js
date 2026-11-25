@@ -688,6 +688,29 @@ window.almaProbarAvisoMail = async () => {
 };
 /* Envío del recibo al pasajero desde info@ (función "enviar-recibo"). Si el cobro recién se cargó
    y todavía no llegó al servidor, espera y reintenta unos segundos. */
+/* Firmas digitalizadas (tabla firmas): se cargan una vez y se usan en los recibos */
+window.almaFirmas = {
+  async cargar() {
+    try {
+      const r = await fetch(CFG.url + '/rest/v1/firmas?select=nombre,imagen', { headers: { apikey: CFG.key, Authorization: 'Bearer ' + await token() } });
+      window.ALMA_FIRMAS = r.ok ? Object.fromEntries((await r.json()).map(x => [x.nombre, x.imagen])) : (window.ALMA_FIRMAS || {});
+    } catch (e) { window.ALMA_FIRMAS = window.ALMA_FIRMAS || {}; }
+    return window.ALMA_FIRMAS;
+  },
+  async guardar(nombre, imagen, por) {
+    const r = await fetch(CFG.url + '/rest/v1/firmas', { method: 'POST',
+      headers: { apikey: CFG.key, Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ nombre, imagen, actualizado: new Date().toISOString(), actualizado_por: por || '' }) });
+    if (!r.ok) throw new Error((await r.text()) || ('error ' + r.status));
+    (window.ALMA_FIRMAS ||= {})[nombre] = imagen;
+  },
+  async borrar(nombre) {
+    const r = await fetch(CFG.url + '/rest/v1/firmas?nombre=eq.' + encodeURIComponent(nombre), { method: 'DELETE',
+      headers: { apikey: CFG.key, Authorization: 'Bearer ' + await token(), Prefer: 'return=minimal' } });
+    if (!r.ok) throw new Error((await r.text()) || ('error ' + r.status));
+    if (window.ALMA_FIRMAS) delete window.ALMA_FIRMAS[nombre];
+  },
+};
 window.almaEnviarRecibo = async (cobroId, to, subject, body, pdf) => {
   for (let i = 0; ; i++) {
     const t = await token();

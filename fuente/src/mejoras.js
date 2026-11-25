@@ -769,3 +769,54 @@ $('supplierForm')?.addEventListener('change',e=>{if(['method','source'].includes
 {const o=window.openSupplierPayment;window.openSupplierPayment=(...a)=>{const r=o(...a);const f=$('supplierForm');if(f?.elements.source){f.elements.source.value='';f.elements.sourceDetail.value='';
  const ex=state.expenses.find(e=>e.id===f.elements.expenseId.value);if(f.elements.method.value!=='Efectivo')f.elements.source.value=ex?.currency==='USD'?'BBVA dólares (agencia)':'BBVA pesos (agencia)';almaOrigSync()}return r}}
 $('supplierExpense')?.addEventListener('change',()=>{const f=$('supplierForm'),ex=state.expenses.find(e=>e.id===f.elements.expenseId.value);if(ex&&String(f.elements.source.value).startsWith('BBVA'))f.elements.source.value=ex.currency==='USD'?'BBVA dólares (agencia)':'BBVA pesos (agencia)'});
+
+/* ---------- Firma digitalizada en los recibos (la de quien registró el cobro) ---------- */
+function almaFirmaEnRecibo(p){const sg=$('receiptPaper')?.querySelector('.receipt-sign');if(!sg||!p)return false;
+ sg.querySelector('.alma-firma-wrap')?.replaceWith(Object.assign(document.createElement('span'),{textContent:'Firma y aclaración'}));
+ const quien=p.recordedBy||'',img=(window.ALMA_FIRMAS||{})[quien],sp=sg.querySelector(':scope > span');if(!img||!sp)return false;
+ const w=document.createElement('div');w.className='alma-firma-wrap';w.innerHTML='<img class="receipt-firma" src="'+img+'" alt="Firma"><span>'+esc(quien)+'</span>';sp.replaceWith(w);return true}
+{const o=window.showReceipt;window.showReceipt=(id,...a)=>{o(id,...a);const p=state.payments.find(x=>x.id===id);
+ const poner=()=>{if(window.currentReceiptId!==id)return;almaFirmaEnRecibo(p);almaRecDuplicar()};
+ if(window.ALMA_FIRMAS)poner();else window.almaFirmas?.cargar().then(poner)}}
+/* Ventana «Firmas»: dibujar o subir foto, guardar o quitar */
+function almaFirmaDlg(){let d=$('almaFirmaDialog');if(d)return d;
+ document.body.insertAdjacentHTML('beforeend','<dialog id="almaFirmaDialog" class="dialog"><div class="modalhead"><h2>✍ Firma para los recibos</h2><button class="btn ghost tiny" type="button" onclick="closeDialog(\'almaFirmaDialog\')">✕</button></div><div class="modalbody">'
+  +'<label class="field">Persona<select id="almaFirmaQuien"></select></label>'
+  +'<p class="hint" id="almaFirmaHoy"></p>'
+  +'<p class="hint">Dibujá la firma con el dedo o el mouse, o subí una foto de la firma hecha en una hoja blanca (el sistema le saca el fondo). Va a salir en los recibos que registre esa persona.</p>'
+  +'<canvas id="almaFirmaCanvas" width="700" height="260" class="alma-firma-canvas"></canvas>'
+  +'<div class="alma-firma-btns"><button type="button" class="btn ghost tiny" onclick="almaFirmaLimpiar()">Borrar dibujo</button><label class="btn ghost tiny" style="cursor:pointer">📷 Subir foto de la firma<input type="file" accept="image/*" hidden onchange="almaFirmaFoto(this)"></label></div>'
+  +'</div><div class="modalfoot"><button type="button" class="btn plain" id="almaFirmaQuitar" onclick="almaFirmaQuitar()">Quitar firma</button><button type="button" class="btn" id="almaFirmaGuardar" onclick="almaFirmaGuardar()">Guardar firma</button></div></dialog>');
+ d=$('almaFirmaDialog');const c=$('almaFirmaCanvas'),ctx=c.getContext('2d');let dib=false,last=null;
+ const pos=e=>{const r=c.getBoundingClientRect();return [(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]};
+ c.addEventListener('pointerdown',e=>{dib=true;last=pos(e);c.setPointerCapture(e.pointerId);c.dataset.sucio='1';e.preventDefault()});
+ c.addEventListener('pointermove',e=>{if(!dib)return;const p=pos(e);ctx.strokeStyle='#1d2a6b';ctx.lineWidth=3.2;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(...last);ctx.lineTo(...p);ctx.stroke();last=p;e.preventDefault()});
+ ['pointerup','pointercancel','pointerleave'].forEach(t=>c.addEventListener(t,()=>{dib=false}));
+ $('almaFirmaQuien').addEventListener('change',almaFirmaMostrar);return d}
+function almaFirmaMostrar(){const n=$('almaFirmaQuien').value,img=(window.ALMA_FIRMAS||{})[n];almaFirmaLimpiar();
+ if(img){const im=new Image();im.onload=()=>{const c=$('almaFirmaCanvas'),k=Math.min(c.width/im.width,c.height/im.height);c.getContext('2d').drawImage(im,(c.width-im.width*k)/2,(c.height-im.height*k)/2,im.width*k,im.height*k)};im.src=img}
+ $('almaFirmaHoy').textContent=img?'Firma cargada. Podés reemplazarla dibujando o subiendo otra foto.':'Todavía no tiene firma cargada.';$('almaFirmaQuitar').style.display=img?'':'none'}
+window.almaFirmaLimpiar=()=>{const c=$('almaFirmaCanvas');c.getContext('2d').clearRect(0,0,c.width,c.height);c.dataset.sucio=''};
+window.openFirmas=async()=>{const d=almaFirmaDlg(),yo=currentDemoOperator(),socio=window.demoRole==='socio';
+ await window.almaFirmas?.cargar();const s=$('almaFirmaQuien');s.innerHTML=[...new Set(socio?owners:[yo])].map(n=>'<option>'+esc(n)+'</option>').join('');s.value=yo;s.disabled=!socio;almaFirmaMostrar();openDlg('almaFirmaDialog')};
+/* Foto de una firma en papel → fondo transparente, recortada */
+window.almaFirmaFoto=inp=>{const f=inp.files?.[0];inp.value='';if(!f)return;const url=URL.createObjectURL(f),im=new Image();
+ im.onload=()=>{URL.revokeObjectURL(url);const k=Math.min(1,1400/Math.max(im.width,im.height)),w=Math.round(im.width*k),h=Math.round(im.height*k),mx=Math.round(w*.03),my=Math.round(h*.04);
+  const a=document.createElement('canvas');a.width=w;a.height=h;const ax=a.getContext('2d');ax.drawImage(im,0,0,w,h);
+  const b=document.createElement('canvas');b.width=w;b.height=h;const bx=b.getContext('2d');bx.filter='blur(25px)';bx.drawImage(a,0,0);
+  const D=ax.getImageData(0,0,w,h),B=bx.getImageData(0,0,w,h).data,px=D.data;let x0=w,y0=h,x1=0,y1=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,g=px[i]*.3+px[i+1]*.59+px[i+2]*.11,bg=B[i]*.3+B[i+1]*.59+B[i+2]*.11,d=bg-g;
+   if(d>22&&x>mx&&x<w-mx&&y>my&&y<h-my){const al=Math.min(255,(d-22)*255/55);px[i]=px[i]*.55;px[i+1]=px[i+1]*.55;px[i+2]=px[i+2]*.7;px[i+3]=al;if(al>90){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}}else px[i+3]=0}
+  if(x1<=x0){alert('No se encontró la firma en la foto. Probá con una foto más nítida, sobre hoja blanca.');return}
+  ax.putImageData(D,0,0);const c=$('almaFirmaCanvas'),cx=c.getContext('2d');almaFirmaLimpiar();const pw=x1-x0+16,ph=y1-y0+16,s=Math.min(c.width/pw,c.height/ph);
+  cx.drawImage(a,x0-8,y0-8,pw,ph,(c.width-pw*s)/2,(c.height-ph*s)/2,pw*s,ph*s);c.dataset.sucio='1'};
+ im.onerror=()=>alert('No se pudo leer la imagen');im.src=url};
+/* Recorta lo dibujado y lo guarda como PNG transparente */
+function almaFirmaPng(){const c=$('almaFirmaCanvas'),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let x0=c.width,y0=c.height,x1=0,y1=0;
+ for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++)if(d[(y*c.width+x)*4+3]>40){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+ if(x1<=x0)return null;const t=document.createElement('canvas');t.width=x1-x0+12;t.height=y1-y0+12;t.getContext('2d').drawImage(c,x0-6,y0-6,t.width,t.height,0,0,t.width,t.height);return t.toDataURL('image/png')}
+window.almaFirmaGuardar=async()=>{const n=$('almaFirmaQuien').value,img=almaFirmaPng();if(!img){alert('Dibujá o subí la firma primero.');return}
+ const bt=$('almaFirmaGuardar');bt.disabled=true;try{await window.almaFirmas.guardar(n,img,currentDemoOperator());audit('Firma cargada','Recibos',n);notify('Firma guardada: '+n);closeDialog('almaFirmaDialog');if(window.currentReceiptId&&$('receiptDialog')?.open)showReceipt(window.currentReceiptId)}
+ catch(e){alert('No se pudo guardar la firma: '+e.message)}finally{bt.disabled=false}};
+window.almaFirmaQuitar=async()=>{const n=$('almaFirmaQuien').value;if(!confirm('¿Quitar la firma de '+n+'? Los recibos van a salir con la línea en blanco.'))return;
+ try{await window.almaFirmas.borrar(n);audit('Firma quitada','Recibos',n);notify('Firma quitada');almaFirmaMostrar()}catch(e){alert('No se pudo quitar: '+e.message)}};
