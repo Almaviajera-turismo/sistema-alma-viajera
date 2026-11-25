@@ -326,7 +326,7 @@ fsub('<label class="field">Contacto / teléfono<input name="phone" id="individua
      '<label class="field">Teléfono de contacto<input name="phone" id="individualPhone" type="tel" placeholder="Ej.: 11 4992-4267">')
 # Inscribir: tipo de habitación y compañeros de habitación (src/mejoras.js, punto 7)
 fsub('<label class="field">Responsable<select name="owner" id="bookingOwner"></select></label>',
-     '<label class="field">Tipo de habitación<select name="roomType" id="almaRoomType" onchange="almaRoomSync()"><option value="">Sin definir (asignar después)</option><option>Single</option><option>Doble matrimonial</option><option>Doble twin</option><option>Triple</option><option>Cuádruple</option></select></label>'
+     '<label class="field">Tipo de habitación<select name="roomType" id="almaRoomType" onchange="almaRoomSync()"><option value="">Sin definir (asignar después)</option><option>Single</option><option>Doble matrimonial</option><option>Doble twin</option><option>Triple</option><option>Cuádruple</option><option value="A compartir">A compartir (con pasajero del operador)</option></select></label>'
      '<div class="field full alma-mates" id="almaRoomMates" style="display:none"><span>Comparte la habitación con</span>'
      '<label class="field" id="almaMate1Wrap">Pasajero 2<select id="almaMate1"></select></label>'
      '<label class="field" id="almaMate2Wrap">Pasajero 3<select id="almaMate2"></select></label>'
@@ -335,7 +335,7 @@ fsub('<label class="field">Responsable<select name="owner" id="bookingOwner"></s
      '<label class="field">Responsable<select name="owner" id="bookingOwner"></select></label>')
 fsub('<label class="field" data-edit-kind="grupal individual aereo">Precio del paquete / viaje<input type="number" name="price"',
      '<div class="field full" id="almaERoomBox" style="display:none"><div class="formgrid">'
-     '<label class="field">Tipo de habitación<select id="almaERoomType" onchange="almaERoomSync()"><option value="">Sin definir (asignar después)</option><option>Single</option><option>Doble matrimonial</option><option>Doble twin</option><option>Triple</option><option>Cuádruple</option></select></label>'
+     '<label class="field">Tipo de habitación<select id="almaERoomType" onchange="almaERoomSync()"><option value="">Sin definir (asignar después)</option><option>Single</option><option>Doble matrimonial</option><option>Doble twin</option><option>Triple</option><option>Cuádruple</option><option value="A compartir">A compartir (con pasajero del operador)</option></select></label>'
      '<div class="field full alma-mates" id="almaERoomMates" style="display:none"><span>Comparte la habitación con</span>'
      '<label class="field" id="almaEMate1Wrap">Pasajero 2<select id="almaEMate1"></select></label>'
      '<label class="field" id="almaEMate2Wrap">Pasajero 3<select id="almaEMate2"></select></label>'
@@ -504,6 +504,8 @@ fsub("esc(o.client)+'</b><div><button class=\"btn ghost tiny\" style=\"margin:6p
 # Inscribir en grupo: aviso visible para cargar al acompañante de habitación
 fsub('<label class="field full">Nombre del pasajero<input name="client" id="groupPassengerName" placeholder="Un pasajero por ficha" required></label>',
      '<label class="field full">Nombre del pasajero<input name="client" id="groupPassengerName" placeholder="Un pasajero por ficha" required></label><div class="field full alma-acomp-aviso" id="almaAcompAviso">🛏 <b>¿Comparte habitación?</b> Elegí <b>Doble, Triple o Cuádruple</b> en «Tipo de habitación» y ahí seleccionás al acompañante. <button type="button" class="btn ghost tiny" onclick="const s=document.getElementById(\'almaRoomType\');s.scrollIntoView({behavior:\'smooth\',block:\'center\'});s.focus()">Elegir habitación ↓</button></div>')
+# Rooming: tipo «A compartir» (comparte con un pasajero del operador)
+fsub('<option>Cuádruple</option><option>Otra</option></select>','<option>Cuádruple</option><option>A compartir</option><option>Otra</option></select>')
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)

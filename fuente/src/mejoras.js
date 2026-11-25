@@ -131,7 +131,7 @@ for(const [form,sel,tel] of [['groupBookingForm','bookingExistingPassenger','alm
   if(p&&v&&!p.phone){p.phone=v;audit('Teléfono agregado a la ficha','Pasajero',p.name+' · '+v)}},true)}
 
 /* ---------- 7) Tipo de habitación y con quién la comparte (al inscribir y al editar la reserva) ---------- */
-const ALMA_CAP={'Single':1,'Doble matrimonial':2,'Doble twin':2,'Triple':3,'Cuádruple':4};
+const ALMA_CAP={'Single':1,'Doble matrimonial':2,'Doble twin':2,'Triple':3,'Cuádruple':4,'A compartir':1};
 const ALMA_TIPO_VIEJO={'Doble':'Doble matrimonial','Twin':'Doble twin'};
 function almaPaxOpts(excl){return '<option value="">— Elegí un pasajero de la base —</option>'+state.passengers.filter(p=>p.name&&p.id!==excl).slice().sort((a,b)=>a.name.localeCompare(b.name,'es')).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+(p.doc?' · DNI '+esc(p.doc):'')+'</option>').join('')}
 function almaHabSync(pre){const t=$(pre+'RoomType')?.value||'',n=(ALMA_CAP[t]||1)-1;$(pre+'RoomMates').style.display=n>0?'':'none';for(const k of [1,2,3])$(pre+'Mate'+k+'Wrap').style.display=n>=k?'':'none'}
@@ -752,5 +752,5 @@ if($('paymentForm')){let antes=null;
 {const o=window.editOrder;window.editOrder=(id,...a)=>{const r=o(id,...a);const p=findOrder(id);if(p&&$('orderChannel'))$('orderChannel').value=p.channel||'';return r}}
 
 /* Inscribir en grupo: el aviso de acompañante se oculta cuando ya se eligió habitación compartida */
-{const av=()=>{const a=$('almaAcompAviso');if(a)a.classList.toggle('alma-off',(ALMA_CAP[$('almaRoomType')?.value]||1)>1)};
+{const av=()=>{const a=$('almaAcompAviso');if(a)a.classList.toggle('alma-off',(ALMA_CAP[$('almaRoomType')?.value]||1)>1||$('almaRoomType')?.value==='A compartir')};
  $('almaRoomType')?.addEventListener('change',av);const o=window.openGroupBooking;window.openGroupBooking=(...x)=>{const r=o(...x);av();return r}}
