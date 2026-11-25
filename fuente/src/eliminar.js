@@ -10,7 +10,7 @@ function almaConfirmar(titulo,detalle){return requireKeyword('ELIMINAR',titulo,d
 function almaQuitar(arr,id){const i=arr.findIndex(x=>x.id===id);if(i>=0)arr.splice(i,1)}
 function almaRecibos(bid){return state.payments.filter(p=>p.bookingId===bid)}
 function almaCompromisosDe(key){return state.expenses.filter(e=>e.operationKey===key)}
-function almaBorrarReserva(b){for(const f of state.flights.filter(f=>f.bookingId===b.id))almaQuitar(state.flights,f.id);almaQuitar(state.bookings,b.id)}
+function almaBorrarReserva(b){for(const f of state.flights.filter(f=>f.bookingId===b.id))almaQuitar(state.flights,f.id);for(const e of state.expenses.filter(e=>e.bookingId===b.id&&e.auto&&!state.supplierPayments.some(p=>p.expenseId===e.id)))almaQuitar(state.expenses,e.id);almaQuitar(state.bookings,b.id)}
 
 window.almaEliminarPasajero=id=>{
  if(!adminOnly())return;
@@ -31,7 +31,7 @@ window.almaEliminarViaje=id=>{
  if(!adminOnly())return;
  const b=findBooking(id);if(!b)return;
  const g=b.kind==='grupal'?findGroup(b.groupId):null,que=b.kind==='aereo'?'el aéreo de '+b.client:g?'la inscripción de '+b.client+' en '+g.name:'el viaje de '+b.client,m=[];
- const rec=almaRecibos(id),comp=almaCompromisosDe('B:'+id);
+ const rec=almaRecibos(id),comp=[...almaCompromisosDe('B:'+id),...state.expenses.filter(e=>e.bookingId===id&&state.supplierPayments.some(p=>p.expenseId===e.id))];
  if(rec.length)m.push('Tiene '+rec.length+' recibo/s ('+rec.map(p=>p.number+(p.voidedAt?' anulado':'')).join(', ')+'). Los recibos numerados no se borran: dejá la reserva y anulá los recibos que estén mal'+(g?' (o dala de baja dentro de la salida).':'.'));
  if(comp.length)m.push('Tiene '+comp.length+' compromiso/s con proveedores. Eliminalos primero en Proveedores.');
  if(m.length)return almaNoSe(que,m);

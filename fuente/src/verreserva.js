@@ -14,8 +14,8 @@ function almaVRFila(k,v){return v===''||v==null?'':'<div class="alma-ff"><span>'
 function almaVRTabla(cols,rows,vacio){
  if(!rows.length)return '<p class="hint">'+vacio+'</p>';
  return '<div class="tablewrap"><table class="table"><thead><tr>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>'}
-function almaVRProveedores(key,titulo,nota){
- const exps=(state.expenses||[]).filter(e=>e.operationKey===key);
+function almaVRProveedores(key,titulo,nota,filtro){
+ const exps=(state.expenses||[]).filter(e=>e.operationKey===key&&(!filtro||filtro(e)));
  let h='<h4>'+titulo+'</h4>'+(nota?'<p class="hint">'+nota+'</p>':'');
  if(!exps.length)return h+'<p class="hint">No hay compromisos con proveedores cargados.</p>';
  const tot={};
@@ -25,6 +25,7 @@ function almaVRProveedores(key,titulo,nota){
   const pagos=(state.supplierPayments||[]).filter(p=>p.expenseId===e.id).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
   h+='<div class="alma-vr-prov"><div class="alma-vr-provhead"><div><b>'+esc(e.provider||'Proveedor')+'</b><span class="sub">'+esc(e.concept||'')+(e.supplierRef?' · Loc. '+esc(e.supplierRef):'')+'</span></div>'
    +'<div style="text-align:right">Compromiso <b>'+money(e.amount,c)+'</b><span class="sub">'+(pend>.001?'<b style="color:#aa431d">Pendiente '+money(pend,c)+'</b>'+(e.dueDate?' · vence '+fmt(e.dueDate):''):'<span class="tag green">Saldado</span>')+'</span></div></div>'
+   +(typeof almaLiqHtml==='function'?'<div class="alma-liq" id="almaLiq'+e.id+'">'+almaLiqHtml(e)+'</div>':'')
    +almaVRTabla(['Fecha','Oficina','Medio / ref.','Importe'],pagos.map(p=>'<tr><td>'+fmt(p.date)+'</td><td>'+esc(cashboxName(p.cashbox))+'</td><td>'+esc(p.method||'—')+(p.reference?'<span class="sub">'+esc(p.reference)+'</span>':'')+'</td><td><b>'+money(p.amount,c)+'</b></td></tr>'),'Todavía no se le pagó nada a este proveedor.')
    +'</div>'}
  h+='<div class="alma-ficha-grid">'+Object.entries(tot).map(([c,t])=>almaVRFila('Pagado a proveedores ('+c+')',money(t.pag,c)+'<span class="sub">de '+money(t.comp,c)+' comprometido</span>')).join('')+'</div>';
@@ -87,7 +88,8 @@ window.almaVerReserva=id=>{
    +'<td><button type="button" class="btn ghost tiny" onclick="accountReceiptAction(&quot;'+p.id+'&quot;,&quot;ver&quot;)">Ver recibo</button></td></tr>'}),'Todavía no hay cobros registrados en esta reserva.');
  // Pagos a proveedores (solo socios: Finanzas es de socios)
  if(socio){
-  if(b.kind==='grupal')h+=almaVRProveedores('G:'+b.groupId,'Pagos a proveedores de la salida','Son los pagos de toda la salida «'+esc(g?.name||'')+'», compartidos por todos los pasajeros del grupo (no solo esta reserva).');
+  if(b.kind==='grupal'){h+=almaVRProveedores('G:'+b.groupId,'Proveedores de este pasajero','Lo que se le debe a cada proveedor por esta reserva, con su liquidación.',e=>e.bookingId===b.id);
+   if((state.expenses||[]).some(e=>e.operationKey==='G:'+b.groupId&&!e.bookingId))h+=almaVRProveedores('G:'+b.groupId,'Pagos a proveedores de toda la salida','Son compromisos de toda la salida «'+esc(g?.name||'')+'», compartidos por todos los pasajeros del grupo.',e=>!e.bookingId)}
   else h+=almaVRProveedores('B:'+b.id,'Pagos a proveedores','');
  }else h+='<h4>Pagos a proveedores</h4><p class="hint">Los pagos a proveedores solo los ven los socios.</p>';
  $('almaVerResTitle').textContent='Reserva · '+b.client;

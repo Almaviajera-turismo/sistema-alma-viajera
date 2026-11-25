@@ -820,3 +820,39 @@ window.almaFirmaGuardar=async()=>{const n=$('almaFirmaQuien').value,img=almaFirm
  catch(e){alert('No se pudo guardar la firma: '+e.message)}finally{bt.disabled=false}};
 window.almaFirmaQuitar=async()=>{const n=$('almaFirmaQuien').value;if(!confirm('¿Quitar la firma de '+n+'? Los recibos van a salir con la línea en blanco.'))return;
  try{await window.almaFirmas.borrar(n);audit('Firma quitada','Recibos',n);notify('Firma quitada');almaFirmaMostrar()}catch(e){alert('No se pudo quitar: '+e.message)}};
+
+/* ---------- Salida grupal con proveedor: compromiso automático por pasajero + liquidación del proveedor ---------- */
+{const f=$('groupForm'),cap=f?.elements.capacity?.closest('label');if(cap&&!f.elements.providerId)cap.insertAdjacentHTML('beforebegin',
+ '<label class="field">Proveedor / operador de la salida<select name="providerId" id="almaGProv"><option value="">— Sin proveedor —</option></select><small class="hint">Al inscribir cada pasajero se le carga solo el compromiso de pago con este proveedor.</small></label>'
+ +'<label class="field">Costo neto por pasajero (al proveedor)<input name="netPerPax" type="number" min="0" step="0.01" placeholder="Lo que se le paga por cada pasajero"><small class="hint">En la moneda de la salida.</small></label>'
+ +'<label class="field">Vencimiento del pago al proveedor<input name="supplierDueDate" type="date"></label>')}
+function almaGProvOpts(sel){const s=$('almaGProv');if(!s)return;s.innerHTML='<option value="">— Sin proveedor —</option>'+[...state.providers].sort((a,b)=>String(a.name).localeCompare(b.name)).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');s.value=sel||''}
+{const o=window.openGroup;window.openGroup=(...a)=>{const r=o(...a);almaGProvOpts('');return r}}
+{const o=window.almaEditarSalida;window.almaEditarSalida=id=>{o(id);const g=findGroup(id),f=$('groupForm');if(!g||!f||window.__almaEditGroup!==id)return;almaGProvOpts(g.providerId);
+ f.elements.netPerPax.value=g.netPerPax||'';f.elements.supplierDueDate.value=g.supplierDueDate||''}}
+function almaCompDe(b){return state.expenses.find(e=>e.bookingId===b.id&&e.auto)}
+function almaCrearComp(b,g){if(!g?.providerId||!(Number(g.netPerPax)>0)||almaCompDe(b)||accountStatus(b)==='Baja')return null;const pr=state.providers.find(p=>p.id===g.providerId);if(!pr)return null;
+ const e={id:uid(),providerId:pr.id,provider:pr.name,operationKey:'G:'+g.id,bookingId:b.id,passengerId:b.passengerId,supplierRef:'',category:'Operador mayorista',concept:g.name+' · '+b.client,amount:Number(g.netPerPax),currency:g.currency||'USD',depositDueDate:'',depositAmount:'',dueDate:g.supplierDueDate||'',notes:'Cargado automáticamente al inscribir al pasajero',auto:true,liquidaciones:[]};
+ state.expenses.unshift(e);audit('Compromiso automático','Finanzas',pr.name+' · '+b.client+' · '+money(e.amount,e.currency));return e}
+// Edición de salida: guardar proveedor/neto y ofrecer crear los compromisos de los ya inscriptos
+document.addEventListener('submit',e=>{if(e.target?.id!=='groupForm')return;const id=window.__almaEditGroup;if(!id)return;const f=e.target,v={providerId:f.elements.providerId.value,netPerPax:Number(f.elements.netPerPax.value||0)||'',supplierDueDate:f.elements.supplierDueDate.value||''};
+ setTimeout(()=>{if($('groupDialog')?.open)return;const g=findGroup(id);if(!g)return;Object.assign(g,v);
+  const falt=state.bookings.filter(b=>b.kind==='grupal'&&b.groupId===id&&accountStatus(b)!=='Baja'&&!almaCompDe(b));
+  if(g.providerId&&g.netPerPax&&falt.length&&confirm('Hay '+falt.length+' pasajero/s inscripto/s sin compromiso con el proveedor.\n\n¿Cargarles ahora '+money(g.netPerPax,g.currency)+' a cada uno?'))falt.forEach(b=>almaCrearComp(b,g));
+  save();render();if(window.currentGroupDetail===id)renderGroupDetail()},0)},true);
+// Inscripción: crear el compromiso de cada pasajero nuevo (también del acompañante inscripto en el mismo paso)
+{let antes=null;document.addEventListener('submit',e=>{if(e.target?.id==='groupBookingForm')antes=new Set(state.bookings.map(b=>b.id))},true);
+ document.addEventListener('submit',e=>{if(e.target?.id!=='groupBookingForm'||!antes)return;const a=antes;antes=null;
+  setTimeout(()=>{const nuevos=state.bookings.filter(b=>!a.has(b.id)&&b.kind==='grupal');let n=0,tot=null;
+   for(const b of nuevos){const x=almaCrearComp(b,findGroup(b.groupId));if(x){n++;tot=x}}
+   if(n){save();if(window.currentGroupDetail)renderGroupDetail();notify('Compromiso con '+tot.provider+' cargado: '+money(tot.amount,tot.currency)+(n>1?' × '+n+' pasajeros':''))}},50)},false)}
+// Liquidación del proveedor (PDF o foto) en cada compromiso
+function almaLiqHtml(e){const ls=e.liquidaciones||[];
+ return '<span class="sub" style="display:inline">Liquidación del proveedor: </span>'+(ls.length?ls.map((n,i)=>'<a href="#" onclick="event.preventDefault();almaComprobantes.abrir(&quot;liq-'+e.id+'&quot;,&quot;'+esc(n)+'&quot;)">📄 Ver'+(ls.length>1?' '+(i+1):'')+'</a>').join(' · ')+' ':'<span class="sub" style="display:inline">sin adjuntar</span> ')
+  +'<label class="btn ghost tiny" style="cursor:pointer">📎 '+(ls.length?'Agregar otra':'Adjuntar liquidación')+'<input type="file" accept="image/*,application/pdf" hidden onchange="almaLiqSubir(&quot;'+e.id+'&quot;,this)"></label>'}
+window.almaLiqHtml=almaLiqHtml;
+window.almaLiqSubir=async(id,inp)=>{const file=inp.files?.[0];inp.value='';const e=state.expenses.find(x=>x.id===id);if(!file||!e)return;
+ document.querySelectorAll('[id="almaLiq'+id+'"]').forEach(c=>c.innerHTML='<span class="sub">Subiendo…</span>');
+ try{const name=await window.almaComprobantes.subir('liq-'+id,file);e.liquidaciones=[...(e.liquidaciones||[]),name];audit('Liquidación de proveedor adjuntada','Finanzas',(e.provider||'')+' · '+(e.concept||''));save();notify('Liquidación adjuntada')}
+ catch(err){alert('No se pudo subir la liquidación: '+err.message)}
+ document.querySelectorAll('[id="almaLiq'+id+'"]').forEach(c=>c.innerHTML=almaLiqHtml(e))};
