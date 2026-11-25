@@ -181,4 +181,10 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 .alma-liq { margin: 4px 0 2px; font-size: 12.5px; }
 .alma-liq .btn { margin-left: 4px; }
 .alma-liq-top { background: #f6f0fd; border: 1px dashed #c9b6ec; border-radius: 10px; padding: 10px 12px; }
+/* Liquidez por viaje */
+.alma-liq-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.alma-liq-card { background: #f7f4fd; border: 1px solid #e3daf4; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; line-height: 1.6; }
+.alma-liq-card > span { font-weight: 800; color: #51407a; letter-spacing: .05em; }
+.alma-liq-big { font-size: 20px; font-weight: 800; margin: 4px 0; }
+.alma-liq-card small { color: #5b5670; display: block; line-height: 1.4; }
 </style>

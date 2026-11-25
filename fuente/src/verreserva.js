@@ -91,6 +91,15 @@ window.almaVerReserva=id=>{
   if(b.kind==='grupal'){h+=almaVRProveedores('G:'+b.groupId,'Proveedores de este pasajero','Lo que se le debe a cada proveedor por esta reserva, con su liquidación.',e=>e.bookingId===b.id);
    if((state.expenses||[]).some(e=>e.operationKey==='G:'+b.groupId&&!e.bookingId))h+=almaVRProveedores('G:'+b.groupId,'Pagos a proveedores de toda la salida','Son compromisos de toda la salida «'+esc(g?.name||'')+'», compartidos por todos los pasajeros del grupo.',e=>!e.bookingId)}
   else h+=almaVRProveedores('B:'+b.id,'Pagos a proveedores','');
+ const es=(state.expenses||[]).filter(e=>e.bookingId===b.id||(b.kind!=='grupal'&&e.operationKey==='B:'+b.id));
+  if(es.length||paid(b)>0){const cs={};const add=(k,c,v)=>{cs[c]=cs[c]||{cobrado:0,pagado:0,falta:0,porCobrar:0};cs[c][k]+=v};
+   add('cobrado',c,paid(b));add('porCobrar',c,Math.max(0,balance(b)));for(const e of es){const p=paidSupplier(e);add('pagado',e.currency||'USD',p);add('falta',e.currency||'USD',Math.max(0,Number(e.amount)-p))}
+   h+='<h4>💧 Liquidez de esta reserva</h4>'+(es.length?'':'<p class="hint">Todavía no tiene compromiso propio con el operador'+(b.kind==='grupal'?' (los de toda la salida se ven en Finanzas → Liquidez por viaje)':'')+'.</p>')
+    +'<div class="alma-ficha-grid">'+Object.entries(cs).map(([cu,x])=>{const enMano=x.cobrado-x.pagado,libre=enMano-x.falta;
+     return almaVRFila('En mano ('+cu+')',money(enMano,cu)+'<span class="sub">cobrado '+money(x.cobrado,cu)+' − pagado al operador '+money(x.pagado,cu)+'</span>')
+      +almaVRFila('Falta pagar al operador',money(x.falta,cu))
+      +almaVRFila('Libre',(libre>=-.009?'<span style="color:#1f7a45">'+money(libre,cu)+'</span><span class="sub">ganancia ya cobrada</span>':'<span style="color:#b13c1c">−'+money(-libre,cu)+'</span><span class="sub">plata del operador en uso</span>'))
+      +almaVRFila('Ganancia al final',money(x.cobrado+x.porCobrar-x.pagado-x.falta,cu))}).join('')+'</div>'}
  }else h+='<h4>Pagos a proveedores</h4><p class="hint">Los pagos a proveedores solo los ven los socios.</p>';
  $('almaVerResTitle').textContent='Reserva · '+b.client;
  $('almaVerResBody').innerHTML=h;

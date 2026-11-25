@@ -883,3 +883,32 @@ window.almaLiqActualizado=async(e,files)=>{audit('Compromiso actualizado con la 
  try{for(const file of files){const name=await window.almaComprobantes.subir('liq-'+e.id,file);e.liquidaciones=[...(e.liquidaciones||[]),name]}if(files.length){save();render();if(window.currentGroupDetail)renderGroupDetail()}
   notify('Compromiso actualizado con la liquidación: '+money(e.amount,e.currency))}
  catch(err){alert('El compromiso se actualizó, pero no se pudo subir la liquidación: '+err.message)}};
+
+/* ---------- Liquidez por viaje: cuánto de lo cobrado es ganancia y cuánto es del operador ---------- */
+function almaLiqOps(){const ops=new Map(),get=(k,tit,sub,fecha,abrir)=>{if(!ops.has(k))ops.set(k,{k,tit,sub,fecha,abrir,c:{}});return ops.get(k)},
+ cc=(o,c)=>o.c[c]||(o.c[c]={cobrado:0,porCobrar:0,pagado:0,falta:0,comp:0});
+ for(const b of state.bookings){if(accountStatus(b)==='Baja')continue;const g=b.kind==='grupal'?findGroup(b.groupId):null;
+  const o=g?get('G:'+g.id,g.name,'Salida grupal · File '+(g.fileNumber||'—'),g.departure,'showGroupDetail(&quot;'+g.id+'&quot;)'):get('B:'+b.id,b.client,(b.kind==='aereo'?'Aéreo':'Viaje individual')+' · '+trip(b)+' · File '+(bookingFile(b)||'—'),b.departure,'almaVerReserva(&quot;'+b.id+'&quot;)');
+  const x=cc(o,cur(b));x.cobrado+=paid(b);x.porCobrar+=Math.max(0,balance(b));if(g){o.pax=(o.pax||0)+1}}
+ for(const e of state.expenses){const o=ops.get(e.operationKey);if(!o)continue;const x=cc(o,e.currency||'USD'),p=paidSupplier(e);x.pagado+=p;x.falta+=Math.max(0,Number(e.amount)-p);x.comp++;
+  const d=expenseNextDue(e);if(d&&(!o.vence||d.date<o.vence.date))o.vence=d}
+ return [...ops.values()].filter(o=>Object.values(o.c).some(x=>x.cobrado>.009||x.falta>.009||x.pagado>.009))}
+function almaLiqCalc(x){const enMano=x.cobrado-x.pagado;return {enMano,libre:enMano-x.falta,final:x.cobrado+x.porCobrar-x.pagado-x.falta}}
+function almaLiqLibre(v,c,sinComp){if(sinComp)return '<b>'+money(v,c)+'</b><span class="sub" style="color:#a06a00">⚠ sin compromisos con el operador cargados</span>';
+ return v>=-.009?'<b style="color:#1f7a45">'+money(v,c)+'</b><span class="sub">ganancia ya cobrada</span>':'<b style="color:#b13c1c">−'+money(-v,c)+'</b><span class="sub">es del operador: cubrir con próximos cobros</span>'}
+function almaLiqRender(){const el=$('almaLiqBody');if(!el)return;const ops=almaLiqOps(),tot={},filtro=$('almaLiqFiltro')?.value||'activos',hoy=today();
+ const lista=ops.filter(o=>filtro==='todos'||Object.values(o.c).some(x=>x.falta>.009||x.porCobrar>.009)||(o.fecha||'')>=hoy).sort((a,b)=>String(a.vence?.date||a.fecha||'9999').localeCompare(String(b.vence?.date||b.fecha||'9999')));
+ const filas=[];for(const o of lista)for(const [c,x] of Object.entries(o.c)){const v=almaLiqCalc(x);const t=tot[c]||(tot[c]={cobrado:0,pagado:0,falta:0,porCobrar:0,libre:0,enMano:0,neg:0,sin:0,sinM:0});
+  if(!x.comp){t.sin++;t.sinM+=x.cobrado}else{
+  t.cobrado+=x.cobrado;t.pagado+=x.pagado;t.falta+=x.falta;t.porCobrar+=x.porCobrar;t.enMano+=v.enMano;t.libre+=v.libre;if(v.libre<-.009)t.neg+=-v.libre}
+  filas.push('<tr><td><a href="#" onclick="event.preventDefault();'+o.abrir+'"><b>'+esc(o.tit)+'</b></a><span class="sub">'+esc(o.sub)+(o.pax?' · '+o.pax+' pax':'')+(o.fecha?' · sale '+fmt(o.fecha):'')+'</span></td>'
+   +'<td>'+money(x.cobrado,c)+(x.porCobrar>.009?'<span class="sub">falta cobrar '+money(x.porCobrar,c)+'</span>':'')+'</td><td>'+money(x.pagado,c)+'</td><td><b>'+money(v.enMano,c)+'</b></td>'
+   +'<td>'+money(x.falta,c)+(o.vence&&x.falta>.009?'<span class="sub">'+o.vence.kind+' '+fmt(o.vence.date)+(o.vence.date<hoy?' · <b style="color:#b13c1c">vencido</b>':'')+'</span>':'')+'</td>'
+   +'<td>'+almaLiqLibre(v.libre,c,!x.comp)+'</td><td>'+money(v.final,c)+'</td></tr>')}
+ const res=Object.entries(tot).map(([c,t])=>'<div class="alma-liq-card"><span>'+c+'</span><div>En mano por viajes <b>'+money(t.enMano,c)+'</b></div><div>Falta pagar a operadores <b>'+money(t.falta,c)+'</b></div>'
+  +'<div class="alma-liq-big" style="color:'+(t.libre>=0?'#1f7a45':'#b13c1c')+'">Libre: '+(t.libre<0?'−':'')+money(Math.abs(t.libre),c)+'</div>'
+  +(t.neg>.009?'<small>De lo cobrado, '+money(t.neg,c)+' es plata de operadores que se está usando hoy y hay que cubrir con próximos cobros (por cobrar: '+money(t.porCobrar,c)+').</small>':'<small>Todo lo que está en mano por encima de lo que se debe a operadores es ganancia ya cobrada.</small>')+(t.sin?'<small style="color:#a06a00;margin-top:4px">⚠ '+t.sin+' viaje/s sin compromisos con el operador cargados ('+money(t.sinM,c)+' cobrado): no se cuentan acá hasta cargar lo que se le debe al operador.</small>':'')+'</div>').join('');
+ el.innerHTML=(res?'<div class="alma-liq-cards">'+res+'</div>':'')+(filas.length?'<div class="tablewrap"><table class="table"><thead><tr><th>Viaje</th><th>Cobrado al pasajero</th><th>Pagado al operador</th><th>En mano</th><th>Falta pagar al operador</th><th>Libre</th><th>Ganancia al final</th></tr></thead><tbody>'+filas.join('')+'</tbody></table></div>':'<p class="hint">No hay viajes con cobros o compromisos pendientes.</p>')
+  +'<p class="hint">En mano = cobrado − pagado al operador. Libre = en mano − lo que falta pagarle al operador. Si da negativo, se está usando plata del operador. Ganancia al final = todo lo que se va a cobrar − todo lo que se le paga al operador.</p>'}
+{const fd=$('financeDashboard');if(fd&&!$('almaLiqPanel'))fd.insertAdjacentHTML('afterend','<div class="panel" id="almaLiqPanel"><div class="panelhead"><h2>💧 Liquidez por viaje</h2><select id="almaLiqFiltro" class="tiny" onchange="almaLiqRender()" style="max-width:220px"><option value="activos">Viajes activos</option><option value="todos">Todos</option></select></div><div id="almaLiqBody"></div></div>');
+ window.almaLiqRender=almaLiqRender;const o=render;render=(...a)=>{const r=o(...a);try{if(window.demoRole==='socio')almaLiqRender()}catch(e){}return r}}
