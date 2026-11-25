@@ -512,6 +512,11 @@ pageTitles.vendedores='Vendedores';
   +'<div class="panel" id="almaVendFicha" style="display:none"></div></section>');
   const cp=$('commissionPanel');if(cp)$('vendedores').appendChild(cp)}}
 {const o=window.switchPage;window.switchPage=(id,...a)=>{if(id==='vendedores'&&!adminOnly())return;return o(id,...a)}}
+/* Menú lateral: acceso a Proveedores debajo de Finanzas (solo socios) */
+{const nav=document.querySelector('nav [data-page="tesoreria"],.sidebar [data-page="tesoreria"]')||document.querySelector('[data-page="tesoreria"]');
+ if(nav&&!nav.parentElement.querySelector(':scope > [data-page="proveedores"]')){
+  nav.insertAdjacentHTML('afterend','<button data-page="proveedores" data-admin-only="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v10H3z"/><path d="M14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17.5" cy="18" r="1.8"/></svg><span>Proveedores</span></button>');
+  const b=nav.nextElementSibling;b.addEventListener('click',()=>switchPage('proveedores'));if(window.demoRole==='vendedor')b.style.display='none'}}
 window.__almaVendSel=null;
 function almaVendMes(){const el=$('almaVMes');if(el&&!el.value)el.value=$('commissionMonth')?.value||today().slice(0,7);return el?.value||today().slice(0,7)}
 function almaVendModo(){return $('commissionMode')?.value||'venta'}
