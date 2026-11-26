@@ -518,6 +518,9 @@ fsub('<button class="btn ghost" onclick="openReceiptEmail()">✉ Enviar por mail
 # Cuenta del proveedor: liquidación adjunta en cada compromiso
 fsub("""'<tr><td>'+esc(e.concept)+'<span class="sub">'+esc(operationTitle(e.operationKey))+'</span></td><td>'+money(e.amount,e.currency)+'</td><td>'+money(Number(e.amount)-paidSupplier(e),e.currency)""",
      """'<tr><td>'+esc(e.concept)+'<span class="sub">'+esc(operationTitle(e.operationKey))+'</span><div class="alma-liq" id="almaLiq'+e.id+'">'+almaLiqHtml(e)+'</div></td><td>'+money(e.amount,e.currency)+'</td><td>'+money(Number(e.amount)-paidSupplier(e),e.currency)""")
+# Cuenta del pasajero: texto actualizado sobre PDF y mail
+fsub('Para guardar un PDF, elegí «Guardar como PDF» en las opciones de impresión. «Enviar email» prepara un borrador; es necesario adjuntar el PDF manualmente.',
+     'Para guardar un PDF, elegí «Guardar como PDF» en las opciones de impresión. «Enviar email» manda el recibo en PDF al pasajero desde info@almaviajeraturismo.com.')
 # Control: el código de la app tiene que compilar (evita publicar una página rota)
 import re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
 _m = _re.search(r'<script type="text/plain" id="almaAppSource">([\s\S]*?)</script>', out)

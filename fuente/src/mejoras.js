@@ -912,3 +912,10 @@ function almaLiqRender(){const el=$('almaLiqBody');if(!el)return;const ops=almaL
   +'<p class="hint">En mano = cobrado − pagado al operador. Libre = en mano − lo que falta pagarle al operador. Si da negativo, se está usando plata del operador. Ganancia al final = todo lo que se va a cobrar − todo lo que se le paga al operador.</p>'}
 {const fd=$('financeDashboard');if(fd&&!$('almaLiqPanel'))fd.insertAdjacentHTML('afterend','<div class="panel" id="almaLiqPanel"><div class="panelhead"><h2>💧 Liquidez por viaje</h2><select id="almaLiqFiltro" class="tiny" onchange="almaLiqRender()" style="max-width:220px"><option value="activos">Viajes activos</option><option value="todos">Todos</option></select></div><div id="almaLiqBody"></div></div>');
  window.almaLiqRender=almaLiqRender;const o=render;render=(...a)=>{const r=o(...a);try{if(window.demoRole==='socio')almaLiqRender()}catch(e){}return r}}
+
+/* Cuenta del pasajero · Viaje: botón para registrar el cobro directo desde la cuenta */
+{const o=window.openAccount;window.openAccount=(id,...a)=>{const r=o(id,...a);const b=findBooking(id),m=$('accountDetailBody')?.querySelector('.fin-metrics');
+ if(b&&m&&!$('almaCtaAcc')){const baja=accountStatus(b)==='Baja',saldo=balance(b);
+  m.insertAdjacentHTML('afterend','<div class="alma-cta-acc" id="almaCtaAcc">'+(baja?'<span class="hint">La reserva está dada de baja.</span>':'<button class="btn" type="button" onclick="openPayment(&quot;'+b.id+'&quot;)">💵 Registrar cobro'+(saldo>.009?' · saldo '+money(saldo,cur(b)):'')+'</button>')
+   +(typeof almaVerReserva==='function'?'<button class="btn ghost" type="button" onclick="almaVerReserva(&quot;'+b.id+'&quot;)">👁 Ver reserva</button>':'')+'</div>')}
+ return r}}
