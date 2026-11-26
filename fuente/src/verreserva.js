@@ -96,11 +96,12 @@ window.almaVerReserva=id=>{
   if(es.length||paid(b)>0){const cs={};const add=(k,c,v)=>{cs[c]=cs[c]||{cobrado:0,pagado:0,falta:0,porCobrar:0};cs[c][k]+=v};
    add('cobrado',c,paid(b));add('porCobrar',c,Math.max(0,balance(b)));for(const e of es){const p=paidSupplier(e);add('pagado',e.currency||'USD',p);add('falta',e.currency||'USD',Math.max(0,Number(e.amount)-p))}
    h+='<h4>💧 Liquidez de esta reserva</h4>'+(es.length?'':'<p class="hint">Todavía no tiene compromiso propio con el operador'+(b.kind==='grupal'?' (los de toda la salida se ven en Finanzas → Liquidez por viaje)':'')+'.</p>')
-    +'<div class="alma-ficha-grid">'+Object.entries(cs).map(([cu,x])=>{const enMano=x.cobrado-x.pagado,libre=enMano-x.falta;
-     return almaVRFila('En mano ('+cu+')',money(enMano,cu)+'<span class="sub">cobrado '+money(x.cobrado,cu)+' − pagado al operador '+money(x.pagado,cu)+'</span>')
+    +'<div class="alma-ficha-grid">'+Object.entries(cs).map(([cu,x])=>{const v=almaLiqCalc(x);
+     return almaVRFila('En mano ('+cu+')',money(v.enMano,cu)+'<span class="sub">cobrado '+money(x.cobrado,cu)+' − pagado al operador '+money(x.pagado,cu)+'</span>')
+      +almaVRFila('Plata del operador',money(v.delOp,cu)+'<span class="sub">de lo que está en mano, reservado para pagarle</span>')
+      +almaVRFila('Libre',(v.libre>.009?'<span style="color:#1f7a45">'+money(v.libre,cu)+'</span><span class="sub">ganancia ya cobrada</span>':money(0,cu)+'<span class="sub">todavía no hay ganancia cobrada</span>'))
       +almaVRFila('Falta pagar al operador',money(x.falta,cu))
-      +almaVRFila('Libre',(libre>=-.009?'<span style="color:#1f7a45">'+money(libre,cu)+'</span><span class="sub">ganancia ya cobrada</span>':'<span style="color:#b13c1c">−'+money(-libre,cu)+'</span><span class="sub">plata del operador en uso</span>'))
-      +almaVRFila('Ganancia al final',money(x.cobrado+x.porCobrar-x.pagado-x.falta,cu))}).join('')+'</div>'}
+      +almaVRFila('Ganancia al final',money(v.final,cu))}).join('')+'</div>'}
  }else{const mia=[b.salesperson,b.owner].includes(currentDemoOperator());
   if(mia){h+=almaVRProveedores(b.kind==='grupal'?'G:'+b.groupId:'B:'+b.id,'Proveedores de este pasajero','Lo que se le debe al operador por esta reserva, con su liquidación. Los pagos al operador los registran los socios.',e=>e.bookingId===b.id);h+='<div class="alma-liq-top" style="margin:8px 0 14px" id="almaVRLiq"><b>📄 Cargar liquidación del operador</b><span class="sub" style="display:block;margin:4px 0 8px">Subí la liquidación (PDF o foto) y se crea solo el compromiso de pago de este pasajero, con el importe, el file del proveedor y el vencimiento.</span><label class="btn tiny" style="cursor:pointer">📎 Elegir liquidación<input type="file" accept="image/*,application/pdf" hidden onchange="almaCompDesdeLiqInp(&quot;'+b.id+'&quot;,this)"></label></div>'}
   else h+='<h4>Proveedores</h4><p class="hint">Solo el vendedor de esta reserva y los socios ven y cargan la liquidación del operador.</p>'}

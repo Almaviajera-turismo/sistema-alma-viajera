@@ -895,23 +895,28 @@ function almaLiqOps(){const ops=new Map(),get=(k,tit,sub,fecha,abrir)=>{if(!ops.
  for(const e of state.expenses){const o=ops.get(e.operationKey);if(!o)continue;const x=cc(o,e.currency||'USD'),p=paidSupplier(e);x.pagado+=p;x.falta+=Math.max(0,Number(e.amount)-p);x.comp++;
   const d=expenseNextDue(e);if(d&&(!o.vence||d.date<o.vence.date))o.vence=d}
  return [...ops.values()].filter(o=>Object.values(o.c).some(x=>x.cobrado>.009||x.falta>.009||x.pagado>.009))}
-function almaLiqCalc(x){const enMano=x.cobrado-x.pagado;return {enMano,libre:enMano-x.falta,final:x.cobrado+x.porCobrar-x.pagado-x.falta}}
-function almaLiqLibre(v,c,sinComp){if(sinComp)return '<b>'+money(v,c)+'</b><span class="sub" style="color:#a06a00">⚠ sin compromisos con el operador cargados</span>';
- return v>=-.009?'<b style="color:#1f7a45">'+money(v,c)+'</b><span class="sub">ganancia ya cobrada</span>':'<b style="color:#b13c1c">−'+money(-v,c)+'</b><span class="sub">es del operador: cubrir con próximos cobros</span>'}
+function almaLiqCalc(x){const enMano=x.cobrado-x.pagado,delOp=Math.max(0,Math.min(enMano,x.falta)),libre=Math.max(0,enMano-x.falta),adelantado=Math.max(0,-enMano);
+ return {enMano,delOp,libre,adelantado,faltaCubrir:Math.max(0,x.falta-Math.max(0,enMano)),final:x.cobrado+x.porCobrar-x.pagado-x.falta}}
+function almaLiqLibre(v,c,sinComp){if(sinComp)return '<b>'+money(v.enMano,c)+'</b><span class="sub" style="color:#a06a00">⚠ sin compromisos con el operador cargados</span>';
+ return '<b style="color:'+(v.libre>.009?'#1f7a45':'#6b6480')+'">'+money(v.libre,c)+'</b><span class="sub">'+(v.libre>.009?'ganancia ya cobrada':'todavía no hay ganancia cobrada')+'</span>'}
 function almaLiqRender(){const el=$('almaLiqBody');if(!el)return;const ops=almaLiqOps(),tot={},filtro=$('almaLiqFiltro')?.value||'activos',hoy=today();
  const lista=ops.filter(o=>filtro==='todos'||Object.values(o.c).some(x=>x.falta>.009||x.porCobrar>.009)||(o.fecha||'')>=hoy).sort((a,b)=>String(a.vence?.date||a.fecha||'9999').localeCompare(String(b.vence?.date||b.fecha||'9999')));
- const filas=[];for(const o of lista)for(const [c,x] of Object.entries(o.c)){const v=almaLiqCalc(x);const t=tot[c]||(tot[c]={cobrado:0,pagado:0,falta:0,porCobrar:0,libre:0,enMano:0,neg:0,sin:0,sinM:0});
-  if(!x.comp){t.sin++;t.sinM+=x.cobrado}else{
-  t.cobrado+=x.cobrado;t.pagado+=x.pagado;t.falta+=x.falta;t.porCobrar+=x.porCobrar;t.enMano+=v.enMano;t.libre+=v.libre;if(v.libre<-.009)t.neg+=-v.libre}
+ const filas=[];for(const o of lista)for(const [c,x] of Object.entries(o.c)){const v=almaLiqCalc(x);const t=tot[c]||(tot[c]={enMano:0,delOp:0,libre:0,falta:0,porCobrar:0,adel:0,sin:0,sinM:0});
+  if(!x.comp){t.sin++;t.sinM+=x.cobrado}else{t.enMano+=v.enMano;t.delOp+=v.delOp;t.libre+=v.libre;t.falta+=x.falta;t.porCobrar+=x.porCobrar;t.adel+=v.adelantado}
   filas.push('<tr><td><a href="#" onclick="event.preventDefault();'+o.abrir+'"><b>'+esc(o.tit)+'</b></a><span class="sub">'+esc(o.sub)+(o.pax?' · '+o.pax+' pax':'')+(o.fecha?' · sale '+fmt(o.fecha):'')+'</span></td>'
-   +'<td>'+money(x.cobrado,c)+(x.porCobrar>.009?'<span class="sub">falta cobrar '+money(x.porCobrar,c)+'</span>':'')+'</td><td>'+money(x.pagado,c)+'</td><td><b>'+money(v.enMano,c)+'</b></td>'
+   +'<td>'+money(x.cobrado,c)+(x.porCobrar>.009?'<span class="sub">falta cobrar '+money(x.porCobrar,c)+'</span>':'')+'</td><td>'+money(x.pagado,c)+'</td>'
+   +'<td><b>'+money(v.enMano,c)+'</b>'+(v.adelantado>.009?'<span class="sub" style="color:#a06a00">se le adelantó al operador más de lo cobrado</span>':'')+'</td>'
+   +'<td>'+(x.comp?money(v.delOp,c)+'<span class="sub">reservado para el operador</span>':'—')+'</td>'
+   +'<td>'+almaLiqLibre(v,c,!x.comp)+'</td>'
    +'<td>'+money(x.falta,c)+(o.vence&&x.falta>.009?'<span class="sub">'+o.vence.kind+' '+fmt(o.vence.date)+(o.vence.date<hoy?' · <b style="color:#b13c1c">vencido</b>':'')+'</span>':'')+'</td>'
-   +'<td>'+almaLiqLibre(v.libre,c,!x.comp)+'</td><td>'+money(v.final,c)+'</td></tr>')}
- const res=Object.entries(tot).map(([c,t])=>'<div class="alma-liq-card"><span>'+c+'</span><div>En mano por viajes <b>'+money(t.enMano,c)+'</b></div><div>Falta pagar a operadores <b>'+money(t.falta,c)+'</b></div>'
-  +'<div class="alma-liq-big" style="color:'+(t.libre>=0?'#1f7a45':'#b13c1c')+'">Libre: '+(t.libre<0?'−':'')+money(Math.abs(t.libre),c)+'</div>'
-  +(t.neg>.009?'<small>De lo cobrado, '+money(t.neg,c)+' es plata de operadores que se está usando hoy y hay que cubrir con próximos cobros (por cobrar: '+money(t.porCobrar,c)+').</small>':'<small>Todo lo que está en mano por encima de lo que se debe a operadores es ganancia ya cobrada.</small>')+(t.sin?'<small style="color:#a06a00;margin-top:4px">⚠ '+t.sin+' viaje/s sin compromisos con el operador cargados ('+money(t.sinM,c)+' cobrado): no se cuentan acá hasta cargar lo que se le debe al operador.</small>':'')+'</div>').join('');
- el.innerHTML=(res?'<div class="alma-liq-cards">'+res+'</div>':'')+(filas.length?'<div class="tablewrap"><table class="table"><thead><tr><th>Viaje</th><th>Cobrado al pasajero</th><th>Pagado al operador</th><th>En mano</th><th>Falta pagar al operador</th><th>Libre</th><th>Ganancia al final</th></tr></thead><tbody>'+filas.join('')+'</tbody></table></div>':'<p class="hint">No hay viajes con cobros o compromisos pendientes.</p>')
-  +'<p class="hint">En mano = cobrado − pagado al operador. Libre = en mano − lo que falta pagarle al operador. Si da negativo, se está usando plata del operador. Ganancia al final = todo lo que se va a cobrar − todo lo que se le paga al operador.</p>'}
+   +'<td>'+money(v.final,c)+'</td></tr>')}
+ const res=Object.entries(tot).map(([c,t])=>'<div class="alma-liq-card"><span>'+c+'</span><div>En mano por viajes <b>'+money(t.enMano,c)+'</b></div><div>De eso, plata de operadores <b>'+money(t.delOp,c)+'</b></div>'
+  +'<div class="alma-liq-big" style="color:#1f7a45">Libre: '+money(t.libre,c)+'</div><small>Es la ganancia ya cobrada: lo que se puede usar sin tocar la plata de los operadores.</small>'
+  +'<small style="margin-top:4px">Falta pagar a operadores '+money(t.falta,c)+' · falta cobrar a pasajeros '+money(t.porCobrar,c)+'.</small>'
+  +(t.adel>.009?'<small style="color:#a06a00;margin-top:4px">⚠ En algunos viajes se le pagó al operador '+money(t.adel,c)+' más de lo cobrado al pasajero (lo puso la agencia).</small>':'')
+  +(t.sin?'<small style="color:#a06a00;margin-top:4px">⚠ '+t.sin+' viaje/s sin compromisos con el operador cargados ('+money(t.sinM,c)+' cobrado): no se cuentan acá hasta cargar lo que se le debe al operador.</small>':'')+'</div>').join('');
+ el.innerHTML=(res?'<div class="alma-liq-cards">'+res+'</div>':'')+(filas.length?'<div class="tablewrap"><table class="table"><thead><tr><th>Viaje</th><th>Cobrado al pasajero</th><th>Pagado al operador</th><th>En mano</th><th>Plata del operador</th><th>Libre</th><th>Falta pagar al operador</th><th>Ganancia al final</th></tr></thead><tbody>'+filas.join('')+'</tbody></table></div>':'<p class="hint">No hay viajes con cobros o compromisos pendientes.</p>')
+  +'<p class="hint">En mano = cobrado al pasajero − pagado al operador. Plata del operador = lo que está en mano y todavía hay que pagarle al operador. Libre = lo que sobra en mano después de cubrir todo lo que se le debe al operador (ganancia ya cobrada). Ganancia al final = todo lo que se va a cobrar − todo lo que se le paga al operador.</p>'}
 {const fd=$('financeDashboard');if(fd&&!$('almaLiqPanel'))fd.insertAdjacentHTML('afterend','<div class="panel" id="almaLiqPanel"><div class="panelhead"><h2>💧 Liquidez por viaje</h2><select id="almaLiqFiltro" class="tiny" onchange="almaLiqRender()" style="max-width:220px"><option value="activos">Viajes activos</option><option value="todos">Todos</option></select></div><div id="almaLiqBody"></div></div>');
  window.almaLiqRender=almaLiqRender;const o=render;render=(...a)=>{const r=o(...a);try{if(window.demoRole==='socio')almaLiqRender()}catch(e){}return r}}
 
