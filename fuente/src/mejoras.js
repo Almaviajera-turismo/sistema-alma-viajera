@@ -952,11 +952,12 @@ window.almaBkHacer=async bt=>{bt.disabled=true;bt.textContent='Haciendo backup�
 
 /* ---------- Compromiso con el operador a partir de la liquidación (al inscribir o desde Ver reserva) ---------- */
 async function almaCompDesdeLiq(b,file,avisar){
+ if(window.demoRole!=='socio'&&![b.salesperson,b.owner].includes(currentDemoOperator()))throw new Error('solo podés cargar la liquidación de tus propias reservas');
  const r=await window.almaLiq.leer(file),g=b.kind==='grupal'?findGroup(b.groupId):null;
  if(!isFinite(r.total))throw new Error('no se encontró el «Total neto agencia» en la liquidación');
  const n=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
  let pr=(r.proveedor&&state.providers.find(p=>n(p.name).includes(n(r.proveedor))))||(g?.providerId&&state.providers.find(p=>p.id===g.providerId));
- if(!pr&&r.proveedor){pr={id:uid(),name:r.proveedor.toUpperCase(),category:'Operador mayorista'};state.providers.push(pr);audit('Proveedor creado','Proveedores',pr.name)}
+ if(!pr&&r.proveedor){if(window.demoRole!=='socio')throw new Error('el proveedor «'+r.proveedor+'» no está cargado en el sistema: pedile a un socio que lo dé de alta');pr={id:uid(),name:r.proveedor.toUpperCase(),category:'Operador mayorista'};state.providers.push(pr);audit('Proveedor creado','Proveedores',pr.name)}
  if(!pr)throw new Error('no se reconoció el proveedor en la liquidación');
  const key=b.kind==='grupal'?'G:'+b.groupId:'B:'+b.id;
  let e=state.expenses.find(x=>x.bookingId===b.id&&x.providerId===pr.id)||state.expenses.find(x=>b.kind!=='grupal'&&x.operationKey===key&&x.providerId===pr.id);

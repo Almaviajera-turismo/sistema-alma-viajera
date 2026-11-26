@@ -101,7 +101,9 @@ window.almaVerReserva=id=>{
       +almaVRFila('Falta pagar al operador',money(x.falta,cu))
       +almaVRFila('Libre',(libre>=-.009?'<span style="color:#1f7a45">'+money(libre,cu)+'</span><span class="sub">ganancia ya cobrada</span>':'<span style="color:#b13c1c">−'+money(-libre,cu)+'</span><span class="sub">plata del operador en uso</span>'))
       +almaVRFila('Ganancia al final',money(x.cobrado+x.porCobrar-x.pagado-x.falta,cu))}).join('')+'</div>'}
- }else h+='<h4>Pagos a proveedores</h4><p class="hint">Los pagos a proveedores solo los ven los socios.</p>';
+ }else{const mia=[b.salesperson,b.owner].includes(currentDemoOperator());
+  if(mia){h+=almaVRProveedores(b.kind==='grupal'?'G:'+b.groupId:'B:'+b.id,'Proveedores de este pasajero','Lo que se le debe al operador por esta reserva, con su liquidación. Los pagos al operador los registran los socios.',e=>e.bookingId===b.id);h+='<div class="alma-liq-top" style="margin:8px 0 14px" id="almaVRLiq"><b>📄 Cargar liquidación del operador</b><span class="sub" style="display:block;margin:4px 0 8px">Subí la liquidación (PDF o foto) y se crea solo el compromiso de pago de este pasajero, con el importe, el file del proveedor y el vencimiento.</span><label class="btn tiny" style="cursor:pointer">📎 Elegir liquidación<input type="file" accept="image/*,application/pdf" hidden onchange="almaCompDesdeLiqInp(&quot;'+b.id+'&quot;,this)"></label></div>'}
+  else h+='<h4>Proveedores</h4><p class="hint">Solo el vendedor de esta reserva y los socios ven y cargan la liquidación del operador.</p>'}
  $('almaVerResTitle').textContent='Reserva · '+b.client;
  $('almaVerResBody').innerHTML=h;
  openDlg('almaVerResDialog')};
