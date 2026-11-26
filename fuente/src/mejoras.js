@@ -949,3 +949,35 @@ window.almaBkBajar=async id=>{try{const n=await window.almaBackups.descargar(id)
 window.almaBkHacer=async bt=>{bt.disabled=true;bt.textContent='Haciendo backup…';try{const r=await window.almaBackups.hacer();notify('Backup hecho: '+r.registros+' registros');audit('Backup manual','Sistema','')}catch(e){alert('No se pudo hacer el backup: '+e.message)}almaBkRender()};
 {const fd=$('almaLiqPanel')||$('financeDashboard');if(fd&&!$('almaBkPanel'))fd.insertAdjacentHTML('afterend','<div class="panel" id="almaBkPanel" style="display:none"><div class="panelhead"><h2>🛟 Backups</h2><span class="tag">Solo Hernan</span></div><div id="almaBkBody"></div></div>');
  let ult=0;const o=window.switchPage;window.switchPage=(id,...a)=>{const r=o(id,...a);if(id==='tesoreria'){const p=$('almaBkPanel');if(p){p.style.display=almaEsHernan()?'':'none';if(almaEsHernan()&&Date.now()-ult>60000){ult=Date.now();almaBkRender()}}}return r}}
+
+/* ---------- Compromiso con el operador a partir de la liquidación (al inscribir o desde Ver reserva) ---------- */
+async function almaCompDesdeLiq(b,file,avisar){
+ const r=await window.almaLiq.leer(file),g=b.kind==='grupal'?findGroup(b.groupId):null;
+ if(!isFinite(r.total))throw new Error('no se encontró el «Total neto agencia» en la liquidación');
+ const n=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+ let pr=(r.proveedor&&state.providers.find(p=>n(p.name).includes(n(r.proveedor))))||(g?.providerId&&state.providers.find(p=>p.id===g.providerId));
+ if(!pr&&r.proveedor){pr={id:uid(),name:r.proveedor.toUpperCase(),category:'Operador mayorista'};state.providers.push(pr);audit('Proveedor creado','Proveedores',pr.name)}
+ if(!pr)throw new Error('no se reconoció el proveedor en la liquidación');
+ const key=b.kind==='grupal'?'G:'+b.groupId:'B:'+b.id;
+ let e=state.expenses.find(x=>x.bookingId===b.id&&x.providerId===pr.id)||state.expenses.find(x=>b.kind!=='grupal'&&x.operationKey===key&&x.providerId===pr.id);
+ const pag=e?paidSupplier(e):0;if(e&&r.total<pag-.001)throw new Error('la liquidación ('+money(r.total,r.moneda||e.currency)+') es menor a lo ya pagado ('+money(pag,e.currency)+')');
+ const datos={providerId:pr.id,provider:pr.name,operationKey:key,bookingId:b.id,passengerId:b.passengerId,supplierRef:r.ref||'',category:'Operador mayorista',
+  concept:b.client+' · '+(r.concepto||g?.name||trip(b)),amount:r.total,currency:r.moneda||cur(b),dueDate:r.vence||'',depositDueDate:'',depositAmount:'',notes:window.almaLiq.notas(r),auto:true,fromLiq:true};
+ const nuevo=!e;if(e)Object.assign(e,datos);else{e={id:uid(),...datos,liquidaciones:[]};state.expenses.unshift(e)}
+ audit(nuevo?'Compromiso desde liquidación':'Compromiso actualizado con la liquidación','Finanzas',pr.name+' · '+b.client+' · '+money(e.amount,e.currency));save();
+ try{const name=await window.almaComprobantes.subir('liq-'+e.id,file);e.liquidaciones=[...(e.liquidaciones||[]),name];save()}catch(err){alert('El compromiso quedó cargado, pero no se pudo guardar el archivo de la liquidación: '+err.message)}
+ render();if(window.currentGroupDetail)renderGroupDetail();
+ if(avisar)notify((nuevo?'Compromiso cargado':'Compromiso actualizado')+' con '+pr.name+': '+money(e.amount,e.currency)+(e.dueDate?' · vence '+fmt(e.dueDate):''));
+ if(r.match?.mejor&&r.match.mejor.b.id!==b.id)alert('Atención: la liquidación parece ser de '+r.match.mejor.p.name+', no de '+b.client+'. Revisá el compromiso.');
+ return e}
+window.almaCompDesdeLiqInp=async(id,inp)=>{const f=inp.files?.[0];inp.value='';const b=findBooking(id);if(!f||!b)return;const box=$('almaVRLiq');if(box)box.insertAdjacentHTML('beforeend','<span class="sub" id="almaVRLiqEst"> ⏳ Leyendo la liquidación…</span>');
+ try{await almaCompDesdeLiq(b,f,true)}catch(e){alert('No se pudo cargar el compromiso: '+e.message)}
+ if($('almaVerResDialog')?.open)almaVerReserva(id)};
+// Inscribir en grupo: campo para la liquidación; al guardar se crea el compromiso del pasajero con ella
+{const f=$('groupBookingForm'),ref=f?.querySelector('[name=notes]')?.closest('label');if(ref&&!$('almaInsLiq'))ref.insertAdjacentHTML('beforebegin',
+ '<label class="field full alma-liq-top">📄 Liquidación del operador (opcional)<input type="file" id="almaInsLiq" accept="image/*,application/pdf"><small class="hint">Si la subís, al inscribir se crea solo el compromiso de pago con el operador (importe, file del proveedor y vencimiento leídos de la liquidación).</small></label>');
+ let antes=null;f?.addEventListener('submit',()=>{antes=new Set(state.bookings.map(b=>b.id))},true);
+ f?.addEventListener('submit',()=>{const inp=$('almaInsLiq'),file=inp?.files?.[0],a=antes;antes=null;if(!file||!a)return;inp.value='';
+  setTimeout(async()=>{const b=state.bookings.find(x=>!a.has(x.id)&&x.kind==='grupal');if(!b)return;notify('⏳ Leyendo la liquidación…');
+   try{await almaCompDesdeLiq(b,file,true)}catch(e){alert('El pasajero quedó inscripto, pero no se pudo cargar el compromiso desde la liquidación: '+e.message+'\nPodés cargarla desde 👁 Ver reserva.')}},200)})}
+{const o=window.openGroupBooking;window.openGroupBooking=(...a)=>{const r=o(...a);const i=$('almaInsLiq');if(i)i.value='';return r}}

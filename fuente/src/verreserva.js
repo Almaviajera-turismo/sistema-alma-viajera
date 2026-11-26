@@ -91,6 +91,7 @@ window.almaVerReserva=id=>{
   if(b.kind==='grupal'){h+=almaVRProveedores('G:'+b.groupId,'Proveedores de este pasajero','Lo que se le debe a cada proveedor por esta reserva, con su liquidación.',e=>e.bookingId===b.id);
    if((state.expenses||[]).some(e=>e.operationKey==='G:'+b.groupId&&!e.bookingId))h+=almaVRProveedores('G:'+b.groupId,'Pagos a proveedores de toda la salida','Son compromisos de toda la salida «'+esc(g?.name||'')+'», compartidos por todos los pasajeros del grupo.',e=>!e.bookingId)}
   else h+=almaVRProveedores('B:'+b.id,'Pagos a proveedores','');
+  h+='<div class="alma-liq-top" style="margin:8px 0 14px" id="almaVRLiq"><b>📄 Cargar liquidación del operador</b><span class="sub" style="display:block;margin:4px 0 8px">Subí la liquidación (PDF o foto) y se crea solo el compromiso de pago de este pasajero, con el importe, el file del proveedor y el vencimiento.</span><label class="btn tiny" style="cursor:pointer">📎 Elegir liquidación<input type="file" accept="image/*,application/pdf" hidden onchange="almaCompDesdeLiqInp(&quot;'+b.id+'&quot;,this)"></label></div>';
  const es=(state.expenses||[]).filter(e=>e.bookingId===b.id||(b.kind!=='grupal'&&e.operationKey==='B:'+b.id));
   if(es.length||paid(b)>0){const cs={};const add=(k,c,v)=>{cs[c]=cs[c]||{cobrado:0,pagado:0,falta:0,porCobrar:0};cs[c][k]+=v};
    add('cobrado',c,paid(b));add('porCobrar',c,Math.max(0,balance(b)));for(const e of es){const p=paidSupplier(e);add('pagado',e.currency||'USD',p);add('falta',e.currency||'USD',Math.max(0,Number(e.amount)-p))}
