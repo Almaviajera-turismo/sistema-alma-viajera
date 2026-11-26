@@ -982,3 +982,6 @@ window.almaCompDesdeLiqInp=async(id,inp)=>{const f=inp.files?.[0];inp.value='';c
   setTimeout(async()=>{const b=state.bookings.find(x=>!a.has(x.id)&&x.kind==='grupal');if(!b)return;notify('⏳ Leyendo la liquidación…');
    try{await almaCompDesdeLiq(b,file,true)}catch(e){alert('El pasajero quedó inscripto, pero no se pudo cargar el compromiso desde la liquidación: '+e.message+'\nPodés cargarla desde 👁 Ver reserva.')}},200)})}
 {const o=window.openGroupBooking;window.openGroupBooking=(...a)=>{const r=o(...a);const i=$('almaInsLiq');if(i)i.value='';return r}}
+
+/* Cobro: medio de pago «Efectivo» por defecto (evita registrar transferencias por error) */
+{const o=window.openPayment;window.openPayment=(...a)=>{const r=o(...a);const s=$('paymentForm')?.elements.method;if(s){s.value='Efectivo';s.dispatchEvent(new Event('change',{bubbles:true}))}return r}}
