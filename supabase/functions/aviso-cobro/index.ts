@@ -15,17 +15,32 @@ const money = (n: number, c: string) => (c || "USD") + " " + Number(n || 0).toLo
 const fecha = (d: string) => d ? d.slice(0, 10).split("-").reverse().join("/") : "—";
 const hora = (t: string) => t ? new Date(t).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
-const OFI: Record<string, string> = { centro: "Centro", gaona: "Gaona" };
+const OFI: Record<string, string> = { centro: "Centro", gaona: "Gaona", policlinico: "Gaona" };
+// Asunto codificado a mano (RFC 2047, base64 en trozos de caracteres completos): denomailer
+// parte mal los asuntos largos con tildes/emojis y el mail llega con los encabezados «sucios».
+const asunto = (s: string) => {
+  if (/^[\x20-\x7e]*$/.test(s)) return s;
+  const enc = new TextEncoder(), partes: string[] = []; let buf = "";
+  for (const ch of s) { if (enc.encode(buf + ch).length > 42) { partes.push(buf); buf = ""; } buf += ch; }
+  if (buf) partes.push(buf);
+  return partes.map((p) => "=?UTF-8?B?" + btoa(String.fromCharCode(...enc.encode(p))) + "?=").join(" ");
+};
+
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const resp = (b: string | object, status = 200) => new Response(typeof b === "string" ? b : JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": typeof b === "string" ? "text/plain; charset=utf-8" : "application/json" } });
 
 async function enviar(subject: string, filas: [string, string][], pie = "") {
   const pass = (Deno.env.get("SMTP_PASS") || "").trim();   // por si se pegó con espacios o salto de línea
   if (!pass) throw new Error("Falta la contraseña de info@ (secreto SMTP_PASS)");
-  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#222"><h2 style="color:#3b2f7a;margin:0 0 12px">${esc(subject)}</h2><table style="border-collapse:collapse">${filas.map(([k, v]) => `<tr><td style="padding:4px 14px 4px 0;color:#666">${esc(k)}</td><td style="padding:4px 0"><b>${esc(v)}</b></td></tr>`).join("")}</table>${pie ? `<p style="color:#666;margin-top:14px">${esc(pie)}</p>` : ""}<p style="color:#999;font-size:12px;margin-top:18px">Aviso automático del sistema de gestión de Alma Viajera Turismo.</p></div>`;
+  const html = `<div style="background:#f4f1fa;padding:18px 10px;font-family:Arial,Helvetica,sans-serif">
+<div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e4def2">
+<div style="background:#3b2f7a;color:#ffffff;padding:14px 18px;font-size:16px;font-weight:bold">${esc(subject)}</div>
+<table style="border-collapse:collapse;width:100%;font-size:14px;color:#222">${filas.map(([k, v], i) => `<tr style="background:${i % 2 ? "#faf8fd" : "#ffffff"}"><td style="padding:9px 18px;color:#6b6480;width:120px;vertical-align:top">${esc(k)}</td><td style="padding:9px 18px 9px 0;font-weight:bold">${esc(v)}</td></tr>`).join("")}</table>
+${pie ? `<p style="color:#555;margin:0;padding:12px 18px;font-size:13px;border-top:1px solid #eee">${esc(pie)}</p>` : ""}
+<p style="color:#999;font-size:11px;margin:0;padding:10px 18px 14px">Aviso automático del sistema de gestión de Alma Viajera Turismo.</p></div></div>`;
   const text = subject + "\n\n" + filas.map(([k, v]) => k + ": " + v).join("\n") + (pie ? "\n\n" + pie : "");
   const client = new SMTPClient({ connection: { hostname: HOST, port: 465, tls: true, auth: { username: DE, password: pass } } });
-  try { await client.send({ from: "Alma Viajera Turismo <" + DE + ">", to: PARA, subject, content: text, html }); }
+  try { await client.send({ from: "Alma Viajera Turismo <" + DE + ">", to: PARA, subject: asunto(subject), content: text, html }); }
   finally { await client.close(); }
 }
 

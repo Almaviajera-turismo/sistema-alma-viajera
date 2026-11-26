@@ -11,6 +11,16 @@ const db = createClient(URL_, KEY, { auth: { persistSession: false, autoRefreshT
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const resp = (b: string | object, status = 200) => new Response(typeof b === "string" ? b : JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": typeof b === "string" ? "text/plain; charset=utf-8" : "application/json" } });
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
+// Asunto codificado a mano (RFC 2047, base64 en trozos de caracteres completos): denomailer
+// parte mal los asuntos largos con tildes/emojis y el mail llega con los encabezados «sucios».
+const asunto = (s: string) => {
+  if (/^[\x20-\x7e]*$/.test(s)) return s;
+  const enc = new TextEncoder(), partes: string[] = []; let buf = "";
+  for (const ch of s) { if (enc.encode(buf + ch).length > 42) { partes.push(buf); buf = ""; } buf += ch; }
+  if (buf) partes.push(buf);
+  return partes.map((p) => "=?UTF-8?B?" + btoa(String.fromCharCode(...enc.encode(p))) + "?=").join(" ");
+};
+
 const EMAIL = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
 
 Deno.serve(async (req) => {
@@ -39,7 +49,7 @@ Deno.serve(async (req) => {
     const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#222;line-height:1.5">${esc(texto).replace(/\n/g, "<br>")}</div>`;
     const client = new SMTPClient({ connection: { hostname: HOST, port: 465, tls: true, auth: { username: DE, password: pass } } });
     try {
-      await client.send({ from: "Alma Viajera Turismo <" + DE + ">", to: [to], bcc: [DE], replyTo: DE, subject, content: texto, html,
+      await client.send({ from: "Alma Viajera Turismo <" + DE + ">", to: [to], bcc: [DE], replyTo: DE, subject: asunto(subject), content: texto, html,
         attachments: [{ filename: "Recibo " + (c.numero || "Alma Viajera") + ".pdf", content: pdf, encoding: "base64", contentType: "application/pdf" }] });
     } finally { await client.close(); }
     return resp({ ok: true });
