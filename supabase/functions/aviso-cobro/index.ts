@@ -59,6 +59,14 @@ Deno.serve(async (req) => {
       await enviar("✅ Prueba de avisos de cobro", [["Estado", "El envío desde info@ funciona"], ["Enviado", hora(new Date().toISOString())]]);
       return resp({ ok: true });
     }
+    if (body.alerta === "backup") {
+      // lo llama la tarea programada de las 04:00 si no hubo backup; se confirma acá antes de avisar
+      const { data: ult } = await db.from("backups").select("creado").order("creado", { ascending: false }).limit(1);
+      const u = ult?.[0]?.creado;
+      if (u && Date.now() - new Date(u).getTime() < 20 * 3600 * 1000) return resp("hay backup", 200);
+      await enviar("🛟 Atención: no se hizo el backup diario", [["Último backup", u ? hora(u) : "nunca"], ["Qué hacer", "Hernan puede hacer uno a mano en Finanzas → Backups"]]);
+      return resp({ ok: true });
+    }
     const id = String(body.id || ""), tipo = body.tipo === "anulado" ? "anulado" : "nuevo";
     if (!/^[0-9a-f-]{36}$/.test(id)) return resp("id inválido", 400);
     const { data: c } = await db.from("cobros").select("*").eq("id", id).maybeSingle();

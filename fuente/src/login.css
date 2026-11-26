@@ -188,4 +188,8 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 .alma-liq-big { font-size: 20px; font-weight: 800; margin: 4px 0; }
 .alma-liq-card small { color: #5b5670; display: block; line-height: 1.4; }
 .alma-cta-acc { display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0 18px; }
+.alma-bk-estado { padding: 12px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; margin-bottom: 10px; }
+.alma-bk-estado.ok { background: #e9f7ee; color: #1f5f37; }
+.alma-bk-estado.mal { background: #fdeee8; color: #8a2f14; }
+.alma-bk-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
 </style>

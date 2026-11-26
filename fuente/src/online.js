@@ -711,6 +711,27 @@ window.almaFirmas = {
     if (window.ALMA_FIRMAS) delete window.ALMA_FIRMAS[nombre];
   },
 };
+/* Backups diarios (tabla backups, solo Hernan): listar, descargar y hacer uno a mano */
+window.almaBackups = {
+  async listar() {
+    const r = await fetch(CFG.url + '/rest/v1/backups?select=id,creado,origen,tablas,registros,bytes&order=creado.desc', { headers: { apikey: CFG.key, Authorization: 'Bearer ' + await token() } });
+    if (!r.ok) throw new Error((await r.text()) || ('error ' + r.status)); return r.json();
+  },
+  async descargar(id) {
+    const r = await fetch(CFG.url + '/rest/v1/backups?select=creado,datos&id=eq.' + Number(id), { headers: { apikey: CFG.key, Authorization: 'Bearer ' + await token() } });
+    if (!r.ok) throw new Error((await r.text()) || ('error ' + r.status));
+    const [b] = await r.json(); if (!b) throw new Error('No se encontró el backup');
+    const d = new Date(b.creado), p = n => String(n).padStart(2, '0');
+    const name = 'alma-viajera-backup-' + d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes()) + '.json';
+    const url = URL.createObjectURL(new Blob([JSON.stringify(b.datos)], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+    return name;
+  },
+  async hacer() {
+    const r = await fetch(CFG.url + '/rest/v1/rpc/hacer_backup', { method: 'POST', headers: { apikey: CFG.key, Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json' }, body: '{}' });
+    if (!r.ok) throw new Error((await r.text()) || ('error ' + r.status)); return r.json();
+  },
+};
 window.almaEnviarRecibo = async (cobroId, to, subject, body, pdf) => {
   for (let i = 0; ; i++) {
     const t = await token();

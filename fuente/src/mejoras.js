@@ -933,3 +933,19 @@ document.addEventListener('submit',e=>{const id=e.target?.id;if(id!=='groupBooki
 function almaSglHint(){const s=$('almaRoomType');if(!s)return;let h=$('almaSglHint');if(!h){s.closest('label')?.insertAdjacentHTML('beforeend','<small class="hint" id="almaSglHint"></small>');h=$('almaSglHint')}
  const g=findGroup($('groupBookingForm')?.elements.groupId?.value),v=Number(g?.singleSupplement||0);h.textContent=s.value==='Single'&&v>0?'Suplemento single: + '+money(v,g.currency||'USD'):'';}
 $('almaRoomType')?.addEventListener('change',almaSglHint);$('groupBookingForm')?.addEventListener('change',e=>{if(e.target.name==='groupId')almaSglHint()});
+
+/* ---------- Finanzas → Backups (solo Hernan): estado del backup diario y descarga ---------- */
+function almaEsHernan(){return currentDemoOperator()==='Hernan Ruiz'&&window.demoRole==='socio'}
+async function almaBkRender(){const el=$('almaBkBody');if(!el||!window.almaBackups)return;el.innerHTML='<p class="hint">Cargando…</p>';
+ let ls;try{ls=await window.almaBackups.listar()}catch(e){el.innerHTML='<p class="hint">No se pudieron leer los backups: '+esc(e.message)+'</p>';return}
+ const u=ls[0],hs=u?(Date.now()-new Date(u.creado))/36e5:99,ok=hs<26,kb=n=>(Number(n)/1024/1024).toFixed(1).replace('.',',')+' MB';
+ const fh=t=>new Date(t).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+ el.innerHTML='<div class="alma-bk-estado '+(ok?'ok':'mal')+'">'+(u?(ok?'✅ ':'⚠️ ')+'<b>Último backup: '+fh(u.creado)+'</b> · '+u.registros.toLocaleString('es-AR')+' registros de '+u.tablas+' tablas · '+kb(u.bytes)+(ok?'':'<br>Hace más de un día que no se hace un backup. Tocá «Hacer backup ahora» y avisame.'):'⚠️ Todavía no hay backups.')+'</div>'
+  +'<div class="alma-bk-btns"><button class="btn" type="button" onclick="almaBkBajar('+(u?u.id:0)+')" '+(u?'':'disabled')+'>⬇ Descargar el último</button><button class="btn ghost" type="button" onclick="almaBkHacer(this)">🛟 Hacer backup ahora</button></div>'
+  +'<p class="hint">Se hace solo todas las madrugadas a las 3:00 y se guardan los últimos 30. Conviene descargar uno por semana y guardarlo en la PC o en Google Drive (es un archivo .json con todos los datos del sistema). Si algo se rompe o se borra, con ese archivo se puede restaurar.</p>'
+  +(ls.length?'<details><summary>Ver los '+ls.length+' backups guardados</summary><div class="tablewrap"><table class="table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Registros</th><th>Tamaño</th><th></th></tr></thead><tbody>'
+   +ls.map(b=>'<tr><td>'+fh(b.creado)+'</td><td>'+esc(b.origen)+'</td><td>'+b.registros.toLocaleString('es-AR')+'</td><td>'+kb(b.bytes)+'</td><td><button class="btn ghost tiny" type="button" onclick="almaBkBajar('+b.id+')">⬇ Descargar</button></td></tr>').join('')+'</tbody></table></div></details>':'')}
+window.almaBkBajar=async id=>{try{const n=await window.almaBackups.descargar(id);notify('Descargado: '+n)}catch(e){alert('No se pudo descargar: '+e.message)}};
+window.almaBkHacer=async bt=>{bt.disabled=true;bt.textContent='Haciendo backup…';try{const r=await window.almaBackups.hacer();notify('Backup hecho: '+r.registros+' registros');audit('Backup manual','Sistema','')}catch(e){alert('No se pudo hacer el backup: '+e.message)}almaBkRender()};
+{const fd=$('almaLiqPanel')||$('financeDashboard');if(fd&&!$('almaBkPanel'))fd.insertAdjacentHTML('afterend','<div class="panel" id="almaBkPanel" style="display:none"><div class="panelhead"><h2>🛟 Backups</h2><span class="tag">Solo Hernan</span></div><div id="almaBkBody"></div></div>');
+ let ult=0;const o=window.switchPage;window.switchPage=(id,...a)=>{const r=o(id,...a);if(id==='tesoreria'){const p=$('almaBkPanel');if(p){p.style.display=almaEsHernan()?'':'none';if(almaEsHernan()&&Date.now()-ult>60000){ult=Date.now();almaBkRender()}}}return r}}
