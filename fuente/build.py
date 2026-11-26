@@ -408,7 +408,7 @@ fsub("function renderPayments(){table('paymentsTable',['Recibo','Pasajero / viaj
 # Cobros sin efectivo: destino del dinero y fecha de acreditación (src/mejoras.js, punto 13)
 fsub('<label class="field full" id="almaPayFileWrap">',
      '<div class="field full alma-mates" id="almaDestWrap" style="display:none"><span>¿A dónde fue el dinero?</span>'
-     '<label class="field">Destino<select name="almaDest"><option value="">— Elegí —</option><option>BBVA pesos (agencia)</option><option>BBVA dólares (agencia)</option><option>Mercado Pago Grupostur (antigua SRL) · cuenta de socio</option><option>Otro</option></select></label>'
+     '<label class="field">Destino<select name="almaDest"><option value="">— Elegí —</option><option>BBVA pesos (agencia)</option><option>BBVA dólares (agencia)</option><option>Mercado Pago Grupostur (antigua SRL) · cuenta de socio</option><option>Caja oficina Centro</option><option>Caja oficina Gaona</option><option>Otro</option></select></label>'
      '<label class="field">Fecha de acreditación<input type="date" name="almaDestFecha"></label>'
      '<label class="field full"><span id="almaDestDetLbl">Detalle (opcional)</span><input name="almaDestDet" placeholder="Ej.: cuenta personal de Hernan, Galicia"></label></div>'
      '<label class="field full" id="almaPayFileWrap">')

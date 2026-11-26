@@ -343,7 +343,7 @@ function almaRecSalidas(){const s=$('almaRecSal');if(!s)return;const v=s.value;
 
 /* ---------- 13) Cobros sin efectivo: a dónde fue el dinero y cuándo se acreditó ---------- */
 const ALMA_MP='Mercado Pago Grupostur (antigua SRL) · cuenta de socio';
-const ALMA_DESTINOS=['BBVA pesos (agencia)','BBVA dólares (agencia)',ALMA_MP,'Otro'];
+const ALMA_DESTINOS=['BBVA pesos (agencia)','BBVA dólares (agencia)',ALMA_MP,'Caja oficina Centro','Caja oficina Gaona','Otro'];
 function almaDestTxt(p){if(!p||p.method==='Efectivo')return '';return p.destination?' · Destino: '+p.destination+(p.destinationDetail?' ('+p.destinationDetail+')':'')+(p.creditedDate?' · acreditado '+fmt(p.creditedDate):''):' · Destino sin indicar'}
 function almaDestFields(x){if(x.method==='Efectivo'||!x.almaDest)return {};return {destination:x.almaDest,destinationDetail:String(x.almaDestDet||'').trim(),creditedDate:x.almaDestFecha||x.date||today()}}
 {const o=window.almaPayFxSync;window.almaPayFxSync=(...a)=>{o(...a);const f=$('paymentForm'),w=$('almaDestWrap');if(!f||!w)return;const no=f.elements.method.value!=='Efectivo';
