@@ -66,7 +66,7 @@ window.almaVerReserva=id=>{
  const base=b.kind==='grupal'?Number(b.basePrice||0):Number(b.total||0),cargos=typeof almaCargosDe==='function'?almaCargosDe(b):{tax:0,adm:0};
  h+='<h4>Importes</h4><div class="alma-ficha-grid">'
   +almaVRFila(b.kind==='grupal'?'Precio de la salida':'Precio del viaje',money(base,c))
-  +(cargos.tax?almaVRFila('Impuestos',money(cargos.tax,c)):'')+(cargos.adm?almaVRFila('Gastos administrativos',money(cargos.adm,c)):'')
+  +(cargos.tax?almaVRFila('Impuestos',money(cargos.tax,c)):'')+(cargos.adm?almaVRFila('Gastos administrativos',money(cargos.adm,c)):'')+(cargos.sgl?almaVRFila('Suplemento single',money(cargos.sgl,c)):'')
   +((b.extensions||[]).length?almaVRFila('Extensiones',money(b.extensions.reduce((s,x)=>s+Number(x.amount||0),0),c)):'')
   +(discountOf(b)?almaVRFila('Descuento','−'+money(discountOf(b),c)+(b.discountReason?'<span class="sub">'+esc(b.discountReason)+'</span>':'')):'')
   +almaVRFila('Total',money(total(b),c))

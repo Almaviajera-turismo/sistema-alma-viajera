@@ -145,7 +145,7 @@ document.addEventListener('submit', e => {
   if (!(amount > 0)) { alert('Completá un importe válido'); return; }
   const pagado = (s.supplierPayments || []).filter(p => p.expenseId === ex.id).reduce((a, p) => a + Number(p.amount || 0), 0);
   if (amount < pagado - .001) { alert('Ya se le pagaron ' + fmtN(pagado, ex.currency) + ' a este compromiso: el importe no puede ser menor.'); return; }
-  Object.assign(ex, { amount, currency: E.currency.value, supplierRef: E.supplierRef.value, concept: E.concept.value || ex.concept, category: E.category.value, dueDate: E.dueDate.value || ex.dueDate || '', depositDueDate: E.depositDueDate.value || '', depositAmount: E.depositAmount.value === '' ? '' : Number(E.depositAmount.value), notes: E.notes.value });
+  Object.assign(ex, { fromLiq: true, amount, currency: E.currency.value, supplierRef: E.supplierRef.value, concept: E.concept.value || ex.concept, category: E.category.value, dueDate: E.dueDate.value || ex.dueDate || '', depositDueDate: E.depositDueDate.value || '', depositAmount: E.depositAmount.value === '' ? '' : Number(E.depositAmount.value), notes: E.notes.value });
   const files = [...(document.getElementById('almaLiqNueva')?.files || [])]; document.getElementById('almaLiqNueva').value = ''; aviso('');
   window.almaLiqActualizado?.(ex, files);
 }, true);

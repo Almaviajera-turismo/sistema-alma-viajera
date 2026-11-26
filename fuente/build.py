@@ -446,11 +446,11 @@ fsub('<div id="commissionTable"></div></div>', '<div id="almaVentasVend"></div><
 # Salidas grupales: impuestos y gastos administrativos por pasajero (se suman al total de cada inscripto)
 fsub("function grossTotal(b){return (b.kind==='grupal'?Number(b.basePrice||0):Number(b.total||0))",
      "function grossTotal(b){return (b.kind==='grupal'?Number(b.basePrice||0)+almaCargos(b):Number(b.total||0))")
-fsub("base:b.kind==='grupal'?Number(b.basePrice):Number(b.total),", "base:b.kind==='grupal'?Number(b.basePrice):Number(b.total),taxes:almaCargosDe(b).tax,adminFee:almaCargosDe(b).adm,")
+fsub("base:b.kind==='grupal'?Number(b.basePrice):Number(b.total),", "base:b.kind==='grupal'?Number(b.basePrice):Number(b.total),taxes:almaCargosDe(b).tax,adminFee:almaCargosDe(b).adm,singleSupplement:almaCargosDe(b).sgl,")
 fsub("${extended>0?`<div class=\"receipt-line\"><b>EXTENSIÓN/ES:</b>",
-     "${Number(snap.taxes||0)>0?`<div class=\"receipt-line\"><b>IMPUESTOS:</b><br>${money(snap.taxes,snap.currency)}</div>`:''}${Number(snap.adminFee||0)>0?`<div class=\"receipt-line\"><b>GASTOS ADMINISTRATIVOS:</b><br>${money(snap.adminFee,snap.currency)}</div>`:''}${extended>0?`<div class=\"receipt-line\"><b>EXTENSIÓN/ES:</b>")
+     "${Number(snap.taxes||0)>0?`<div class=\"receipt-line\"><b>IMPUESTOS:</b><br>${money(snap.taxes,snap.currency)}</div>`:''}${Number(snap.adminFee||0)>0?`<div class=\"receipt-line\"><b>GASTOS ADMINISTRATIVOS:</b><br>${money(snap.adminFee,snap.currency)}</div>`:''}${Number(snap.singleSupplement||0)>0?`<div class=\"receipt-line\"><b>SUPLEMENTO SINGLE:</b><br>${money(snap.singleSupplement,snap.currency)}</div>`:''}${extended>0?`<div class=\"receipt-line\"><b>EXTENSIÓN/ES:</b>")
 fsub("(b.kind==='grupal'?'<span class=\"sub\">Incluye '+(b.extensions||[]).length+' extensión/es</span>':'')",
-     "(b.kind==='grupal'?(almaCargos(b)?'<span class=\"sub\">Incluye impuestos y gastos adm. '+money(almaCargos(b),cur(b))+'</span>':'')+'<span class=\"sub\">Incluye '+(b.extensions||[]).length+' extensión/es</span>':'')")
+     "(b.kind==='grupal'?(almaCargos(b)?'<span class=\"sub\">Incluye '+almaCargosTxt(b)+'</span>':'')+'<span class=\"sub\">Incluye '+(b.extensions||[]).length+' extensión/es</span>':'')")
 
 # Comisiones: % nacional / internacional y extra (bono) por vendedor y mes (src/mejoras.js)
 fsub("<div class=\"room-card\" style=\"margin-top:12px\"><h3>'+esc(seller)+' · '+c+' · '+commissionRate(seller)+' %</h3>'", "<div class=\"room-card alma-comcard\" style=\"margin-top:16px\"><h3>'+esc(seller)+' · '+c+' '+almaRateTxt(seller,ls)+'</h3>'")

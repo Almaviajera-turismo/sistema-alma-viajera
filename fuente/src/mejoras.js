@@ -464,11 +464,12 @@ window.almaVentasVend=almaVentasVend;
 {const o=renderCommissions;renderCommissions=(...a)=>{const r=o(...a);almaVentasVend();return r};window.renderCommissions=renderCommissions}
 
 // ── Salidas grupales: impuestos y gastos administrativos por pasajero ──
-function almaCargosDe(b){if(!b||b.kind!=='grupal')return {tax:0,adm:0};const g=findGroup(b.groupId);if(!g)return {tax:0,adm:0};
- if(cur(b)!==(g.currency||'USD'))return {tax:0,adm:0};return {tax:Number(g.taxes||0)||0,adm:Number(g.adminFee||0)||0}}
-function almaCargos(b){const c=almaCargosDe(b);return c.tax+c.adm}
+function almaCargosDe(b){const z={tax:0,adm:0,sgl:0};if(!b||b.kind!=='grupal')return z;const g=findGroup(b.groupId);if(!g)return z;
+ if(cur(b)!==(g.currency||'USD'))return z;return {tax:Number(g.taxes||0)||0,adm:Number(g.adminFee||0)||0,sgl:b.roomType==='Single'?Number(g.singleSupplement||0)||0:0}}
+function almaCargos(b){const c=almaCargosDe(b);return c.tax+c.adm+c.sgl}
+function almaCargosTxt(b){const c=almaCargosDe(b),cu=cur(b);return [c.tax?'impuestos '+money(c.tax,cu):'',c.adm?'gastos adm. '+money(c.adm,cu):'',c.sgl?'suplemento single '+money(c.sgl,cu):''].filter(Boolean).join(' · ')}
 {const f=$('groupForm'),cap=f?.elements.capacity?.closest('label');if(cap&&!f.elements.taxes)cap.insertAdjacentHTML('beforebegin',
- '<label class="field">Impuestos por pasajero<input name="taxes" type="number" min="0" step="0.01" placeholder="0"><small class="hint">Misma moneda de la salida. Se suma al total de cada inscripto.</small></label><label class="field">Gastos administrativos por pasajero<input name="adminFee" type="number" min="0" step="0.01" placeholder="0"><small class="hint">Se suma al total de cada inscripto.</small></label>')}
+ '<label class="field">Impuestos por pasajero<input name="taxes" type="number" min="0" step="0.01" placeholder="0"><small class="hint">Misma moneda de la salida. Se suma al total de cada inscripto.</small></label><label class="field">Gastos administrativos por pasajero<input name="adminFee" type="number" min="0" step="0.01" placeholder="0"><small class="hint">Se suma al total de cada inscripto.</small></label>'+'<label class="field">Suplemento single<input name="singleSupplement" type="number" min="0" step="0.01" placeholder="0"><small class="hint">Se suma solo a quien viaja en habitación Single.</small></label>')}
 // Ganancia y comisiones: los impuestos no son venta de la agencia (los gastos administrativos sí)
 {const o=bookingProfit;bookingProfit=(b,...a)=>{const r=o(b,...a);const t=almaCargosDe(b).tax;if(t&&r){if('sale' in r)r.sale-=t;if('gain' in r)r.gain-=t}return r}}
 
@@ -825,17 +826,18 @@ window.almaFirmaQuitar=async()=>{const n=$('almaFirmaQuien').value;if(!confirm('
 {const f=$('groupForm'),cap=f?.elements.capacity?.closest('label');if(cap&&!f.elements.providerId)cap.insertAdjacentHTML('beforebegin',
  '<label class="field">Proveedor / operador de la salida<select name="providerId" id="almaGProv"><option value="">— Sin proveedor —</option></select><small class="hint">Al inscribir cada pasajero se le carga solo el compromiso de pago con este proveedor.</small></label>'
  +'<label class="field">Costo neto por pasajero (al proveedor)<input name="netPerPax" type="number" min="0" step="0.01" placeholder="Lo que se le paga por cada pasajero"><small class="hint">En la moneda de la salida.</small></label>'
+ +'<label class="field">Suplemento single neto (al proveedor)<input name="netSingle" type="number" min="0" step="0.01" placeholder="0"><small class="hint">Se suma al compromiso de quien viaja en Single.</small></label>'
  +'<label class="field">Vencimiento del pago al proveedor<input name="supplierDueDate" type="date"></label>')}
 function almaGProvOpts(sel){const s=$('almaGProv');if(!s)return;s.innerHTML='<option value="">— Sin proveedor —</option>'+[...state.providers].sort((a,b)=>String(a.name).localeCompare(b.name)).map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');s.value=sel||''}
 {const o=window.openGroup;window.openGroup=(...a)=>{const r=o(...a);almaGProvOpts('');return r}}
 {const o=window.almaEditarSalida;window.almaEditarSalida=id=>{o(id);const g=findGroup(id),f=$('groupForm');if(!g||!f||window.__almaEditGroup!==id)return;almaGProvOpts(g.providerId);
- f.elements.netPerPax.value=g.netPerPax||'';f.elements.supplierDueDate.value=g.supplierDueDate||''}}
+ f.elements.netPerPax.value=g.netPerPax||'';f.elements.supplierDueDate.value=g.supplierDueDate||'';f.elements.netSingle.value=g.netSingle||'';f.elements.singleSupplement.value=g.singleSupplement||''}}
 function almaCompDe(b){return state.expenses.find(e=>e.bookingId===b.id&&e.auto)}
 function almaCrearComp(b,g){if(!g?.providerId||!(Number(g.netPerPax)>0)||almaCompDe(b)||accountStatus(b)==='Baja')return null;const pr=state.providers.find(p=>p.id===g.providerId);if(!pr)return null;
- const e={id:uid(),providerId:pr.id,provider:pr.name,operationKey:'G:'+g.id,bookingId:b.id,passengerId:b.passengerId,supplierRef:'',category:'Operador mayorista',concept:g.name+' · '+b.client,amount:Number(g.netPerPax),currency:g.currency||'USD',depositDueDate:'',depositAmount:'',dueDate:g.supplierDueDate||'',notes:'Cargado automáticamente al inscribir al pasajero',auto:true,liquidaciones:[]};
+ const e={id:uid(),providerId:pr.id,provider:pr.name,operationKey:'G:'+g.id,bookingId:b.id,passengerId:b.passengerId,supplierRef:'',category:'Operador mayorista',concept:g.name+' · '+b.client+(b.roomType==='Single'&&Number(g.netSingle)>0?' (single)':''),amount:Number(g.netPerPax)+(b.roomType==='Single'?Number(g.netSingle||0):0),roomType:b.roomType||'',currency:g.currency||'USD',depositDueDate:'',depositAmount:'',dueDate:g.supplierDueDate||'',notes:'Cargado automáticamente al inscribir al pasajero',auto:true,liquidaciones:[]};
  state.expenses.unshift(e);audit('Compromiso automático','Finanzas',pr.name+' · '+b.client+' · '+money(e.amount,e.currency));return e}
 // Edición de salida: guardar proveedor/neto y ofrecer crear los compromisos de los ya inscriptos
-document.addEventListener('submit',e=>{if(e.target?.id!=='groupForm')return;const id=window.__almaEditGroup;if(!id)return;const f=e.target,v={providerId:f.elements.providerId.value,netPerPax:Number(f.elements.netPerPax.value||0)||'',supplierDueDate:f.elements.supplierDueDate.value||''};
+document.addEventListener('submit',e=>{if(e.target?.id!=='groupForm')return;const id=window.__almaEditGroup;if(!id)return;const f=e.target,v={providerId:f.elements.providerId.value,netPerPax:Number(f.elements.netPerPax.value||0)||'',supplierDueDate:f.elements.supplierDueDate.value||'',netSingle:Number(f.elements.netSingle.value||0)||'',singleSupplement:Number(f.elements.singleSupplement.value||0)||''};
  setTimeout(()=>{if($('groupDialog')?.open)return;const g=findGroup(id);if(!g)return;Object.assign(g,v);
   const falt=state.bookings.filter(b=>b.kind==='grupal'&&b.groupId===id&&accountStatus(b)!=='Baja'&&!almaCompDe(b));
   if(g.providerId&&g.netPerPax&&falt.length&&confirm('Hay '+falt.length+' pasajero/s inscripto/s sin compromiso con el proveedor.\n\n¿Cargarles ahora '+money(g.netPerPax,g.currency)+' a cada uno?'))falt.forEach(b=>almaCrearComp(b,g));
@@ -860,7 +862,7 @@ window.almaLiqSubir=async(id,inp)=>{const file=inp.files?.[0];inp.value='';const
   const pag=paidSupplier(e);
   if(r.total<pag-.001)alert('La liquidación dice '+money(r.total,r.moneda||e.currency)+', menos de lo ya pagado ('+money(pag,e.currency)+'). Revisalo con el proveedor.');
   else if(confirm('La liquidación dice:\n\nImporte: '+money(r.total,r.moneda||e.currency)+' (el compromiso tiene '+money(e.amount,e.currency)+')'+(r.ref?'\nFile del proveedor: '+r.ref:'')+(r.vence?'\nVence: '+fmt(r.vence):'')+'\n\n¿Actualizar el compromiso con estos datos?')){
-   Object.assign(e,{amount:r.total,currency:r.moneda||e.currency,supplierRef:r.ref||e.supplierRef||'',dueDate:r.vence||e.dueDate||'',notes:[window.almaLiq.notas(r),e.notes].filter(Boolean).join('\n')});
+   Object.assign(e,{fromLiq:true,amount:r.total,currency:r.moneda||e.currency,supplierRef:r.ref||e.supplierRef||'',dueDate:r.vence||e.dueDate||'',notes:[window.almaLiq.notas(r),e.notes].filter(Boolean).join('\n')});
    audit('Compromiso actualizado con la liquidación','Finanzas',(e.provider||'')+' · '+money(e.amount,e.currency));save();render();if(window.currentGroupDetail)renderGroupDetail();if($('almaVerResDialog')?.open&&e.bookingId)almaVerReserva(e.bookingId);notify('Compromiso actualizado')}}}catch(_){}
  document.querySelectorAll('[id="almaLiq'+id+'"]').forEach(c=>c.innerHTML=almaLiqHtml(e))};
 
@@ -919,3 +921,15 @@ function almaLiqRender(){const el=$('almaLiqBody');if(!el)return;const ops=almaL
   m.insertAdjacentHTML('afterend','<div class="alma-cta-acc" id="almaCtaAcc">'+(baja?'<span class="hint">La reserva está dada de baja.</span>':'<button class="btn" type="button" onclick="openPayment(&quot;'+b.id+'&quot;)">💵 Registrar cobro'+(saldo>.009?' · saldo '+money(saldo,cur(b)):'')+'</button>')
    +(typeof almaVerReserva==='function'?'<button class="btn ghost" type="button" onclick="almaVerReserva(&quot;'+b.id+'&quot;)">👁 Ver reserva</button>':'')+'</div>')}
  return r}}
+
+/* Single: si cambia la habitación, ajustar el compromiso automático (si no tiene pagos ni vino de una liquidación) y avisar el suplemento al inscribir */
+function almaSglAjuste(gid){const g=findGroup(gid);if(!g)return false;let ch=false;
+ for(const e of state.expenses.filter(e=>e.auto&&e.operationKey==='G:'+gid&&!e.fromLiq)){const b=findBooking(e.bookingId);if(!b||(e.roomType||'')===(b.roomType||''))continue;
+  if(state.supplierPayments.some(p=>p.expenseId===e.id))continue;const ns=Number(g.netSingle||0);
+  e.amount=Number(e.amount)+(b.roomType==='Single'?ns:0)-(e.roomType==='Single'?ns:0);e.roomType=b.roomType||'';ch=true}
+ return ch}
+document.addEventListener('submit',e=>{const id=e.target?.id;if(id!=='groupBookingForm'&&id!=='editBookingForm')return;const gid0=id==='editBookingForm'?findBooking(e.target.elements.editId?.value)?.groupId:e.target.elements.groupId?.value;
+ setTimeout(()=>{if(gid0&&almaSglAjuste(gid0)){save();if(window.currentGroupDetail)renderGroupDetail();notify('Compromiso con el proveedor ajustado por el cambio de habitación')}},150)});
+function almaSglHint(){const s=$('almaRoomType');if(!s)return;let h=$('almaSglHint');if(!h){s.closest('label')?.insertAdjacentHTML('beforeend','<small class="hint" id="almaSglHint"></small>');h=$('almaSglHint')}
+ const g=findGroup($('groupBookingForm')?.elements.groupId?.value),v=Number(g?.singleSupplement||0);h.textContent=s.value==='Single'&&v>0?'Suplemento single: + '+money(v,g.currency||'USD'):'';}
+$('almaRoomType')?.addEventListener('change',almaSglHint);$('groupBookingForm')?.addEventListener('change',e=>{if(e.target.name==='groupId')almaSglHint()});
