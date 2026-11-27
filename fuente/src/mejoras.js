@@ -990,3 +990,88 @@ window.almaCompDesdeLiqInp=async(id,inp)=>{const f=inp.files?.[0];inp.value='';c
 
 /* Cobro: medio de pago «Efectivo» por defecto (evita registrar transferencias por error) */
 {const o=window.openPayment;window.openPayment=(...a)=>{const r=o(...a);const s=$('paymentForm')?.elements.method;if(s){s.value='Efectivo';s.dispatchEvent(new Event('change',{bubbles:true}))}return r}}
+
+/* ---------- 📋 Mi agenda: tareas personales de cada socio/vendedor (los socios también ven las de los vendedores) ---------- */
+let ALMA_TAREAS=[],ALMA_EQUIPO=[],almaAgVer='',almaAgTab='hoy',almaAgCarga=0;
+pageTitles.agenda='Mi agenda';
+{const ini=document.querySelector('nav [data-page="inicio"]')||document.querySelector('[data-page="inicio"]');
+ if(ini&&!document.querySelector('nav [data-page="agenda"]')){ini.insertAdjacentHTML('afterend','<button data-page="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M9 15l2 2 4-4"/></svg><span>Mi agenda</span><b class="alma-ag-badge" id="almaAgBadge" style="display:none"></b></button>');
+  ini.nextElementSibling.addEventListener('click',()=>switchPage('agenda'))}
+ const ref=$('inicio');if(ref&&!$('agenda'))ref.insertAdjacentHTML('afterend','<section class="page" id="agenda"><div class="panel"><div class="panelhead"><h2>📋 <span id="almaAgTit">Mi agenda</span></h2><div class="actionset"><select id="almaAgQuien" class="tiny" style="max-width:240px;display:none" onchange="almaAgSetVer(this.value)"></select><button class="btn" type="button" onclick="almaTareaForm()">+ Nueva tarea</button></div></div>'
+  +'<div class="alma-ag-tabs" id="almaAgTabs"></div><div id="almaAgLista"></div><p class="hint" style="margin-top:12px">Cada mañana a las 8:00 te llega un mail a tu casilla con las tareas del día y las vencidas. <a href="#" onclick="event.preventDefault();almaAgProbar()">Mandarme el mail ahora</a></p></div></section>')}
+function almaYoAg(){return currentDemoOperator()}
+async function almaAgCargar(forzar){if(!window.almaTareas)return;if(!forzar&&Date.now()-almaAgCarga<60000)return;almaAgCarga=Date.now();
+ try{ALMA_TAREAS=await window.almaTareas.listar();if(!ALMA_EQUIPO.length)ALMA_EQUIPO=await window.almaTareas.equipo()}catch(e){console.warn('agenda',e)}
+ almaAgBanner();if($('agenda')?.classList.contains('active'))almaAgRender()}
+function almaAgDe(quien){return ALMA_TAREAS.filter(t=>quien==='__asignadas'?t.creada_por===almaYoAg()&&t.para!==almaYoAg():t.para===quien)}
+function almaAgEstado(t){const h=today();return t.hecha?'hecha':!t.fecha?'sinfecha':t.fecha<h?'vencida':t.fecha===h?'hoy':'prox'}
+function almaAgVinc(t){const v=t.vinculo||{};if(!v.tipo||!v.id)return '';const f=v.tipo==='pasajero'?'openPassengerProfile':v.tipo==='salida'?'showGroupDetail':'almaVerReserva';
+ return '<a href="#" class="alma-ag-vinc" onclick="event.preventDefault();'+f+'(&quot;'+esc(v.id)+'&quot;)">🔗 '+esc(v.label||v.tipo)+'</a>'}
+function almaAgItem(t){const e=almaAgEstado(t),yo=almaYoAg();
+ return '<div class="alma-ag-item '+e+(t.prioridad==='urgente'?' urg':'')+'"><button type="button" class="alma-ag-check" title="'+(t.hecha?'Marcar como pendiente':'Marcar como hecha')+'" onclick="almaTareaHecha(&quot;'+t.id+'&quot;)">'+(t.hecha?'✓':'')+'</button>'
+  +'<div class="alma-ag-txt"><b>'+(t.prioridad==='urgente'?'🔴 ':'')+esc(t.titulo)+'</b>'
+  +'<span class="sub">'+(t.fecha?(e==='vencida'?'<b style="color:#b13c1c">Vencida · '+fmt(t.fecha)+'</b>':fmt(t.fecha)):'Sin fecha')+(t.hora?' · '+esc(t.hora):'')
+  +(t.para!==yo?' · para <b>'+esc(t.para)+'</b>':'')+(t.creada_por&&t.creada_por!==t.para&&t.creada_por!==yo?' · te la asignó '+esc(t.creada_por):'')
+  +(t.hecha?' · hecha '+new Date(t.hecha).toLocaleDateString('es-AR')+(t.hecha_por&&t.hecha_por!==yo?' por '+esc(t.hecha_por):''):'')+'</span>'
+  +(t.notas?'<span class="sub">'+esc(t.notas)+'</span>':'')+almaAgVinc(t)+'</div>'
+  +'<div class="alma-ag-acc"><button class="btn ghost tiny" type="button" onclick="almaTareaForm(&quot;'+t.id+'&quot;)">✎</button><button class="btn plain tiny" type="button" onclick="almaTareaBorrar(&quot;'+t.id+'&quot;)">🗑</button></div></div>'}
+function almaAgRender(){const box=$('almaAgLista');if(!box)return;const yo=almaYoAg(),socio=window.demoRole==='socio';
+ const sel=$('almaAgQuien'),vends=ALMA_EQUIPO.filter(p=>p.rol==='vendedor').map(p=>p.nombre);
+ if(!almaAgVer)almaAgVer=yo;
+ sel.innerHTML='<option value="'+esc(yo)+'">Mi agenda</option><option value="__asignadas">Tareas que asigné a otros</option>'+(socio?vends.map(n=>'<option value="'+esc(n)+'">Agenda de '+esc(n)+'</option>').join(''):'');sel.value=almaAgVer;sel.style.display='';
+ $('almaAgTit').textContent=almaAgVer===yo?'Mi agenda':almaAgVer==='__asignadas'?'Tareas que asigné':'Agenda de '+almaAgVer;
+ const ts=almaAgDe(almaAgVer),c=k=>ts.filter(t=>k==='hoy'?['hoy','vencida'].includes(almaAgEstado(t)):almaAgEstado(t)===k).length;
+ const tabs=[['hoy','Hoy y vencidas'],['prox','Próximas'],['sinfecha','Sin fecha'],['hecha','Hechas']];
+ $('almaAgTabs').innerHTML=tabs.map(([k,l])=>'<button type="button" class="'+(almaAgTab===k?'on':'')+'" onclick="almaAgSetTab(&quot;'+k+'&quot;)">'+l+' <b>'+c(k)+'</b></button>').join('');
+ let ls=ts.filter(t=>almaAgTab==='hoy'?['hoy','vencida'].includes(almaAgEstado(t)):almaAgEstado(t)===almaAgTab);
+ if(almaAgTab==='hecha')ls=ls.sort((a,b)=>String(b.hecha).localeCompare(String(a.hecha))).slice(0,60);
+ box.innerHTML=ls.length?ls.map(almaAgItem).join(''):'<p class="empty">'+(almaAgTab==='hoy'?'No hay tareas para hoy ni vencidas. 👌':'No hay tareas acá.')+'</p>'}
+window.almaAgSetVer=v=>{almaAgVer=v;almaAgRender()};window.almaAgSetTab=k=>{almaAgTab=k;almaAgRender()};
+{const o=window.switchPage;window.switchPage=(id,...a)=>{const r=o(id,...a);if(id==='agenda'){almaAgRender();almaAgCargar(true)}return r}}
+function almaAgBanner(){const yo=almaYoAg(),mias=ALMA_TAREAS.filter(t=>t.para===yo&&!t.hecha),hoy=mias.filter(t=>almaAgEstado(t)==='hoy').length,venc=mias.filter(t=>almaAgEstado(t)==='vencida').length;
+ const bd=$('almaAgBadge');if(bd){bd.textContent=hoy+venc;bd.style.display=hoy+venc?'':'none';bd.classList.toggle('rojo',venc>0)}
+ let vistos=[];try{vistos=JSON.parse(localStorage.getItem('almaAgVistas')||'[]')}catch(e){}
+ const terminadas=ALMA_TAREAS.filter(t=>t.hecha&&t.creada_por===yo&&t.para!==yo&&!vistos.includes(t.id)&&Date.now()-new Date(t.hecha)<4*864e5);
+ const head=document.querySelector('.main > .head')||document.querySelector('.head');if(!head)return;let el=$('almaAgAviso');
+ if(!el){el=document.createElement('div');el.id='almaAgAviso';el.className='alma-ag-aviso';($('almaCumple')||head).insertAdjacentElement('afterend',el)}
+ const partes=[];if(hoy||venc)partes.push('📋 '+[hoy?'Hoy tenés <b>'+hoy+'</b> tarea'+(hoy===1?'':'s'):'',venc?'<b style="color:#b13c1c">'+(hoy?'':'Tenés ')+venc+' tarea'+(venc===1?'':'s')+' vencida'+(venc===1?'':'s')+'</b>':''].filter(Boolean).join(' · '));
+ if(terminadas.length)partes.push('✓ '+terminadas.map(t=>esc(t.hecha_por||t.para)+' terminó «'+esc(t.titulo)+'»').join(' · ')+' <a href="#" onclick="event.preventDefault();almaAgVisto()">Listo</a>');
+ el.innerHTML=partes.length?partes.join('<br>')+' <a href="#" onclick="event.preventDefault();switchPage(&quot;agenda&quot;)">Ver agenda →</a>':'';el.style.display=partes.length?'':'none'}
+window.almaAgVisto=()=>{const yo=almaYoAg();let v=[];try{v=JSON.parse(localStorage.getItem('almaAgVistas')||'[]')}catch(e){}
+ v=[...new Set([...v,...ALMA_TAREAS.filter(t=>t.hecha&&t.creada_por===yo).map(t=>t.id)])].slice(-300);try{localStorage.setItem('almaAgVistas',JSON.stringify(v))}catch(e){}almaAgBanner()};
+/* Formulario de tarea */
+function almaAgDlg(){if($('almaTareaDialog'))return;document.body.insertAdjacentHTML('beforeend','<dialog id="almaTareaDialog" class="dialog"><form id="almaTareaForm"><div class="modalhead"><h2 id="almaTareaTit">Nueva tarea</h2><button class="btn ghost tiny" type="button" onclick="closeDialog(\'almaTareaDialog\')">✕</button></div><div class="modalbody"><div class="formgrid">'
+ +'<label class="field full">Tarea<input name="titulo" required maxlength="300" placeholder="Ej.: Llamar a Nelida por el saldo"></label>'
+ +'<label class="field">Fecha<input name="fecha" type="date"></label><label class="field">Hora (opcional)<input name="hora" type="time"></label>'
+ +'<label class="field">Para<select name="para"></select></label><label class="field">Prioridad<select name="prioridad"><option value="normal">Normal</option><option value="urgente">🔴 Urgente</option></select></label>'
+ +'<label class="field full">Vincular con (opcional)<input name="vinc" list="almaAgVincList" placeholder="Escribí un pasajero, un file o una salida"><datalist id="almaAgVincList"></datalist></label>'
+ +'<label class="field full">Notas<textarea name="notas" rows="3"></textarea></label></div></div>'
+ +'<div class="modalfoot"><button class="btn plain" type="button" onclick="closeDialog(\'almaTareaDialog\')">Cancelar</button><button class="btn" type="submit">Guardar tarea</button></div></form></dialog>');
+ $('almaTareaForm').addEventListener('submit',almaTareaGuardar)}
+function almaAgOpciones(){const o=[];
+ for(const p of state.passengers)o.push({label:'Pasajero · '+p.name,tipo:'pasajero',id:p.id});
+ for(const b of state.bookings)if(accountStatus(b)!=='Baja')o.push({label:'Reserva · '+b.client+' · '+trip(b)+' · '+(bookingFile(b)||''),tipo:'reserva',id:b.id});
+ for(const g of state.groups)o.push({label:'Salida · '+g.name+' · '+(g.fileNumber||''),tipo:'salida',id:g.id});return o}
+window.almaTareaForm=(id,pre)=>{almaAgDlg();const t=id?ALMA_TAREAS.find(x=>x.id===id):null,f=$('almaTareaForm'),yo=almaYoAg();f.reset();f.dataset.id=id||'';
+ $('almaTareaTit').textContent=t?'Editar tarea':'Nueva tarea';
+ const equipo=[...new Set([yo,...(ALMA_EQUIPO.length?ALMA_EQUIPO.map(p=>p.nombre):owners)])];
+ f.elements.para.innerHTML=equipo.map(n=>'<option value="'+esc(n)+'">'+(n===yo?'Yo ('+esc(n)+')':esc(n))+'</option>').join('');
+ const ops=almaAgOpciones();$('almaAgVincList').innerHTML=ops.map(x=>'<option value="'+esc(x.label)+'"></option>').join('');
+ const v=t||pre||{};f.elements.titulo.value=v.titulo||'';f.elements.fecha.value=v.fecha||(t?'':today());f.elements.hora.value=v.hora||'';
+ f.elements.para.value=v.para||(almaAgVer&&almaAgVer!=='__asignadas'?almaAgVer:yo);f.elements.prioridad.value=v.prioridad||'normal';f.elements.notas.value=v.notas||'';f.elements.vinc.value=v.vinculo?.label||'';
+ openDlg('almaTareaDialog');setTimeout(()=>f.elements.titulo.focus(),50)};
+async function almaTareaGuardar(e){e.preventDefault();const f=e.target,id=f.dataset.id,t=id?ALMA_TAREAS.find(x=>x.id===id):null,lab=f.elements.vinc.value.trim();
+ let vinculo={};if(lab){const m=almaAgOpciones().find(x=>x.label===lab);vinculo=m||{label:lab}}
+ const datos={id:id||undefined,titulo:f.elements.titulo.value.trim(),fecha:f.elements.fecha.value,hora:f.elements.hora.value,para:f.elements.para.value,prioridad:f.elements.prioridad.value,notas:f.elements.notas.value.trim(),vinculo,hecha:t?.hecha||null};
+ const bt=f.querySelector('button[type=submit]');bt.disabled=true;
+ try{const r=await window.almaTareas.guardar(datos);if(t)Object.assign(t,r);else ALMA_TAREAS.push(r);closeDialog('almaTareaDialog');
+  notify(datos.para!==almaYoAg()?'Tarea asignada a '+datos.para:'Tarea guardada');almaAgBanner();almaAgRender()}
+ catch(err){alert('No se pudo guardar la tarea: '+err.message)}finally{bt.disabled=false}}
+window.almaTareaHecha=async id=>{const t=ALMA_TAREAS.find(x=>x.id===id);if(!t)return;const antes=t.hecha;t.hecha=antes?null:new Date().toISOString();almaAgRender();almaAgBanner();
+ try{const r=await window.almaTareas.guardar(t);Object.assign(t,r);if(!antes)notify('✓ Tarea hecha')}catch(err){t.hecha=antes;alert('No se pudo actualizar: '+err.message)}almaAgRender();almaAgBanner()};
+window.almaTareaBorrar=async id=>{const t=ALMA_TAREAS.find(x=>x.id===id);if(!t||!confirm('¿Borrar la tarea «'+t.titulo+'»?'))return;
+ try{await window.almaTareas.borrar(id);ALMA_TAREAS=ALMA_TAREAS.filter(x=>x.id!==id);almaAgRender();almaAgBanner()}catch(err){alert('No se pudo borrar: '+err.message)}};
+window.almaAgProbar=async()=>{try{const r=await window.almaTareas.probarMail();notify(r.enviados?'Te mandamos el mail con tus tareas':'No tenés tareas para hoy ni vencidas: no hay nada que mandar')}catch(e){alert('No se pudo mandar el mail: '+e.message)}};
+// Cargar al entrar y cada 5 minutos
+{const o=render;render=(...a)=>{const r=o(...a);try{almaAgCargar(false)}catch(e){}return r}}
+setInterval(()=>{if(document.visibilityState==='visible')almaAgCargar(true)},300000);

@@ -192,4 +192,23 @@ body[data-role="socio"] .alma-nav-vend { display: none !important; }
 .alma-bk-estado.ok { background: #e9f7ee; color: #1f5f37; }
 .alma-bk-estado.mal { background: #fdeee8; color: #8a2f14; }
 .alma-bk-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+/* Agenda */
+.alma-ag-badge { margin-left: auto; background: #6a4fc0; color: #fff; border-radius: 999px; font-size: 11px; padding: 1px 7px; font-weight: 800; }
+.alma-ag-badge.rojo { background: #c0392b; }
+.alma-ag-aviso { margin: 10px 0; padding: 10px 14px; background: #f1ecfb; border: 1px solid #ddd2f3; border-radius: 12px; font-size: 14px; line-height: 1.6; color: #3f2f66; }
+.alma-ag-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 12px; }
+.alma-ag-tabs button { border: 1px solid #ddd2f3; background: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; color: #3f2f66; }
+.alma-ag-tabs button.on { background: #3b2f7a; color: #fff; border-color: #3b2f7a; }
+.alma-ag-tabs button b { opacity: .75; margin-left: 2px; }
+.alma-ag-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border: 1px solid #ece7f6; border-radius: 12px; margin-bottom: 8px; background: #fff; }
+.alma-ag-item.vencida { border-color: #f1c7bb; background: #fff8f5; }
+.alma-ag-item.urg { border-left: 4px solid #c0392b; }
+.alma-ag-item.hecha { opacity: .6; }
+.alma-ag-item.hecha .alma-ag-txt b { text-decoration: line-through; }
+.alma-ag-check { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 8px; border: 2px solid #9c8fc4; background: #fff; color: #fff; font-weight: 900; cursor: pointer; line-height: 1; }
+.alma-ag-item.hecha .alma-ag-check { background: #1f7a45; border-color: #1f7a45; }
+.alma-ag-txt { flex: 1; min-width: 0; font-size: 14px; }
+.alma-ag-txt .sub { display: block; }
+.alma-ag-vinc { display: inline-block; margin-top: 3px; font-size: 12.5px; }
+.alma-ag-acc { display: flex; gap: 4px; }
 </style>

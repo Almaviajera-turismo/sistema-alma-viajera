@@ -732,6 +732,32 @@ window.almaBackups = {
     if (!r.ok) throw new Error((await r.text()) || ('error ' + r.status)); return r.json();
   },
 };
+/* Agenda personal (tabla tareas): cada uno ve las suyas y las que asignó; los socios, también las de los vendedores */
+window.almaTareas = {
+  async h(extra) { return { apikey: CFG.key, Authorization: 'Bearer ' + await token(), ...(extra || {}) }; },
+  async listar() {
+    const r = await fetch(CFG.url + '/rest/v1/tareas?select=*&order=fecha.asc.nullslast,hora.asc.nullslast,creado.asc', { headers: await this.h() });
+    if (!r.ok) throw new Error((await r.text()) || ('error ' + r.status)); return r.json();
+  },
+  async guardar(t) {
+    const nueva = !t.id, body = { titulo: t.titulo, notas: t.notas || null, fecha: t.fecha || null, hora: t.hora || null, prioridad: t.prioridad || 'normal', para: t.para, vinculo: t.vinculo || {}, hecha: t.hecha || null };
+    const r = await fetch(CFG.url + '/rest/v1/tareas' + (nueva ? '' : '?id=eq.' + encodeURIComponent(t.id)), { method: nueva ? 'POST' : 'PATCH',
+      headers: await this.h({ 'Content-Type': 'application/json', Prefer: 'return=representation' }), body: JSON.stringify(body) });
+    if (!r.ok) throw new Error((await r.text()) || ('error ' + r.status)); return (await r.json())[0];
+  },
+  async borrar(id) {
+    const r = await fetch(CFG.url + '/rest/v1/tareas?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: await this.h({ Prefer: 'return=minimal' }) });
+    if (!r.ok) throw new Error((await r.text()) || ('error ' + r.status));
+  },
+  async equipo() {
+    const r = await fetch(CFG.url + '/rest/v1/rpc/lista_personal', { method: 'POST', headers: await this.h({ 'Content-Type': 'application/json' }), body: '{}' });
+    return r.ok ? r.json() : [];
+  },
+  async probarMail() {
+    const r = await fetch(CFG.url + '/functions/v1/agenda-diaria', { method: 'POST', headers: await this.h({ 'Content-Type': 'application/json' }), body: JSON.stringify({ prueba: true }) });
+    if (!r.ok) throw new Error((await r.text()) || ('error ' + r.status)); return r.json();
+  },
+};
 window.almaEnviarRecibo = async (cobroId, to, subject, body, pdf) => {
   for (let i = 0; ; i++) {
     const t = await token();
